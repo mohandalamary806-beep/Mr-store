@@ -1,0 +1,1105 @@
+<!DOCTYPE html>
+<!--
+  MR Store — متجر إلكتروني (نسخة أولى جاهزة للنشر)
+  ===================================================
+  حاجات مهمة قبل ما تنشر الموقع:
+  1) دوّر على STORE_WHATSAPP_NUMBER في الجافاسكريبت تحت وحط رقم واتساب متجرك الحقيقي.
+  2) دوّر على PRODUCTS في الجافاسكريبت وغيّر قيمة "img" لكل منتج بصور المنتجات الحقيقية.
+  3) دوّر على GOOGLE_CLIENT_ID في الجافاسكريبت وحط فيه Client ID بتاع تسجيل الدخول بجوجل
+     (تسجيل الدخول بجوجل مش هيشتغل غير بعد ما تحط ده — التعليمات في آخر الرد).
+-->
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MR Store | متجرك لأحدث موضة رجالي</title>
+<meta name="description" content="MR Store — تسوق أحدث صيحات الموضة الرجالي. توصيل لكل مصر ودفع عند الاستلام.">
+<meta property="og:title" content="MR Store">
+<meta property="og:description" content="تسوق أحدث صيحات الموضة الرجالي — توصيل لكل مصر.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%232B3B68' d='M3 12l9-9h8v8l-9 9a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8z'/%3E%3Ccircle cx='15.5' cy='8.5' r='1.5' fill='%23ECE5D3'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jomhuria&family=Tajawal:wght@300;400;500;700;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+/* ============ TOKENS ============ */
+:root{
+  --canvas:#ECE5D3;
+  --canvas-deep:#E1D9C3;
+  --paper:#FBF8F0;
+  --ink:#221F1A;
+  --ink-soft:#6B6355;
+  --denim:#2B3B68;
+  --denim-deep:#1E2A4D;
+  --brass:#A9762E;
+  --stamp:#A63B2A;
+  --line:#D6CCB4;
+  --ok:#3F7D5C;
+  --radius-s:4px;
+  --radius-m:10px;
+  --radius-l:22px;
+  --shadow-s:0 2px 10px rgba(34,31,26,.09);
+  --shadow-m:0 10px 28px rgba(34,31,26,.14);
+  --shadow-l:0 24px 60px rgba(34,31,26,.22);
+  --ff-display:'Jomhuria', sans-serif;
+  --ff-body:'Tajawal', sans-serif;
+  --ff-mono:'Space Mono', monospace;
+  --container:1220px;
+}
+
+/* ============ RESET ============ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  font-family:var(--ff-body);
+  background:var(--canvas);
+  color:var(--ink);
+  line-height:1.7;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+img{max-width:100%;display:block;}
+a{color:inherit;text-decoration:none;}
+button{font:inherit;cursor:pointer;border:none;background:none;color:inherit;}
+ul{list-style:none;}
+input,textarea{font:inherit;border:none;outline:none;background:none;color:inherit;}
+h1,h2,h3,h4{font-weight:inherit;}
+.container{max-width:var(--container);margin-inline:auto;padding-inline:24px;}
+:focus-visible{outline:3px solid var(--denim);outline-offset:3px;border-radius:3px;}
+::selection{background:var(--brass);color:var(--paper);}
+
+/* ============ REVEAL ON SCROLL ============ */
+.reveal{opacity:0;transform:translateY(22px);transition:opacity .6s ease, transform .6s ease;}
+.reveal.is-visible{opacity:1;transform:translateY(0);}
+
+@media (prefers-reduced-motion: reduce){
+  html{scroll-behavior:auto;}
+  *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important;}
+  .reveal{opacity:1;transform:none;}
+}
+
+/* ============ BUTTONS ============ */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  padding:14px 30px;border-radius:var(--radius-s);
+  font-weight:700;font-size:.95rem;
+  transition:transform .18s ease, box-shadow .18s ease, background .18s ease;
+  white-space:nowrap;
+}
+.btn-primary{background:var(--denim);color:var(--paper);box-shadow:var(--shadow-s);}
+.btn-primary:hover{background:var(--denim-deep);transform:translateY(-2px);box-shadow:var(--shadow-m);}
+.btn-primary:disabled{background:var(--line);color:var(--ink-soft);cursor:not-allowed;transform:none;box-shadow:none;}
+.btn-outline{border:2px solid var(--ink);background:transparent;}
+.btn-outline:hover{background:var(--ink);color:var(--paper);}
+.btn-block{width:100%;}
+
+/* ============ LABEL / EYEBROW ============ */
+.eyebrow{
+  font-family:var(--ff-mono);font-size:.72rem;letter-spacing:.14em;
+  color:var(--brass);font-weight:700;text-transform:uppercase;
+  display:inline-flex;align-items:center;gap:10px;
+}
+.eyebrow::before{content:'';width:22px;height:2px;background:var(--brass);}
+
+/* ============ HEADER ============ */
+.site-header{position:sticky;top:0;z-index:60;background:var(--canvas);border-bottom:2px dashed var(--line);}
+.header-inner{display:flex;align-items:center;justify-content:space-between;height:78px;gap:16px;}
+.logo{display:flex;align-items:center;gap:10px;font-family:var(--ff-mono);font-weight:700;font-size:1.2rem;letter-spacing:.05em;}
+.logo svg{width:26px;height:26px;color:var(--denim);flex-shrink:0;}
+.main-nav{display:flex;gap:30px;}
+.main-nav a{font-size:.95rem;font-weight:500;color:var(--ink-soft);transition:color .2s;padding:6px 0;}
+.main-nav a:hover{color:var(--ink);}
+.admin-nav-link{display:none;}
+.admin-nav-link.is-visible{display:inline;}
+.header-actions{display:flex;align-items:center;gap:4px;}
+.icon-btn{position:relative;width:42px;height:42px;display:flex;align-items:center;justify-content:center;border-radius:50%;transition:background .2s;}
+.icon-btn svg{width:21px;height:21px;}
+.icon-btn:hover{background:var(--canvas-deep);}
+.cart-badge{
+  position:absolute;top:0;left:0;
+  background:var(--stamp);color:#fff;font-family:var(--ff-mono);font-weight:700;font-size:.62rem;
+  width:18px;height:18px;border-radius:50%;display:none;align-items:center;justify-content:center;
+  border:2px solid var(--canvas);
+}
+.menu-toggle{display:none;}
+@media (max-width:900px){
+  .main-nav{display:none;}
+  .menu-toggle{display:flex;}
+}
+
+/* Mobile menu overlay */
+.mobile-menu{
+  position:fixed;inset:0;background:var(--canvas);z-index:100;
+  display:flex;flex-direction:column;padding:24px;
+  transform:translateY(-100%);transition:transform .35s ease;
+}
+.mobile-menu.open{transform:translateY(0);}
+.mobile-menu-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:50px;}
+.mobile-menu nav{display:flex;flex-direction:column;gap:8px;}
+.mobile-menu nav a{font-family:var(--ff-display);font-size:2.6rem;padding:14px 4px;border-bottom:1px dashed var(--line);}
+
+/* ============ HERO ============ */
+.hero{padding:64px 0 56px;}
+.hero-grid{display:flex;align-items:center;gap:64px;}
+.hero-content{flex:1;min-width:0;}
+.hero-content .eyebrow{margin-bottom:22px;}
+.hero-title{
+  font-family:var(--ff-display);
+  font-size:clamp(3.6rem,8vw,6.4rem);
+  line-height:.95;font-weight:400;
+  margin-bottom:22px;
+  max-width:14ch;
+}
+.hero-sub{font-size:1.08rem;color:var(--ink-soft);max-width:46ch;margin-bottom:32px;}
+.hero-actions{display:flex;align-items:center;gap:22px;flex-wrap:wrap;}
+.hero-fineprint{font-family:var(--ff-mono);font-size:.7rem;letter-spacing:.06em;color:var(--ink-soft);}
+
+.hero-stamp-wrap{flex-shrink:0;display:flex;align-items:center;justify-content:center;width:260px;height:260px;position:relative;}
+.hero-stamp{
+  width:250px;height:250px;border:3px solid var(--denim);border-radius:50%;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  transform:rotate(-9deg);position:relative;background:var(--paper);box-shadow:var(--shadow-m);
+}
+.hero-stamp::before{content:'';position:absolute;inset:12px;border:1px dashed var(--denim);border-radius:50%;opacity:.55;}
+.hero-stamp-text{font-family:var(--ff-mono);font-weight:700;font-size:1.5rem;letter-spacing:.04em;color:var(--denim);}
+.hero-stamp-sub{font-family:var(--ff-mono);font-size:.58rem;letter-spacing:.12em;color:var(--brass);margin-top:8px;text-align:center;}
+.hero-stamp-tag{position:absolute;top:-6px;right:28px;width:16px;height:16px;border-radius:50%;background:var(--canvas);border:2px solid var(--denim);}
+
+@media (max-width:860px){
+  .hero-grid{flex-direction:column-reverse;gap:40px;text-align:center;}
+  .hero-content{width:100%;}
+  .hero-sub{margin-inline:auto;}
+  .hero-actions{justify-content:center;}
+  .hero-title{max-width:none;}
+}
+
+/* ============ TRUST STRIP ============ */
+.trust-strip{border-block:2px dashed var(--line);background:var(--canvas-deep);}
+.trust-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;padding-block:26px;}
+.trust-item{display:flex;align-items:center;gap:12px;justify-content:center;font-size:.85rem;font-weight:500;text-align:center;}
+.trust-item svg{width:24px;height:24px;color:var(--denim);flex-shrink:0;}
+@media (max-width:860px){.trust-grid{grid-template-columns:repeat(2,1fr);}}
+@media (max-width:480px){.trust-item{flex-direction:column;gap:8px;font-size:.78rem;}}
+
+/* ============ SECTION HEAD ============ */
+.section{padding-block:72px;}
+.section-head{margin-bottom:44px;text-align:center;}
+.section-title{font-family:var(--ff-display);font-size:clamp(2.4rem,5vw,3.4rem);font-weight:400;margin-top:14px;}
+
+/* ============ PRODUCTS ============ */
+.products-toolbar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:18px;margin-bottom:38px;}
+.filter-tabs{display:flex;gap:8px;flex-wrap:wrap;}
+.filter-tab{
+  padding:10px 20px;border-radius:999px;border:2px solid var(--ink);
+  font-size:.85rem;font-weight:600;transition:background .2s,color .2s;
+}
+.filter-tab.active,.filter-tab:hover{background:var(--ink);color:var(--paper);}
+.search-box{
+  display:flex;align-items:center;gap:10px;background:var(--paper);
+  border:2px solid var(--line);border-radius:999px;padding:10px 18px;min-width:220px;
+}
+.search-box svg{width:18px;height:18px;color:var(--ink-soft);flex-shrink:0;}
+.search-box input{flex:1;font-size:.9rem;}
+
+.product-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:26px;}
+@media (max-width:1080px){.product-grid{grid-template-columns:repeat(3,1fr);}}
+@media (max-width:760px){.product-grid{grid-template-columns:repeat(2,1fr);}.products-toolbar{flex-direction:column;align-items:stretch;}.search-box{min-width:0;}}
+@media (max-width:460px){.product-grid{grid-template-columns:1fr;}}
+
+.product-card{transition:transform .28s ease;}
+.product-card:hover{transform:translateY(-6px) rotate(-.6deg);}
+.product-card:hover .product-card-inner{box-shadow:var(--shadow-l);}
+.product-card-inner{
+  background:var(--paper);border-radius:var(--radius-m);overflow:hidden;
+  box-shadow:var(--shadow-s);transition:box-shadow .28s ease;position:relative;
+  clip-path:polygon(0 0,calc(100% - 18px) 0,100% 18px,100% 100%,0 100%);
+}
+.tag-hole{
+  position:absolute;top:12px;left:12px;width:14px;height:14px;border-radius:50%;
+  background:var(--canvas);border:2px solid var(--ink);z-index:3;
+}
+.product-img{position:relative;aspect-ratio:4/5;overflow:hidden;background:var(--canvas-deep);}
+.product-img img{width:100%;height:100%;object-fit:cover;transition:transform .4s ease;}
+.product-card:hover .product-img img{transform:scale(1.05);}
+.stamp-badge{
+  position:absolute;top:14px;right:-6px;font-family:var(--ff-mono);font-size:.62rem;font-weight:700;
+  letter-spacing:.08em;padding:5px 12px;border-radius:3px;color:#fff;transform:rotate(-7deg);
+  box-shadow:var(--shadow-s);z-index:3;
+}
+.stamp-new{background:var(--denim);}
+.stamp-sale{background:var(--stamp);}
+.product-perf{border-top:2px dashed var(--line);}
+.product-info{padding:18px 18px 20px;}
+.product-name{font-size:1rem;font-weight:700;margin:0 0 12px;line-height:1.4;}
+.product-price-row{display:flex;align-items:baseline;gap:10px;margin-bottom:14px;}
+.product-price{font-weight:800;font-size:1.15rem;}
+.product-old{font-size:.82rem;color:var(--ink-soft);text-decoration:line-through;}
+.btn-add{
+  width:100%;padding:11px;border-radius:var(--radius-s);border:2px solid var(--ink);
+  font-weight:700;font-size:.85rem;transition:background .2s,color .2s;
+}
+.btn-add:hover{background:var(--ink);color:var(--paper);}
+.empty-state{grid-column:1/-1;text-align:center;padding:60px 20px;color:var(--ink-soft);}
+.empty-state strong{display:block;font-family:var(--ff-display);font-size:2rem;color:var(--ink);margin-bottom:10px;font-weight:400;}
+
+/* ============ FOOTER ============ */
+.site-footer{background:var(--ink);color:var(--canvas);padding-block:64px 28px;margin-top:40px;}
+.footer-grid{display:grid;grid-template-columns:1.6fr 1fr 1.2fr;gap:40px;padding-bottom:44px;border-bottom:1px solid rgba(236,229,211,.15);}
+.footer-logo{display:flex;align-items:center;gap:10px;font-family:var(--ff-mono);font-weight:700;font-size:1.15rem;letter-spacing:.05em;margin-bottom:16px;}
+.footer-logo svg{width:24px;height:24px;color:var(--brass);}
+.footer-about{color:rgba(236,229,211,.7);font-size:.9rem;max-width:34ch;}
+.footer-col h4{font-family:var(--ff-mono);font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--brass);margin-bottom:18px;}
+.footer-col ul{display:flex;flex-direction:column;gap:11px;}
+.footer-col a{color:rgba(236,229,211,.8);font-size:.9rem;transition:color .2s;}
+.footer-col a:hover{color:var(--paper);}
+.footer-social{display:flex;gap:10px;margin-top:18px;}
+.footer-social a{width:38px;height:38px;border:1px solid rgba(236,229,211,.25);border-radius:50%;display:flex;align-items:center;justify-content:center;transition:background .2s,border-color .2s;}
+.footer-social a:hover{background:var(--brass);border-color:var(--brass);}
+.footer-social svg{width:17px;height:17px;}
+.footer-bottom{display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;padding-top:26px;font-size:.8rem;color:rgba(236,229,211,.55);}
+@media (max-width:860px){.footer-grid{grid-template-columns:1fr 1fr;}}
+@media (max-width:520px){.footer-grid{grid-template-columns:1fr;}}
+
+/* ============ WHATSAPP FLOAT ============ */
+.wa-float{
+  position:fixed;bottom:24px;left:24px;z-index:70;width:58px;height:58px;border-radius:50%;
+  background:#25D366;display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow-m);
+  transition:transform .2s ease;
+}
+.wa-float:hover{transform:scale(1.08);}
+.wa-float svg{width:27px;height:27px;color:#fff;}
+
+/* ============ CART DRAWER ============ */
+.overlay{position:fixed;inset:0;background:rgba(34,31,26,.5);z-index:80;opacity:0;pointer-events:none;transition:opacity .3s ease;}
+.overlay.open{opacity:1;pointer-events:auto;}
+.drawer{
+  position:fixed;top:0;left:0;height:100%;width:420px;max-width:92vw;background:var(--paper);z-index:90;
+  transform:translateX(-100%);transition:transform .35s ease;display:flex;flex-direction:column;box-shadow:var(--shadow-l);
+}
+.drawer.open{transform:translateX(0);}
+.drawer-head{display:flex;justify-content:space-between;align-items:center;padding:22px 24px;border-bottom:2px dashed var(--line);}
+.drawer-head h3{font-family:var(--ff-display);font-size:1.9rem;font-weight:400;}
+.drawer-body{flex:1;overflow-y:auto;padding:18px 24px;}
+.cart-empty{text-align:center;color:var(--ink-soft);padding:60px 10px;font-size:.95rem;}
+.cart-item{display:flex;gap:14px;padding:16px 0;border-bottom:1px dashed var(--line);align-items:center;}
+.cart-item img{width:64px;height:80px;object-fit:cover;border-radius:var(--radius-s);flex-shrink:0;background:var(--canvas-deep);}
+.cart-item-info{flex:1;min-width:0;}
+.cart-item-info h4{font-size:.9rem;font-weight:700;margin-bottom:4px;}
+.cart-item-price{font-family:var(--ff-mono);font-size:.82rem;color:var(--brass);}
+.qty-control{display:flex;align-items:center;gap:12px;margin-top:8px;}
+.qty-control button{width:26px;height:26px;border:1.5px solid var(--ink);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.9rem;line-height:1;}
+.qty-control button:hover{background:var(--ink);color:var(--paper);}
+.qty-control span{font-family:var(--ff-mono);font-weight:700;min-width:16px;text-align:center;}
+.cart-item-remove{color:var(--stamp);font-size:1.3rem;font-weight:700;padding:4px 8px;flex-shrink:0;}
+.drawer-foot{border-top:2px dashed var(--line);padding:22px 24px;}
+.drawer-subtotal{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:18px;font-size:1.05rem;font-weight:700;}
+.drawer-subtotal span:last-child{font-family:var(--ff-mono);color:var(--brass);font-size:1.2rem;}
+
+/* ============ CHECKOUT MODAL ============ */
+.modal{
+  position:fixed;top:50%;left:50%;transform:translate(-50%,-48%);z-index:95;background:var(--paper);
+  border-radius:var(--radius-m);width:460px;max-width:92vw;max-height:88vh;overflow-y:auto;
+  opacity:0;pointer-events:none;transition:opacity .3s ease, transform .3s ease;box-shadow:var(--shadow-l);
+}
+.modal.open{opacity:1;pointer-events:auto;transform:translate(-50%,-50%);}
+.modal-head{display:flex;justify-content:space-between;align-items:center;padding:22px 26px;border-bottom:2px dashed var(--line);}
+.modal-head h3{font-family:var(--ff-display);font-size:1.9rem;font-weight:400;}
+.modal-body{padding:24px 26px 28px;}
+.field{margin-bottom:16px;}
+.field label{display:block;font-size:.82rem;font-weight:700;margin-bottom:7px;color:var(--ink-soft);}
+.field input,.field textarea{
+  width:100%;border:2px solid var(--line);border-radius:var(--radius-s);padding:12px 14px;font-size:.92rem;
+  background:var(--canvas);transition:border-color .2s;
+}
+.field input:focus,.field textarea:focus{border-color:var(--denim);}
+.field-row{display:flex;gap:12px;}
+.field-row .field{flex:1;}
+.checkout-summary{background:var(--canvas);border-radius:var(--radius-s);padding:14px 16px;margin-bottom:18px;font-size:.85rem;color:var(--ink-soft);}
+.checkout-summary strong{color:var(--ink);}
+.success-view{display:none;text-align:center;padding:10px 4px 4px;}
+.success-view.show{display:block;}
+.success-view svg{width:52px;height:52px;color:var(--ok);margin-bottom:16px;}
+.success-view h4{font-family:var(--ff-display);font-size:1.9rem;font-weight:400;margin-bottom:10px;}
+.success-view p{color:var(--ink-soft);font-size:.9rem;margin-bottom:22px;line-height:1.7;}
+
+/* ============ TOAST ============ */
+.toast{
+  position:fixed;bottom:26px;right:26px;left:auto;z-index:120;background:var(--ink);color:var(--paper);
+  padding:14px 22px;border-radius:var(--radius-s);font-size:.88rem;font-weight:500;box-shadow:var(--shadow-m);
+  transform:translateY(120%);transition:transform .3s ease;
+}
+.toast.show{transform:translateY(0);}
+@media (max-width:480px){.toast{right:16px;left:16px;text-align:center;}}
+
+/* ============ ADMIN VIEW (لوحة صاحب المتجر) ============ */
+.admin-view{display:none;}
+.admin-view.open{display:block;min-height:100vh;}
+
+.admin-login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;}
+.admin-login-card{background:var(--paper);border-radius:var(--radius-m);box-shadow:var(--shadow-l);padding:44px 34px;width:380px;max-width:100%;text-align:center;}
+.admin-badge{width:64px;height:64px;border-radius:50%;border:3px solid var(--denim);display:flex;align-items:center;justify-content:center;margin:0 auto 18px;background:var(--paper);position:relative;}
+.admin-badge::before{content:'';position:absolute;inset:6px;border:1px dashed var(--denim);border-radius:50%;opacity:.5;}
+.admin-badge svg{width:24px;height:24px;color:var(--denim);}
+.admin-login-card h2{font-family:var(--ff-display);font-size:2.1rem;font-weight:400;margin-bottom:8px;}
+.admin-login-card p{color:var(--ink-soft);font-size:.88rem;margin-bottom:24px;line-height:1.6;}
+.admin-login-card .field{text-align:right;}
+.admin-login-error{color:var(--stamp);font-size:.82rem;margin-top:12px;display:none;}
+.admin-login-error.show{display:block;}
+.admin-back-link{display:inline-block;margin-top:20px;font-size:.82rem;color:var(--ink-soft);}
+.admin-back-link:hover{color:var(--ink);}
+
+.admin-divider{display:flex;align-items:center;gap:14px;margin:26px 0 20px;font-family:var(--ff-mono);font-size:.68rem;letter-spacing:.1em;color:var(--ink-soft);text-transform:uppercase;}
+.admin-divider::before,.admin-divider::after{content:'';flex:1;height:0;border-top:2px dashed var(--line);}
+.google-signin-wrap{display:flex;justify-content:center;min-height:44px;margin-bottom:4px;}
+
+.admin-topbar{position:sticky;top:0;z-index:10;background:var(--canvas);border-bottom:2px dashed var(--line);}
+.admin-topbar-inner{display:flex;align-items:center;justify-content:space-between;height:78px;gap:16px;flex-wrap:wrap;}
+.admin-title{font-family:var(--ff-display);font-size:1.9rem;}
+.admin-actions{display:flex;align-items:center;gap:14px;}
+.admin-actions .btn{padding:11px 20px;font-size:.85rem;}
+.admin-authed-as{font-family:var(--ff-mono);font-size:.7rem;color:var(--ink-soft);}
+@media (max-width:640px){.admin-authed-as{display:none;}}
+.admin-body{padding-block:36px 64px;}
+
+.admin-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-bottom:36px;}
+.admin-stat-card{background:var(--paper);border-radius:var(--radius-m);padding:20px 22px;box-shadow:var(--shadow-s);}
+.admin-stat-label{font-family:var(--ff-mono);font-size:.66rem;letter-spacing:.08em;color:var(--ink-soft);text-transform:uppercase;margin-bottom:10px;}
+.admin-stat-value{font-family:var(--ff-mono);font-weight:700;font-size:1.5rem;color:var(--denim);}
+@media (max-width:860px){.admin-stats{grid-template-columns:repeat(2,1fr);}}
+
+.admin-toolbar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;margin-bottom:30px;}
+
+.order-card{background:var(--paper);border-radius:var(--radius-m);box-shadow:var(--shadow-s);padding:22px 24px;margin-bottom:16px;}
+.order-card-head{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;margin-bottom:14px;padding-bottom:14px;border-bottom:2px dashed var(--line);}
+.order-num{font-family:var(--ff-mono);font-weight:700;color:var(--brass);}
+.order-date{font-family:var(--ff-mono);font-size:.75rem;color:var(--ink-soft);display:block;margin-top:4px;}
+.order-status{font-family:var(--ff-mono);font-size:.66rem;font-weight:700;padding:6px 14px;border-radius:999px;letter-spacing:.05em;white-space:nowrap;height:fit-content;}
+.order-status.pending{background:#F3E6DA;color:var(--stamp);}
+.order-status.delivered{background:#DCEEE3;color:var(--ok);}
+.order-cust{display:grid;grid-template-columns:1fr 1fr;gap:10px 20px;margin-bottom:16px;font-size:.9rem;}
+.order-cust div span{display:block;font-family:var(--ff-mono);font-size:.63rem;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;}
+.order-items{border-top:1px dashed var(--line);padding-top:12px;margin-bottom:14px;}
+.order-items div{display:flex;justify-content:space-between;font-size:.86rem;padding:4px 0;color:var(--ink-soft);}
+.order-total-row{display:flex;justify-content:space-between;align-items:baseline;font-weight:700;padding-top:12px;border-top:2px dashed var(--line);margin-bottom:18px;}
+.order-total-row span:last-child{font-family:var(--ff-mono);color:var(--brass);font-size:1.1rem;}
+.order-actions{display:flex;gap:10px;flex-wrap:wrap;}
+.order-actions button{padding:9px 18px;border-radius:var(--radius-s);font-size:.82rem;font-weight:700;transition:background .2s,color .2s;}
+.btn-mark{background:var(--denim);color:var(--paper);}
+.btn-mark:hover{background:var(--denim-deep);}
+.btn-undo{border:2px solid var(--ink);}
+.btn-undo:hover{background:var(--ink);color:var(--paper);}
+.btn-delete{color:var(--stamp);margin-inline-start:auto;}
+.btn-delete:hover{text-decoration:underline;}
+.admin-empty{text-align:center;padding:90px 20px;color:var(--ink-soft);}
+.admin-empty strong{display:block;font-family:var(--ff-display);font-size:2.2rem;color:var(--ink);margin-bottom:10px;font-weight:400;}
+@media (max-width:640px){.order-cust{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<!-- ============ HEADER ============ -->
+<header class="site-header">
+  <div class="container header-inner">
+    <a href="#top" class="logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l9-9h8v8l-9 9a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8z"/><circle cx="15.5" cy="8.5" r="1.2" fill="currentColor" stroke="none"/></svg>
+      MR STORE
+    </a>
+    <nav class="main-nav">
+      <a href="#top">الرئيسية</a>
+      <a href="#products">المنتجات</a>
+      <a href="#footer">تواصل معنا</a>
+      <a href="#admin" class="admin-nav-link" id="adminNavLink">صفحة الطلبات</a>
+    </nav>
+    <div class="header-actions">
+      <button class="icon-btn" id="searchToggle" aria-label="بحث" onclick="document.getElementById('searchInput').focus();document.getElementById('products').scrollIntoView({behavior:'smooth'});">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/></svg>
+      </button>
+      <button class="icon-btn" id="cartToggle" aria-label="عربة التسوق">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8h12l-1 12H7L6 8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>
+        <span class="cart-badge" id="cartBadge">0</span>
+      </button>
+      <button class="icon-btn menu-toggle" id="menuOpenBtn" aria-label="القائمة">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- Mobile menu -->
+<div class="mobile-menu" id="mobileMenu">
+  <div class="mobile-menu-top">
+    <span class="logo">MR STORE</span>
+    <button class="icon-btn" id="menuCloseBtn" aria-label="إغلاق القائمة">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
+    </button>
+  </div>
+  <nav>
+    <a href="#top">الرئيسية</a>
+    <a href="#products">المنتجات</a>
+    <a href="#footer">تواصل معنا</a>
+    <a href="#admin" class="admin-nav-link" id="adminNavLinkMobile">صفحة الطلبات</a>
+  </nav>
+</div>
+
+<main id="top">
+  <!-- ============ HERO ============ -->
+  <section class="hero">
+    <div class="container hero-grid">
+      <div class="hero-content reveal">
+        <span class="eyebrow">NEW COLLECTION — NO. 014</span>
+        <h1 class="hero-title">أناقتك تبدأ من هنا</h1>
+        <p class="hero-sub">تشكيلة رجالي مختارة بعناية. اطلب دلوقتي واستلم في بيتك بالدفع عند الاستلام.</p>
+        <div class="hero-actions">
+          <a href="#products" class="btn btn-primary">تسوق دلوقتي</a>
+          <span class="hero-fineprint">SHIPPING · ALL EGYPT</span>
+        </div>
+      </div>
+      <div class="hero-stamp-wrap reveal">
+        <div class="hero-stamp">
+          <div class="hero-stamp-tag"></div>
+          <span class="hero-stamp-text">MR STORE</span>
+          <span class="hero-stamp-sub">EST. 2026 · EGYPT</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TRUST STRIP ============ -->
+  <section class="trust-strip">
+    <div class="container trust-grid">
+      <div class="trust-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 8h11v8H2z"/><path d="M13 11h4l3 3v2h-7z"/><circle cx="6" cy="18" r="1.6"/><circle cx="16.5" cy="18" r="1.6"/></svg> توصيل لكل مصر</div>
+      <div class="trust-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="1.5"/><circle cx="12" cy="12" r="3"/></svg> الدفع عند الاستلام</div>
+      <div class="trust-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 1 3 6.7"/><path d="M3 12V7M3 12h5"/></svg> استرجاع خلال 14 يوم</div>
+      <div class="trust-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.5 8.5 0 0 1-8.9 8.49 8.6 8.6 0 0 1-3.8-.9L3 20l1-4.8A8.5 8.5 0 1 1 21 11.5z"/></svg> دعم عبر واتساب</div>
+    </div>
+  </section>
+
+  <!-- ============ PRODUCTS ============ -->
+  <section class="section" id="products">
+    <div class="container">
+      <div class="section-head reveal">
+        <span class="eyebrow">FULL COLLECTION</span>
+        <h2 class="section-title">تصفح المنتجات</h2>
+      </div>
+      <div class="products-toolbar reveal">
+        <div class="filter-tabs" id="filterTabs">
+          <button class="filter-tab active" data-badge="all">الكل</button>
+          <button class="filter-tab" data-badge="new">جديد</button>
+          <button class="filter-tab" data-badge="sale">تخفيضات</button>
+        </div>
+        <div class="search-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/></svg>
+          <input type="text" id="searchInput" placeholder="دور على قطعة...">
+        </div>
+      </div>
+      <div class="product-grid" id="productGrid"></div>
+    </div>
+  </section>
+</main>
+
+<!-- ============ FOOTER ============ -->
+<footer class="site-footer" id="footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-logo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l9-9h8v8l-9 9a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8z"/><circle cx="15.5" cy="8.5" r="1.2" fill="currentColor" stroke="none"/></svg>
+          MR STORE
+        </div>
+        <p class="footer-about">وجهتك لأحدث صيحات الموضة الرجالي. جودة تستاهل، وأسعار في متناول الجميع.</p>
+        <div class="footer-social">
+          <a href="#" aria-label="Instagram"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="1" fill="currentColor" stroke="none"/></svg></a>
+          <a href="#" aria-label="Facebook"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M14 9h3V6h-3a3 3 0 0 0-3 3v2H9v3h2v6h3v-6h3l1-3h-4v-2c0-.5.5-1 1-1z"/></svg></a>
+          <a href="#" aria-label="TikTok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M13 3v11.5a3.5 3.5 0 1 1-3-3.46"/><path d="M13 3c.3 2.4 2 4.2 4.5 4.5"/></svg></a>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h4>روابط سريعة</h4>
+        <ul>
+          <li><a href="#top">الرئيسية</a></li>
+          <li><a href="#products">المنتجات</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>تواصل معنا</h4>
+        <ul>
+          <li>هاتف: 01027883297</li>
+          <li>إيميل: mrstore010011@gmail.com</li>
+          <li>واتساب متاح يوميًا 10ص – 10م</li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 MR Store — جميع الحقوق محفوظة</span>
+      <span>صُنع بعناية في مصر</span>
+    </div>
+  </div>
+</footer>
+
+<!-- ============ WHATSAPP FLOAT ============ -->
+<a href="#" id="waFloat" class="wa-float" target="_blank" rel="noopener" aria-label="تواصل عبر واتساب">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.5 8.5 0 0 1-8.9 8.49 8.6 8.6 0 0 1-3.8-.9L3 20l1-4.8A8.5 8.5 0 1 1 21 11.5z"/></svg>
+</a>
+
+<!-- ============ CART DRAWER ============ -->
+<div class="overlay" id="cartOverlay"></div>
+<aside class="drawer" id="cartDrawer">
+  <div class="drawer-head">
+    <h3>عربة التسوق</h3>
+    <button class="icon-btn" id="cartCloseBtn" aria-label="إغلاق">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
+    </button>
+  </div>
+  <div class="drawer-body" id="cartItems"></div>
+  <div class="drawer-foot">
+    <div class="drawer-subtotal"><span>الإجمالي</span><span id="cartSubtotal">0 ج.م</span></div>
+    <button class="btn btn-primary btn-block" id="checkoutBtn" disabled>استكمال الطلب</button>
+  </div>
+</aside>
+
+<!-- ============ CHECKOUT MODAL ============ -->
+<div class="overlay" id="checkoutOverlay"></div>
+<div class="modal" id="checkoutModal">
+  <div class="modal-head">
+    <h3>بيانات التوصيل</h3>
+    <button class="icon-btn" id="checkoutCloseBtn" aria-label="إغلاق">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
+    </button>
+  </div>
+  <div class="modal-body">
+    <form id="checkoutForm">
+      <div class="checkout-summary">الإجمالي المطلوب سداده: <strong id="checkoutTotal">0 ج.م</strong> (دفع عند الاستلام)</div>
+      <div class="field"><label for="custName">الاسم بالكامل</label><input type="text" id="custName" required></div>
+      <div class="field-row">
+        <div class="field"><label for="custPhone">رقم الهاتف</label><input type="tel" id="custPhone" required></div>
+        <div class="field"><label for="custCity">المحافظة</label><input type="text" id="custCity" required></div>
+      </div>
+      <div class="field"><label for="custAddress">العنوان بالتفصيل</label><textarea id="custAddress" rows="2" required></textarea></div>
+      <button type="submit" class="btn btn-primary btn-block">تأكيد الطلب عبر واتساب</button>
+    </form>
+    <div class="success-view" id="successView">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+      <h4>طلبك جاهز</h4>
+      <p>لو صفحة واتساب ماتفتحتش لوحدها، دوس على الزرار وكمّل الإرسال عشان نأكّد طلبك.</p>
+      <a href="#" id="waFallback" target="_blank" rel="noopener" class="btn btn-primary btn-block">إرسال الطلب على واتساب</a>
+    </div>
+  </div>
+</div>
+
+<!-- ============ TOAST ============ -->
+<div class="toast" id="toast"></div>
+
+<!-- ============ ADMIN VIEW (لوحة صاحب المتجر — يدخلها بإضافة #admin آخر رابط الموقع) ============ -->
+<div class="admin-view" id="adminView">
+
+  <div class="admin-login-wrap" id="adminLoginWrap">
+    <div class="admin-login-card">
+      <div class="admin-badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+      </div>
+      <h2>لوحة التحكم</h2>
+      <p>الصفحة دي لصاحب المتجر بس.<br>أدخل كلمة المرور أو سجّل دخول بحساب جوجل بتاعك.</p>
+      <form id="adminLoginForm">
+        <div class="field"><input type="password" id="adminPasswordInput" placeholder="كلمة المرور" required autocomplete="current-password"></div>
+        <button type="submit" class="btn btn-primary btn-block">دخول</button>
+      </form>
+      <div class="admin-login-error" id="adminLoginError">كلمة المرور غلط، جرّب تاني.</div>
+
+      <div class="admin-divider"><span>أو</span></div>
+      <div class="google-signin-wrap" id="googleSignInBtn"></div>
+      <div class="admin-login-error" id="googleLoginError">الحساب ده مش مسموحله يدخل لوحة التحكم.</div>
+
+      <a href="#top" class="admin-back-link">رجوع للموقع</a>
+    </div>
+  </div>
+
+  <div id="adminDashboard" style="display:none;">
+    <div class="admin-topbar">
+      <div class="container admin-topbar-inner">
+        <span class="admin-title">لوحة الطلبات</span>
+        <div class="admin-actions">
+          <span class="admin-authed-as" id="adminAuthedAs"></span>
+          <a href="#top" class="btn btn-outline">رجوع للموقع</a>
+          <button class="btn btn-outline" id="adminLogoutBtn">تسجيل خروج</button>
+        </div>
+      </div>
+    </div>
+    <div class="container admin-body">
+      <div class="admin-stats">
+        <div class="admin-stat-card"><div class="admin-stat-label">كل الطلبات</div><div class="admin-stat-value" id="statTotal">0</div></div>
+        <div class="admin-stat-card"><div class="admin-stat-label">قيد التوصيل</div><div class="admin-stat-value" id="statPending">0</div></div>
+        <div class="admin-stat-card"><div class="admin-stat-label">تم التوصيل</div><div class="admin-stat-value" id="statDelivered">0</div></div>
+        <div class="admin-stat-card"><div class="admin-stat-label">إجمالي المبيعات</div><div class="admin-stat-value" id="statRevenue">0 ج.م</div></div>
+      </div>
+      <div class="admin-toolbar">
+        <div class="filter-tabs" id="adminFilterTabs">
+          <button class="filter-tab active" data-status="all">الكل</button>
+          <button class="filter-tab" data-status="pending">قيد التوصيل</button>
+          <button class="filter-tab" data-status="delivered">تم التوصيل</button>
+        </div>
+        <div class="search-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/></svg>
+          <input type="text" id="adminSearchInput" placeholder="دور بالاسم أو رقم الهاتف...">
+        </div>
+      </div>
+      <div id="ordersList"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ============ CONFIG ============ */
+// TODO: عدّل الرقم ده لرقم واتساب متجرك الحقيقي (بصيغة الكود الدولي بدون + أو صفر البداية، مثال لمصر: 201012345678)
+const STORE_WHATSAPP_NUMBER = "01027883297";
+// TODO: غيّر كلمة المرور دي لكلمة سرية تعرفها انت بس، عشان تدخل بيها على لوحة الطلبات (الرابط + #admin)
+const ADMIN_PASSWORD = "mrstore2026";
+// TODO: حط هنا Client ID بتاع تسجيل الدخول بجوجل (Google Cloud Console). من غيره زرار "الدخول بجوجل" مش هيشتغل.
+const GOOGLE_CLIENT_ID = "366744614163-uj73iqu3hca8q25un8sten0j6h9ol81f.apps.googleusercontent.com";
+// الإيميلات المسموحلها بس تدخل لوحة الطلبات وتشوف رابط "صفحة الطلبات"
+const ADMIN_ALLOWED_EMAILS = ["mrstore010011@gmail.com", "mohandalamary806@gmail.com"];
+const ADMIN_EMAIL_KEY = 'mrstore_admin_google_email';
+
+/* ============ PRODUCT DATA ============ */
+// TODO: غيّر "img" بصور المنتجات الحقيقية بتاعتك لما تبعتهالي أو تستضيفهم بنفسك
+const PRODUCTS = [
+  {id:1, name:"قميص كلاسيك أبيض", price:450, old:null, badge:null, img:"https://placehold.co/600x750/ece5d3/221f1a?text=Classic+Shirt"},
+  {id:2, name:"تيشيرت قطن أزرق", price:250, old:300, badge:"sale", img:"https://placehold.co/600x750/dfe6ee/2b3b68?text=Cotton+Tee"},
+  {id:3, name:"بنطلون جينز رجالي", price:550, old:null, badge:null, img:"https://placehold.co/600x750/e1d9c3/221f1a?text=Denim+Jeans"},
+  {id:4, name:"جاكيت شتوي", price:900, old:null, badge:"new", img:"https://placehold.co/600x750/ece5d3/2b3b68?text=Winter+Jacket"},
+];
+
+/* ============ STATE ============ */
+const state = { cart: [], filter: "all", search: "" };
+
+function money(n){ return n.toLocaleString('en-US') + ' ج.م'; }
+
+/* ============ RENDER PRODUCTS ============ */
+function productCardHTML(p){
+  const badge = p.badge ? `<span class="stamp-badge stamp-${p.badge}">${p.badge==='new'?'NEW':'SALE'}</span>` : '';
+  const oldPrice = p.old ? `<span class="product-old">${money(p.old)}</span>` : '';
+  return `
+  <article class="product-card reveal is-visible">
+    <div class="product-card-inner">
+      <div class="tag-hole"></div>
+      <div class="product-img">
+        ${badge}
+        <img src="${p.img}" alt="${p.name}" loading="lazy">
+      </div>
+      <div class="product-perf"></div>
+      <div class="product-info">
+        <h3 class="product-name">${p.name}</h3>
+        <div class="product-price-row">
+          <span class="product-price">${money(p.price)}</span>
+          ${oldPrice}
+        </div>
+        <button class="btn-add" data-action="add" data-id="${p.id}">أضف للعربة</button>
+      </div>
+    </div>
+  </article>`;
+}
+
+function renderProducts(){
+  const grid = document.getElementById('productGrid');
+  const term = state.search.trim();
+  const filtered = PRODUCTS.filter(p =>
+    (state.filter === 'all' || p.badge === state.filter) &&
+    (term === '' || p.name.includes(term))
+  );
+  if(filtered.length === 0){
+    grid.innerHTML = `<div class="empty-state"><strong>مفيش نتايج مطابقة</strong>جرّب كلمة تانية أو اختار فلتر مختلف.</div>`;
+    return;
+  }
+  grid.innerHTML = filtered.map(productCardHTML).join('');
+}
+
+/* ============ FILTER TABS + SEARCH ============ */
+function applyFilter(badge){
+  state.filter = badge;
+  document.querySelectorAll('#filterTabs .filter-tab').forEach(btn=>{
+    btn.classList.toggle('active', btn.dataset.badge === badge);
+  });
+  renderProducts();
+}
+
+document.getElementById('filterTabs').addEventListener('click', e=>{
+  const btn = e.target.closest('.filter-tab');
+  if(!btn) return;
+  applyFilter(btn.dataset.badge);
+});
+
+document.getElementById('searchInput').addEventListener('input', e=>{
+  state.search = e.target.value;
+  renderProducts();
+});
+
+/* ============ CART ============ */
+function findProduct(id){ return PRODUCTS.find(p=>p.id===id); }
+
+function addToCart(id){
+  const item = state.cart.find(i=>i.id===id);
+  if(item) item.qty++;
+  else state.cart.push({id, qty:1});
+  renderCart();
+  showToast('تمت الإضافة للعربة ✓');
+}
+function removeFromCart(id){
+  state.cart = state.cart.filter(i=>i.id!==id);
+  renderCart();
+}
+function changeQty(id, delta){
+  const item = state.cart.find(i=>i.id===id);
+  if(!item) return;
+  item.qty += delta;
+  if(item.qty<=0){ removeFromCart(id); return; }
+  renderCart();
+}
+function cartCount(){ return state.cart.reduce((s,i)=>s+i.qty,0); }
+function cartTotal(){ return state.cart.reduce((s,i)=>s+findProduct(i.id).price*i.qty,0); }
+
+function cartItemHTML(i){
+  const p = findProduct(i.id);
+  return `
+  <div class="cart-item">
+    <img src="${p.img}" alt="${p.name}">
+    <div class="cart-item-info">
+      <h4>${p.name}</h4>
+      <span class="cart-item-price">${money(p.price)}</span>
+      <div class="qty-control">
+        <button data-action="dec" data-id="${p.id}" aria-label="تقليل">−</button>
+        <span>${i.qty}</span>
+        <button data-action="inc" data-id="${p.id}" aria-label="زيادة">+</button>
+      </div>
+    </div>
+    <button class="cart-item-remove" data-action="remove" data-id="${p.id}" aria-label="حذف">×</button>
+  </div>`;
+}
+
+function renderCart(){
+  const wrap = document.getElementById('cartItems');
+  const badge = document.getElementById('cartBadge');
+  const count = cartCount();
+  badge.textContent = count;
+  badge.style.display = count>0 ? 'flex' : 'none';
+
+  wrap.innerHTML = state.cart.length === 0
+    ? `<div class="cart-empty">لسه مفيش حاجة في العربة.<br>يلا نتصفح المنتجات؟</div>`
+    : state.cart.map(cartItemHTML).join('');
+
+  document.getElementById('cartSubtotal').textContent = money(cartTotal());
+  document.getElementById('checkoutTotal').textContent = money(cartTotal());
+  document.getElementById('checkoutBtn').disabled = state.cart.length === 0;
+}
+
+document.getElementById('productGrid').addEventListener('click', e=>{
+  const btn = e.target.closest('[data-action="add"]');
+  if(btn) addToCart(Number(btn.dataset.id));
+});
+
+document.getElementById('cartItems').addEventListener('click', e=>{
+  const btn = e.target.closest('button[data-action]');
+  if(!btn) return;
+  const id = Number(btn.dataset.id);
+  if(btn.dataset.action==='inc') changeQty(id,1);
+  if(btn.dataset.action==='dec') changeQty(id,-1);
+  if(btn.dataset.action==='remove') removeFromCart(id);
+});
+
+/* ============ CART DRAWER TOGGLE ============ */
+const cartDrawer = document.getElementById('cartDrawer');
+const cartOverlay = document.getElementById('cartOverlay');
+function openCart(){ cartDrawer.classList.add('open'); cartOverlay.classList.add('open'); }
+function closeCart(){ cartDrawer.classList.remove('open'); cartOverlay.classList.remove('open'); }
+document.getElementById('cartToggle').addEventListener('click', openCart);
+document.getElementById('cartCloseBtn').addEventListener('click', closeCart);
+cartOverlay.addEventListener('click', closeCart);
+
+/* ============ MOBILE MENU ============ */
+const mobileMenu = document.getElementById('mobileMenu');
+document.getElementById('menuOpenBtn').addEventListener('click', ()=>mobileMenu.classList.add('open'));
+document.getElementById('menuCloseBtn').addEventListener('click', ()=>mobileMenu.classList.remove('open'));
+mobileMenu.querySelectorAll('a').forEach(a=>a.addEventListener('click', ()=>mobileMenu.classList.remove('open')));
+
+/* ============ CHECKOUT MODAL ============ */
+const checkoutModal = document.getElementById('checkoutModal');
+const checkoutOverlay = document.getElementById('checkoutOverlay');
+const checkoutForm = document.getElementById('checkoutForm');
+const successView = document.getElementById('successView');
+
+function openCheckout(){
+  if(state.cart.length === 0) return;
+  checkoutForm.style.display = 'block';
+  successView.classList.remove('show');
+  checkoutModal.classList.add('open');
+  checkoutOverlay.classList.add('open');
+}
+function closeCheckout(){
+  checkoutModal.classList.remove('open');
+  checkoutOverlay.classList.remove('open');
+}
+document.getElementById('checkoutBtn').addEventListener('click', ()=>{ closeCart(); openCheckout(); });
+document.getElementById('checkoutCloseBtn').addEventListener('click', closeCheckout);
+checkoutOverlay.addEventListener('click', closeCheckout);
+
+checkoutForm.addEventListener('submit', e=>{
+  e.preventDefault();
+  const name = document.getElementById('custName').value.trim();
+  const phone = document.getElementById('custPhone').value.trim();
+  const city = document.getElementById('custCity').value.trim();
+  const address = document.getElementById('custAddress').value.trim();
+
+  let msg = `طلب جديد من MR Store\n\nالاسم: ${name}\nالهاتف: ${phone}\nالمحافظة: ${city}\nالعنوان: ${address}\n\nالمنتجات:\n`;
+  state.cart.forEach(i=>{
+    const p = findProduct(i.id);
+    msg += `- ${p.name} × ${i.qty} = ${money(p.price*i.qty)}\n`;
+  });
+  msg += `\nالإجمالي: ${money(cartTotal())}`;
+
+  const waUrl = `https://wa.me/${STORE_WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
+  document.getElementById('waFallback').href = waUrl;
+
+  // يسجّل الطلب في لوحة تحكم صاحب المتجر (الرابط + #admin)
+  addOrder({
+    id: Date.now(),
+    date: new Date().toLocaleString('ar-EG', {dateStyle:'medium', timeStyle:'short'}),
+    name, phone, city, address,
+    items: state.cart.map(i=>({name:findProduct(i.id).name, qty:i.qty, price:findProduct(i.id).price})),
+    total: cartTotal(),
+    status: 'pending'
+  });
+
+  checkoutForm.style.display = 'none';
+  successView.classList.add('show');
+
+  try{ window.open(waUrl, '_blank'); }catch(err){ /* popup blocked — user can use the fallback button */ }
+
+  state.cart = [];
+  renderCart();
+  checkoutForm.reset();
+});
+
+/* ============ WHATSAPP FLOAT LINK ============ */
+document.getElementById('waFloat').href = `https://wa.me/${STORE_WHATSAPP_NUMBER}?text=${encodeURIComponent('عايز أستفسر عن منتج في MR Store')}`;
+
+/* ============ TOAST ============ */
+let toastTimer;
+function showToast(text){
+  const toast = document.getElementById('toast');
+  toast.textContent = text;
+  toast.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>toast.classList.remove('show'), 2400);
+}
+
+/* ============ ADMIN ORDERS ============ */
+const ORDERS_KEY = 'mrstore_orders';
+const adminState = { status: 'all', search: '' };
+
+function getOrders(){
+  try{ return JSON.parse(localStorage.getItem(ORDERS_KEY)) || []; }
+  catch(err){ return []; }
+}
+function saveOrders(orders){
+  localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
+}
+function addOrder(order){
+  const orders = getOrders();
+  orders.unshift(order);
+  saveOrders(orders);
+}
+
+function orderCardHTML(o){
+  const itemsHTML = o.items.map(i=>`<div><span>${i.name} × ${i.qty}</span><span>${money(i.price*i.qty)}</span></div>`).join('');
+  const isDelivered = o.status === 'delivered';
+  return `
+  <div class="order-card">
+    <div class="order-card-head">
+      <div>
+        <span class="order-num">#${String(o.id).slice(-5)}</span>
+        <span class="order-date">${o.date}</span>
+      </div>
+      <span class="order-status ${isDelivered ? 'delivered' : 'pending'}">${isDelivered ? 'تم التوصيل' : 'قيد التوصيل'}</span>
+    </div>
+    <div class="order-cust">
+      <div><span>الاسم</span>${o.name}</div>
+      <div><span>الهاتف</span><a href="tel:${o.phone}">${o.phone}</a></div>
+      <div><span>المحافظة</span>${o.city}</div>
+      <div><span>العنوان</span>${o.address}</div>
+    </div>
+    <div class="order-items">${itemsHTML}</div>
+    <div class="order-total-row"><span>الإجمالي</span><span>${money(o.total)}</span></div>
+    <div class="order-actions">
+      ${isDelivered
+        ? `<button class="btn-undo" data-action="undo" data-id="${o.id}">رجّعه قيد التوصيل</button>`
+        : `<button class="btn-mark" data-action="deliver" data-id="${o.id}">تم التوصيل ✓</button>`}
+      <button class="btn-delete" data-action="delete" data-id="${o.id}">حذف</button>
+    </div>
+  </div>`;
+}
+
+function renderOrders(){
+  const orders = getOrders();
+  document.getElementById('statTotal').textContent = orders.length;
+  document.getElementById('statPending').textContent = orders.filter(o=>o.status!=='delivered').length;
+  document.getElementById('statDelivered').textContent = orders.filter(o=>o.status==='delivered').length;
+  document.getElementById('statRevenue').textContent = money(orders.reduce((s,o)=>s+o.total,0));
+
+  const term = adminState.search.trim();
+  const filtered = orders.filter(o=>{
+    const statusMatch = adminState.status === 'all'
+      || (adminState.status === 'delivered' ? o.status === 'delivered' : o.status !== 'delivered');
+    const termMatch = term === '' || o.name.includes(term) || o.phone.includes(term);
+    return statusMatch && termMatch;
+  });
+
+  const list = document.getElementById('ordersList');
+  list.innerHTML = filtered.length === 0
+    ? `<div class="admin-empty"><strong>لسه مفيش طلبات</strong>الطلبات اللي هتوصل من العملاء هتظهر هنا.</div>`
+    : filtered.map(orderCardHTML).join('');
+}
+
+document.getElementById('adminFilterTabs').addEventListener('click', e=>{
+  const btn = e.target.closest('.filter-tab');
+  if(!btn) return;
+  adminState.status = btn.dataset.status;
+  document.querySelectorAll('#adminFilterTabs .filter-tab').forEach(b=>b.classList.toggle('active', b===btn));
+  renderOrders();
+});
+document.getElementById('adminSearchInput').addEventListener('input', e=>{
+  adminState.search = e.target.value;
+  renderOrders();
+});
+document.getElementById('ordersList').addEventListener('click', e=>{
+  const btn = e.target.closest('button[data-action]');
+  if(!btn) return;
+  const id = btn.dataset.id;
+  let orders = getOrders();
+  if(btn.dataset.action === 'deliver'){
+    orders = orders.map(o => String(o.id) === id ? {...o, status:'delivered'} : o);
+  } else if(btn.dataset.action === 'undo'){
+    orders = orders.map(o => String(o.id) === id ? {...o, status:'pending'} : o);
+  } else if(btn.dataset.action === 'delete'){
+    if(!confirm('متأكد إنك عايز تحذف الطلب ده؟')) return;
+    orders = orders.filter(o => String(o.id) !== id);
+  }
+  saveOrders(orders);
+  renderOrders();
+});
+
+/* ============ GOOGLE SIGN-IN (تسجيل دخول صاحب المتجر بجوجل) ============ */
+function getAdminGoogleEmail(){
+  const email = localStorage.getItem(ADMIN_EMAIL_KEY);
+  return (email && ADMIN_ALLOWED_EMAILS.includes(email)) ? email : null;
+}
+
+function updateAdminNavVisibility(){
+  const show = !!getAdminGoogleEmail();
+  document.querySelectorAll('.admin-nav-link').forEach(el=>{
+    el.classList.toggle('is-visible', show);
+  });
+}
+
+async function handleGoogleCredentialResponse(response){
+  const googleErr = document.getElementById('googleLoginError');
+  googleErr.classList.remove('show');
+  try{
+    // بنتأكد من صحة التوكن مباشرة مع سيرفرات جوجل، من غير ما نحتاج باك اند
+    const res = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(response.credential)}`);
+    if(!res.ok) throw new Error('token-invalid');
+    const payload = await res.json();
+    const email = payload.email;
+    const verified = payload.email_verified === 'true' || payload.email_verified === true;
+    if(email && verified && ADMIN_ALLOWED_EMAILS.includes(email)){
+      localStorage.setItem(ADMIN_EMAIL_KEY, email);
+      updateAdminNavVisibility();
+      showAdminDashboard();
+    } else {
+      googleErr.textContent = 'الحساب ده مش من ضمن الحسابات المسموحلها تدخل لوحة التحكم.';
+      googleErr.classList.add('show');
+    }
+  }catch(err){
+    googleErr.textContent = 'حصلت مشكلة في تسجيل الدخول بجوجل. جرّب تاني.';
+    googleErr.classList.add('show');
+  }
+}
+
+function initGoogleSignIn(){
+  try{
+    if(typeof google === 'undefined' || !google.accounts || !google.accounts.id) return;
+    google.accounts.id.initialize({ client_id: 366744614163-uj73iqu3hca8q25un8sten0j6h9ol81f.apps.googleusercontent.com, callback: handleGoogleCredentialResponse });
+    const btnWrap = document.getElementById('googleSignInBtn');
+    if(btnWrap){
+      google.accounts.id.renderButton(btnWrap, { theme:'outline', size:'large', text:'signin_with', shape:'pill', locale:'ar', width:280 });
+    }
+  }catch(err){ /* لو جوجل مش متظبطة لسه، الدخول بكلمة السر لسه شغال عادي */ }
+}
+window.addEventListener('load', initGoogleSignIn);
+
+/* ============ ADMIN AUTH + ROUTING ============ */
+function isAdminAuthed(){
+  return sessionStorage.getItem('mrstore_admin_auth') === '1' || !!getAdminGoogleEmail();
+}
+
+function showAdminDashboard(){
+  document.getElementById('adminLoginWrap').style.display = 'none';
+  document.getElementById('adminDashboard').style.display = 'block';
+  const googleEmail = getAdminGoogleEmail();
+  document.getElementById('adminAuthedAs').textContent = googleEmail ? `مسجل دخول بحساب: ${googleEmail}` : '';
+  renderOrders();
+}
+function showAdminLogin(){
+  document.getElementById('adminLoginWrap').style.display = 'flex';
+  document.getElementById('adminDashboard').style.display = 'none';
+  document.getElementById('adminLoginError').classList.remove('show');
+  document.getElementById('googleLoginError').classList.remove('show');
+}
+
+document.getElementById('adminLoginForm').addEventListener('submit', e=>{
+  e.preventDefault();
+  const input = document.getElementById('adminPasswordInput');
+  if(input.value === ADMIN_PASSWORD){
+    sessionStorage.setItem('mrstore_admin_auth', '1');
+    input.value = '';
+    showAdminDashboard();
+  } else {
+    document.getElementById('adminLoginError').classList.add('show');
+  }
+});
+document.getElementById('adminLogoutBtn').addEventListener('click', ()=>{
+  sessionStorage.removeItem('mrstore_admin_auth');
+  localStorage.removeItem(ADMIN_EMAIL_KEY);
+  updateAdminNavVisibility();
+  if(typeof google !== 'undefined' && google.accounts && google.accounts.id){
+    google.accounts.id.disableAutoSelect();
+  }
+  location.hash = '';
+});
+
+function checkRoute(){
+  const isAdmin = location.hash === '#admin';
+  document.querySelector('.site-header').style.display = isAdmin ? 'none' : '';
+  document.getElementById('top').style.display = isAdmin ? 'none' : '';
+  document.querySelector('.site-footer').style.display = isAdmin ? 'none' : '';
+  document.getElementById('waFloat').style.display = isAdmin ? 'none' : '';
+  document.getElementById('adminView').classList.toggle('open', isAdmin);
+  if(isAdmin){ isAdminAuthed() ? showAdminDashboard() : showAdminLogin(); }
+}
+window.addEventListener('hashchange', checkRoute);
+
+/* ============ SCROLL REVEAL ============ */
+const observer = new IntersectionObserver(entries=>{
+  entries.forEach(entry=>{
+    if(entry.isIntersecting){ entry.target.classList.add('is-visible'); observer.unobserve(entry.target); }
+  });
+}, {threshold:.12});
+document.querySelectorAll('.reveal').forEach(el=>observer.observe(el));
+
+/* ============ INIT ============ */
+renderProducts();
+renderCart();
+updateAdminNavVisibility();
+checkRoute();
+</script>
+</body>
+</html>
