@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!--
-  MR Store — متجر إلكتروني (نسخة أولى جاهزة للنشر)
+  MR Store — متجر إلكتروني (نسخة مطورة مع إدارة المنتجات)
   ===================================================
 -->
 <html lang="ar" dir="rtl">
@@ -58,7 +58,7 @@ img{max-width:100%;display:block;}
 a{color:inherit;text-decoration:none;}
 button{font:inherit;cursor:pointer;border:none;background:none;color:inherit;}
 ul{list-style:none;}
-input,textarea{font:inherit;border:none;outline:none;background:none;color:inherit;}
+input,textarea,select{font:inherit;border:none;outline:none;background:none;color:inherit;}
 h1,h2,h3,h4{font-weight:inherit;}
 .container{max-width:var(--container);margin-inline:auto;padding-inline:24px;}
 :focus-visible{outline:3px solid var(--denim);outline-offset:3px;border-radius:3px;}
@@ -241,6 +241,10 @@ h1,h2,h3,h4{font-weight:inherit;}
   font-weight:700;font-size:.85rem;transition:background .2s,color .2s;
 }
 .btn-add:hover{background:var(--ink);color:var(--paper);}
+.out-of-stock-badge{
+  width:100%;padding:11px;border-radius:var(--radius-s);background:var(--canvas-deep);
+  color:var(--stamp);font-weight:700;font-size:.85rem;text-align:center;border:1px dashed var(--stamp);
+}
 .empty-state{grid-column:1/-1;text-align:center;padding:60px 20px;color:var(--ink-soft);}
 .empty-state strong{display:block;font-family:var(--ff-display);font-size:2rem;color:var(--ink);margin-bottom:10px;font-weight:400;}
 
@@ -309,11 +313,11 @@ h1,h2,h3,h4{font-weight:inherit;}
 .modal-body{padding:24px 26px 28px;}
 .field{margin-bottom:16px;}
 .field label{display:block;font-size:.82rem;font-weight:700;margin-bottom:7px;color:var(--ink-soft);}
-.field input,.field textarea{
+.field input,.field textarea,.field select{
   width:100%;border:2px solid var(--line);border-radius:var(--radius-s);padding:12px 14px;font-size:.92rem;
   background:var(--canvas);transition:border-color .2s;
 }
-.field input:focus,.field textarea:focus{border-color:var(--denim);}
+.field input:focus,.field textarea:focus,.field select:focus{border-color:var(--denim);}
 .field-row{display:flex;gap:12px;}
 .field-row .field{flex:1;}
 .checkout-summary{background:var(--canvas);border-radius:var(--radius-s);padding:14px 16px;margin-bottom:18px;font-size:.85rem;color:var(--ink-soft);}
@@ -333,7 +337,7 @@ h1,h2,h3,h4{font-weight:inherit;}
 .toast.show{transform:translateY(0);}
 @media (max-width:480px){.toast{right:16px;left:16px;text-align:center;}}
 
-/* ============ ADMIN VIEW (لوحة صاحب المتجر) ============ */
+/* ============ ADMIN VIEW ============ */
 .admin-view{display:none;}
 .admin-view.open{display:block;min-height:100vh;}
 
@@ -500,9 +504,15 @@ h1,h2,h3,h4{font-weight:inherit;}
           <button class="filter-tab" data-badge="new">جديد</button>
           <button class="filter-tab" data-badge="sale">تخفيضات</button>
         </div>
-        <div class="search-box">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/></svg>
-          <input type="text" id="searchInput" placeholder="دور على قطعة...">
+        
+        <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+          <!-- زر إضافة منتج يظهر للأدمن فقط -->
+          <button class="btn btn-primary btn-sm" id="openAddProductBtn" style="display:none;" onclick="openAddProductModal()">+ إضافة منتج جديد</button>
+          
+          <div class="search-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/></svg>
+            <input type="text" id="searchInput" placeholder="دور على قطعة...">
+          </div>
         </div>
       </div>
       <div class="product-grid" id="productGrid"></div>
@@ -599,6 +609,36 @@ h1,h2,h3,h4{font-weight:inherit;}
   </div>
 </div>
 
+<!-- ============ ADD PRODUCT MODAL (نافذة إضافة منتج جديد) ============ -->
+<div class="overlay" id="addProductOverlay" onclick="closeAddProductModal()"></div>
+<div class="modal" id="addProductModal">
+  <div class="modal-head">
+    <h3>إضافة منتج جديد</h3>
+    <button class="icon-btn" onclick="closeAddProductModal()" aria-label="إغلاق">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
+    </button>
+  </div>
+  <div class="modal-body">
+    <form id="addProductForm">
+      <div class="field"><label for="prodName">اسم المنتج</label><input type="text" id="prodName" required placeholder="مثال: قميص أبيض كلاسيك"></div>
+      <div class="field-row">
+        <div class="field"><label for="prodPrice">السعر الحالي (ج.م)</label><input type="number" id="prodPrice" required placeholder="450"></div>
+        <div class="field"><label for="prodOldPrice">السعر القديم (اختياري)</label><input type="number" id="prodOldPrice" placeholder="550"></div>
+      </div>
+      <div class="field"><label for="prodImg">رابط الصورة (URL)</label><input type="url" id="prodImg" required placeholder="https://example.com/image.jpg"></div>
+      <div class="field">
+        <label for="prodBadge">الشارة (اختياري)</label>
+        <select id="prodBadge">
+          <option value="">بدون شارة</option>
+          <option value="new">جديد (NEW)</option>
+          <option value="sale">تخفيض (SALE)</option>
+        </select>
+      </div>
+      <button type="submit" class="btn btn-primary btn-block">إضافة المنتج للبيع</button>
+    </form>
+  </div>
+</div>
+
 <!-- ============ USER AUTH MODAL (تسجيل دخول العملاء) ============ -->
 <div class="overlay" id="userAuthOverlay" onclick="closeUserAuthModal()"></div>
 <div class="modal" id="userAuthModal">
@@ -684,21 +724,37 @@ const GOOGLE_CLIENT_ID = "443646227114-vbstcio2leo5l5ene86mtmd9cv6djdln.apps.goo
 const ADMIN_ALLOWED_EMAILS = ["mrstore010011@gmail.com", "mohandalamary806@gmail.com"];
 const ADMIN_EMAIL_KEY = 'mrstore_admin_google_email';
 const USER_AUTH_KEY = 'mrstore_user_data';
+const PRODUCTS_STORAGE_KEY = 'mrstore_products_data';
 
-/* ============ PRODUCT DATA ============ */
-const PRODUCTS = [
-  {id:1, name:"قميص كلاسيك أبيض", price:450, old:null, badge:null, img:"https://placehold.co/600x750/ece5d3/221f1a?text=Classic+Shirt"},
-  {id:2, name:"تيشيرت قطن أزرق", price:250, old:300, badge:"sale", img:"https://placehold.co/600x750/dfe6ee/2b3b68?text=Cotton+Tee"},
-  {id:3, name:"بنطلون جينز رجالي", price:550, old:null, badge:null, img:"https://placehold.co/600x750/e1d9c3/221f1a?text=Denim+Jeans"},
-  {id:4, name:"جاكيت شتوي", price:900, old:null, badge:"new", img:"https://placehold.co/600x750/ece5d3/2b3b68?text=Winter+Jacket"},
+/* ============ PRODUCT DATA STORE ============ */
+const DEFAULT_PRODUCTS = [
+  {id:1, name:"قميص كلاسيك أبيض", price:450, old:null, badge:null, active:true, img:"https://placehold.co/600x750/ece5d3/221f1a?text=Classic+Shirt"},
+  {id:2, name:"تيشيرت قطن أزرق", price:250, old:300, badge:"sale", active:true, img:"https://placehold.co/600x750/dfe6ee/2b3b68?text=Cotton+Tee"},
+  {id:3, name:"بنطلون جينز رجالي", price:550, old:null, badge:null, active:true, img:"https://placehold.co/600x750/e1d9c3/221f1a?text=Denim+Jeans"},
+  {id:4, name:"جاكيت شتوي", price:900, old:null, badge:"new", active:true, img:"https://placehold.co/600x750/ece5d3/2b3b68?text=Winter+Jacket"},
 ];
+
+function getProducts() {
+  try {
+    const saved = localStorage.getItem(PRODUCTS_STORAGE_KEY);
+    return saved ? JSON.parse(saved) : DEFAULT_PRODUCTS;
+  } catch(e) {
+    return DEFAULT_PRODUCTS;
+  }
+}
+
+function saveProducts(products) {
+  localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(products));
+}
+
+let PRODUCTS = getProducts();
 
 /* ============ STATE ============ */
 const state = { cart: [], filter: "all", search: "" };
 
 function money(n){ return n.toLocaleString('en-US') + ' ج.م'; }
 
-/* ============ USER AUTH UI & HELPERS ============ */
+/* ============ USER & ADMIN AUTH HELPERS ============ */
 function getUserData() {
   try { return JSON.parse(localStorage.getItem(USER_AUTH_KEY)); } catch(e) { return null; }
 }
@@ -726,6 +782,10 @@ function updateUserUI() {
   }
 }
 
+function isAdminAuthed(){
+  return sessionStorage.getItem('mrstore_admin_auth') === '1' || !!getAdminGoogleEmail();
+}
+
 function openUserAuthModal() {
   document.getElementById('userAuthModal').classList.add('open');
   document.getElementById('userAuthOverlay').classList.add('open');
@@ -742,12 +802,11 @@ function closeUserAuthModal() {
 function handleUserLogout() {
   setUserData(null);
   
-  // مسح بيانات لوحة التحكم من المتصفح وتحديث القائمة
+  // مسح بيانات لوحة التحكم وتحديث القائمة
   localStorage.removeItem(ADMIN_EMAIL_KEY);
   sessionStorage.removeItem('mrstore_admin_auth');
   updateAdminNavVisibility();
   
-  // توجيه المستخدم للرئيسية لو كان داخل لوحة التحكم
   if (location.hash === '#admin') {
     location.hash = '';
   }
@@ -755,10 +814,93 @@ function handleUserLogout() {
   showToast('تم تسجيل الخروج');
 }
 
+/* ============ CREATE & TOGGLE PRODUCTS (التحكم بالمنتجات) ============ */
+function openAddProductModal() {
+  document.getElementById('addProductModal').classList.add('open');
+  document.getElementById('addProductOverlay').classList.add('open');
+}
+
+function closeAddProductModal() {
+  document.getElementById('addProductModal').classList.remove('open');
+  document.getElementById('addProductOverlay').classList.remove('open');
+}
+
+document.getElementById('addProductForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const name = document.getElementById('prodName').value.trim();
+  const price = Number(document.getElementById('prodPrice').value);
+  const oldVal = document.getElementById('prodOldPrice').value;
+  const old = oldVal ? Number(oldVal) : null;
+  const img = document.getElementById('prodImg').value.trim();
+  const badge = document.getElementById('prodBadge').value || null;
+
+  const newProduct = {
+    id: Date.now(),
+    name,
+    price,
+    old,
+    badge,
+    active: true,
+    img
+  };
+
+  PRODUCTS.unshift(newProduct);
+  saveProducts(PRODUCTS);
+  renderProducts();
+  closeAddProductModal();
+  document.getElementById('addProductForm').reset();
+  showToast('تمت إضافة المنتج بنجاح ✓');
+});
+
+function toggleProductActive(id) {
+  PRODUCTS = PRODUCTS.map(p => {
+    if (p.id === id) {
+      return { ...p, active: p.active === false ? true : false };
+    }
+    return p;
+  });
+  saveProducts(PRODUCTS);
+  renderProducts();
+  showToast('تم تغيير حالة المنتج ✓');
+}
+
+function deleteProduct(id) {
+  if (!confirm('متأكد إنك عايز تحذف المنتج ده نهائياً؟')) return;
+  PRODUCTS = PRODUCTS.filter(p => p.id !== id);
+  saveProducts(PRODUCTS);
+  renderProducts();
+  showToast('تم حذف المنتج ✓');
+}
+
 /* ============ RENDER PRODUCTS ============ */
 function productCardHTML(p){
   const badge = p.badge ? `<span class="stamp-badge stamp-${p.badge}">${p.badge==='new'?'NEW':'SALE'}</span>` : '';
   const oldPrice = p.old ? `<span class="product-old">${money(p.old)}</span>` : '';
+  const isActive = p.active !== false;
+  const isAdmin = isAdminAuthed();
+
+  // زر الإضافة للعربة أو رسالة غير متوفر
+  let buyBtnHTML = '';
+  if (isActive) {
+    buyBtnHTML = `<button class="btn-add" data-action="add" data-id="${p.id}">أضف للعربة</button>`;
+  } else {
+    buyBtnHTML = `<div class="out-of-stock-badge">المنتج ليس متوفر حالياً</div>`;
+  }
+
+  // أدوات التحكم بالمنتج للأدمن فقط
+  let adminControlsHTML = '';
+  if (isAdmin) {
+    adminControlsHTML = `
+    <div style="margin-top:12px; padding-top:10px; border-top:1px dashed var(--line); display:flex; gap:6px;">
+      <button class="btn btn-sm ${isActive ? 'btn-outline' : 'btn-primary'}" data-action="toggle-active" data-id="${p.id}" style="font-size:0.75rem; flex:1; padding:6px;">
+        ${isActive ? 'توقيف ⏸️' : 'تفعيل ▶️'}
+      </button>
+      <button class="btn btn-sm" data-action="delete-prod" data-id="${p.id}" style="font-size:0.75rem; color:var(--stamp); border:1px solid var(--stamp); padding:6px;">
+        حذف 🗑️
+      </button>
+    </div>`;
+  }
+
   return `
   <article class="product-card reveal is-visible">
     <div class="product-card-inner">
@@ -774,7 +916,8 @@ function productCardHTML(p){
           <span class="product-price">${money(p.price)}</span>
           ${oldPrice}
         </div>
-        <button class="btn-add" data-action="add" data-id="${p.id}">أضف للعربة</button>
+        ${buyBtnHTML}
+        ${adminControlsHTML}
       </div>
     </div>
   </article>`;
@@ -836,10 +979,11 @@ function changeQty(id, delta){
   renderCart();
 }
 function cartCount(){ return state.cart.reduce((s,i)=>s+i.qty,0); }
-function cartTotal(){ return state.cart.reduce((s,i)=>s+findProduct(i.id).price*i.qty,0); }
+function cartTotal(){ return state.cart.reduce((s,i)=>s+(findProduct(i.id) ? findProduct(i.id).price : 0)*i.qty,0); }
 
 function cartItemHTML(i){
   const p = findProduct(i.id);
+  if(!p) return '';
   return `
   <div class="cart-item">
     <img src="${p.img}" alt="${p.name}">
@@ -873,8 +1017,14 @@ function renderCart(){
 }
 
 document.getElementById('productGrid').addEventListener('click', e=>{
-  const btn = e.target.closest('[data-action="add"]');
-  if(btn) addToCart(Number(btn.dataset.id));
+  const btn = e.target.closest('button[data-action]');
+  if(!btn) return;
+  const action = btn.dataset.action;
+  const id = Number(btn.dataset.id);
+
+  if (action === 'add') addToCart(id);
+  if (action === 'toggle-active') toggleProductActive(id);
+  if (action === 'delete-prod') deleteProduct(id);
 });
 
 document.getElementById('cartItems').addEventListener('click', e=>{
@@ -936,7 +1086,7 @@ checkoutForm.addEventListener('submit', e=>{
   let msg = `طلب جديد من MR Store\n\nالاسم: ${name}\nالهاتف: ${phone}\nالمحافظة: ${city}\nالعنوان: ${address}\n\nالمنتجات:\n`;
   state.cart.forEach(i=>{
     const p = findProduct(i.id);
-    msg += `- ${p.name} × ${i.qty} = ${money(p.price*i.qty)}\n`;
+    if(p) msg += `- ${p.name} × ${i.qty} = ${money(p.price*i.qty)}\n`;
   });
   msg += `\nالإجمالي: ${money(cartTotal())}`;
 
@@ -947,7 +1097,10 @@ checkoutForm.addEventListener('submit', e=>{
     id: Date.now(),
     date: new Date().toLocaleString('ar-EG', {dateStyle:'medium', timeStyle:'short'}),
     name, phone, city, address,
-    items: state.cart.map(i=>({name:findProduct(i.id).name, qty:i.qty, price:findProduct(i.id).price})),
+    items: state.cart.map(i=>{
+      const p = findProduct(i.id);
+      return {name: p ? p.name : 'منتج', qty:i.qty, price: p ? p.price : 0};
+    }),
     total: cartTotal(),
     status: 'pending'
   });
@@ -1077,10 +1230,16 @@ function getAdminGoogleEmail(){
 }
 
 function updateAdminNavVisibility(){
-  const show = !!getAdminGoogleEmail();
+  const isAuthed = isAdminAuthed();
   document.querySelectorAll('.admin-nav-link').forEach(el=>{
-    el.classList.toggle('is-visible', show);
+    el.classList.toggle('is-visible', isAuthed);
   });
+  
+  // ظهور زر إضافة منتج جديد للآدمن فقط
+  const addBtn = document.getElementById('openAddProductBtn');
+  if (addBtn) addBtn.style.display = isAuthed ? 'inline-flex' : 'none';
+  
+  renderProducts(); // إعادة رسم المنتجات لإظهار أزرار التحكم للأدمن
 }
 
 async function handleGoogleCredentialResponse(response){
@@ -1145,11 +1304,7 @@ function initGoogleSignIn(){
 }
 window.addEventListener('load', initGoogleSignIn);
 
-/* ============ ADMIN AUTH + ROUTING ============ */
-function isAdminAuthed(){
-  return sessionStorage.getItem('mrstore_admin_auth') === '1' || !!getAdminGoogleEmail();
-}
-
+/* ============ ADMIN ROUTING ============ */
 function showAdminDashboard(){
   document.getElementById('adminLoginWrap').style.display = 'none';
   document.getElementById('adminDashboard').style.display = 'block';
@@ -1170,6 +1325,7 @@ document.getElementById('adminLoginForm').addEventListener('submit', e=>{
   if(input.value === ADMIN_PASSWORD){
     sessionStorage.setItem('mrstore_admin_auth', '1');
     input.value = '';
+    updateAdminNavVisibility();
     showAdminDashboard();
   } else {
     document.getElementById('adminLoginError').classList.add('show');
