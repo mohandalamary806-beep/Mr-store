@@ -347,7 +347,6 @@ h1,h2,h3,h4{font-weight:inherit;}
 .admin-login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;}
 .admin-login-card{background:var(--paper);border-radius:var(--radius-m);box-shadow:var(--shadow-l);padding:44px 34px;width:380px;max-width:100%;text-align:center;}
 .admin-badge{width:64px;height:64px;border-radius:50%;border:3px solid var(--denim);display:flex;align-items:center;justify-content:center;margin:0 auto 18px;background:var(--paper);position:relative;}
-/* تم إصلاح الخطأ المطبعي هنا الذي كان يعطل تنسيقات الأدمن */
 .admin-badge::before{content:'';position:absolute;inset:6px;border:1px dashed var(--denim);border-radius:50%;opacity:.5;}
 .admin-badge svg{width:24px;height:24px;color:var(--denim);}
 .admin-login-card h2{font-family:var(--ff-display);font-size:2.1rem;font-weight:400;margin-bottom:8px;}
@@ -629,7 +628,18 @@ h1,h2,h3,h4{font-weight:inherit;}
         <div class="field"><label for="prodPrice">السعر الحالي (ج.م)</label><input type="number" id="prodPrice" required placeholder="450"></div>
         <div class="field"><label for="prodOldPrice">السعر القديم (اختياري)</label><input type="number" id="prodOldPrice" placeholder="550"></div>
       </div>
-      <div class="field"><label for="prodImg">رابط الصورة (URL)</label><input type="url" id="prodImg" required placeholder="https://example.com/image.jpg"></div>
+      
+      <!-- التعديل الجديد: رفع الصورة من الجهاز بدل الرابط -->
+      <div class="field">
+        <label>صورة المنتج</label>
+        <!-- إخفاء زرار الرفع الافتراضي وعمل زرار مخصص شكله أنظف -->
+        <input type="file" id="prodImg" accept="image/*" style="display:none;">
+        <button type="button" class="btn btn-outline btn-block" onclick="document.getElementById('prodImg').click()">
+          📁 اختر صورة من الجهاز
+        </button>
+        <span id="fileNameDisplay" style="display:block; margin-top:8px; font-size:0.85rem; color:var(--ink-soft); text-align:center;">لم يتم اختيار صورة</span>
+      </div>
+
       <div class="field">
         <label for="prodBadge">الشارة (اختياري)</label>
         <select id="prodBadge">
@@ -730,8 +740,7 @@ const ADMIN_EMAIL_KEY = 'mrstore_admin_google_email';
 const USER_AUTH_KEY = 'mrstore_user_data';
 const PRODUCTS_STORAGE_KEY = 'mrstore_products_data';
 
-/* ============ FIREBASE CONFIG (للمزامنة بين الأجهزة) ============ */
-// ضع بيانات مشروع Firebase المجاني الخاص بك هنا لتعمل المزامنة عبر الأجهزة
+/* ============ FIREBASE CONFIG ============ */
 const firebaseConfig = {
  apiKey: "AIzaSyCQdprjl67J6xQ-hssegcPCr2fSZgUqz4k",
   authDomain: "mr-gaming-24803.firebaseapp.com",
@@ -757,14 +766,12 @@ const DEFAULT_PRODUCTS = [
 
 let PRODUCTS = [];
 
-// تم إضافة فحص لإرجاع البيانات في شكل Array وتجنب الانهيار
 async function fetchProducts() {
   if (useFirebase) {
     try {
       const snapshot = await firebase.database().ref('products').once('value');
       if (snapshot.exists()) {
         const data = snapshot.val();
-        // إرجاعها مصفوفة في حال قام فايربيس بتحويلها لكائن بعد حذف عنصر
         return Array.isArray(data) ? data : Object.values(data);
       }
       return DEFAULT_PRODUCTS;
@@ -782,7 +789,6 @@ async function fetchProducts() {
   }
 }
 
-// تم إضافة try/catch للتعامل مع أخطاء صلاحيات Firebase حتى لا يتوقف الكود
 async function saveProducts(products) {
   try {
     if (useFirebase) {
@@ -792,7 +798,6 @@ async function saveProducts(products) {
     }
   } catch (error) {
     console.error("Save Error:", error);
-    // كبديل احتياطي لو فايربيس رفض الحفظ، بنحفظ في التخزين المحلي عشان الموقع ميقفش
     localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(products));
   }
 }
@@ -872,23 +877,49 @@ function closeAddProductModal() {
   document.getElementById('addProductOverlay').classList.remove('open');
 }
 
+// عرض اسم الصورة المختارة بمجرد التحديد
+document.getElementById('prodImg').addEventListener('change', function() {
+  const fileName = this.files[0] ? this.files[0].name : 'لم يتم اختيار صورة';
+  document.getElementById('fileNameDisplay').textContent = fileName;
+});
+
+// التعديل الأساسي هنا: قراءة الصورة كملف بدل رابط
 document.getElementById('addProductForm').addEventListener('submit', async e => {
   e.preventDefault();
   const name = document.getElementById('prodName').value.trim();
   const price = Number(document.getElementById('prodPrice').value);
   const oldVal = document.getElementById('prodOldPrice').value;
   const old = oldVal ? Number(oldVal) : null;
-  const img = document.getElementById('prodImg').value.trim();
   const badge = document.getElementById('prodBadge').value || null;
 
-  const newProduct = { id: Date.now(), name, price, old, badge, active: true, img };
+  const fileInput = document.getElementById('prodImg');
+  
+  // التأكد من اختيار صورة
+  if (!fileInput.files || fileInput.files.length === 0) {
+    showToast('الرجاء اختيار صورة للمنتج ⚠️');
+    return;
+  }
 
-  PRODUCTS.unshift(newProduct);
-  await saveProducts(PRODUCTS);
-  renderProducts();
-  closeAddProductModal();
-  document.getElementById('addProductForm').reset();
-  showToast('تمت إضافة المنتج بنجاح ✓');
+  const file = fileInput.files[0];
+  const reader = new FileReader();
+  
+  // تحويل الصورة لـ Base64 عشان تتسجل في الداتا بيز بسهولة
+  reader.onload = async function(event) {
+    const imgBase64 = event.target.result; 
+
+    const newProduct = { id: Date.now(), name, price, old, badge, active: true, img: imgBase64 };
+
+    PRODUCTS.unshift(newProduct);
+    await saveProducts(PRODUCTS);
+    renderProducts();
+    closeAddProductModal();
+    document.getElementById('addProductForm').reset();
+    document.getElementById('fileNameDisplay').textContent = 'لم يتم اختيار صورة';
+    showToast('تمت إضافة المنتج بنجاح ✓');
+  };
+  
+  // بدأ عملية القراءة
+  reader.readAsDataURL(file);
 });
 
 async function toggleProductActive(id) {
@@ -1394,7 +1425,7 @@ const observer = new IntersectionObserver(entries=>{
 }, {threshold:.12});
 document.querySelectorAll('.reveal').forEach(el=>observer.observe(el));
 
-/* ============ INIT (تهيئة التطبيق) ============ */
+/* ============ INIT ============ */
 async function initializeApp() {
   PRODUCTS = await fetchProducts();
   renderProducts();
