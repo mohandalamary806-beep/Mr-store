@@ -16,6 +16,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Jomhuria&family=Tajawal:wght@300;400;500;700;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<!-- إضافة مكتبات Firebase للاتصال بقاعدة البيانات -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 /* ============ TOKENS ============ */
@@ -344,7 +347,7 @@ h1,h2,h3,h4{font-weight:inherit;}
 .admin-login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;}
 .admin-login-card{background:var(--paper);border-radius:var(--radius-m);box-shadow:var(--shadow-l);padding:44px 34px;width:380px;max-width:100%;text-align:center;}
 .admin-badge{width:64px;height:64px;border-radius:50%;border:3px solid var(--denim);display:flex;align-items:center;justify-content:center;margin:0 auto 18px;background:var(--paper);position:relative;}
-.admin-badge::before{content:'';position:absolute;inset:6px;border:1px dashed var(--denim);border-radius:50%;opacity:.5;}
+.admin-badge::before{content:'absolute;inset:6px;border:1px dashed var(--denim);border-radius:50%;opacity:.5;}
 .admin-badge svg{width:24px;height:24px;color:var(--denim);}
 .admin-login-card h2{font-family:var(--ff-display);font-size:2.1rem;font-weight:400;margin-bottom:8px;}
 .admin-login-card p{color:var(--ink-soft);font-size:.88rem;margin-bottom:24px;line-height:1.6;}
@@ -609,7 +612,7 @@ h1,h2,h3,h4{font-weight:inherit;}
   </div>
 </div>
 
-<!-- ============ ADD PRODUCT MODAL (نافذة إضافة منتج جديد) ============ -->
+<!-- ============ ADD PRODUCT MODAL ============ -->
 <div class="overlay" id="addProductOverlay" onclick="closeAddProductModal()"></div>
 <div class="modal" id="addProductModal">
   <div class="modal-head">
@@ -639,7 +642,7 @@ h1,h2,h3,h4{font-weight:inherit;}
   </div>
 </div>
 
-<!-- ============ USER AUTH MODAL (تسجيل دخول العملاء) ============ -->
+<!-- ============ USER AUTH MODAL ============ -->
 <div class="overlay" id="userAuthOverlay" onclick="closeUserAuthModal()"></div>
 <div class="modal" id="userAuthModal">
   <div class="modal-head">
@@ -657,7 +660,7 @@ h1,h2,h3,h4{font-weight:inherit;}
 <!-- ============ TOAST ============ -->
 <div class="toast" id="toast"></div>
 
-<!-- ============ ADMIN VIEW (لوحة صاحب المتجر — يدخلها بإضافة #admin آخر رابط الموقع) ============ -->
+<!-- ============ ADMIN VIEW ============ -->
 <div class="admin-view" id="adminView">
 
   <div class="admin-login-wrap" id="adminLoginWrap">
@@ -726,6 +729,23 @@ const ADMIN_EMAIL_KEY = 'mrstore_admin_google_email';
 const USER_AUTH_KEY = 'mrstore_user_data';
 const PRODUCTS_STORAGE_KEY = 'mrstore_products_data';
 
+/* ============ FIREBASE CONFIG (للمزامنة بين الأجهزة) ============ */
+// ضع بيانات مشروع Firebase المجاني الخاص بك هنا لتعمل المزامنة عبر الأجهزة
+const firebaseConfig = {
+  apiKey: "",
+  authDomain: "",
+  databaseURL: "",
+  projectId: "",
+  storageBucket: "",
+  messagingSenderId: "",
+  appId: ""
+};
+
+const useFirebase = firebaseConfig.apiKey !== "";
+if (useFirebase) {
+  firebase.initializeApp(firebaseConfig);
+}
+
 /* ============ PRODUCT DATA STORE ============ */
 const DEFAULT_PRODUCTS = [
   {id:1, name:"قميص كلاسيك أبيض", price:450, old:null, badge:null, active:true, img:"https://placehold.co/600x750/ece5d3/221f1a?text=Classic+Shirt"},
@@ -734,20 +754,36 @@ const DEFAULT_PRODUCTS = [
   {id:4, name:"جاكيت شتوي", price:900, old:null, badge:"new", active:true, img:"https://placehold.co/600x750/ece5d3/2b3b68?text=Winter+Jacket"},
 ];
 
-function getProducts() {
-  try {
-    const saved = localStorage.getItem(PRODUCTS_STORAGE_KEY);
-    return saved ? JSON.parse(saved) : DEFAULT_PRODUCTS;
-  } catch(e) {
-    return DEFAULT_PRODUCTS;
+let PRODUCTS = [];
+
+// دالة جلب المنتجات (تعمل سحابياً إذا توفرت الإعدادات، أو محلياً كوضع افتراضي)
+async function fetchProducts() {
+  if (useFirebase) {
+    try {
+      const snapshot = await firebase.database().ref('products').once('value');
+      return snapshot.exists() ? snapshot.val() : DEFAULT_PRODUCTS;
+    } catch (error) {
+      console.error("Firebase Error:", error);
+      return DEFAULT_PRODUCTS;
+    }
+  } else {
+    try {
+      const saved = localStorage.getItem(PRODUCTS_STORAGE_KEY);
+      return saved ? JSON.parse(saved) : DEFAULT_PRODUCTS;
+    } catch(e) {
+      return DEFAULT_PRODUCTS;
+    }
   }
 }
 
-function saveProducts(products) {
-  localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(products));
+// دالة حفظ المنتجات 
+async function saveProducts(products) {
+  if (useFirebase) {
+    await firebase.database().ref('products').set(products);
+  } else {
+    localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(products));
+  }
 }
-
-let PRODUCTS = getProducts();
 
 /* ============ STATE ============ */
 const state = { cart: [], filter: "all", search: "" };
@@ -802,7 +838,6 @@ function closeUserAuthModal() {
 function handleUserLogout() {
   setUserData(null);
   
-  // مسح بيانات لوحة التحكم وتحديث القائمة
   localStorage.removeItem(ADMIN_EMAIL_KEY);
   sessionStorage.removeItem('mrstore_admin_auth');
   updateAdminNavVisibility();
@@ -814,7 +849,7 @@ function handleUserLogout() {
   showToast('تم تسجيل الخروج');
 }
 
-/* ============ CREATE & TOGGLE PRODUCTS (التحكم بالمنتجات) ============ */
+/* ============ CREATE & TOGGLE PRODUCTS ============ */
 function openAddProductModal() {
   document.getElementById('addProductModal').classList.add('open');
   document.getElementById('addProductOverlay').classList.add('open');
@@ -825,7 +860,7 @@ function closeAddProductModal() {
   document.getElementById('addProductOverlay').classList.remove('open');
 }
 
-document.getElementById('addProductForm').addEventListener('submit', e => {
+document.getElementById('addProductForm').addEventListener('submit', async e => {
   e.preventDefault();
   const name = document.getElementById('prodName').value.trim();
   const price = Number(document.getElementById('prodPrice').value);
@@ -834,40 +869,32 @@ document.getElementById('addProductForm').addEventListener('submit', e => {
   const img = document.getElementById('prodImg').value.trim();
   const badge = document.getElementById('prodBadge').value || null;
 
-  const newProduct = {
-    id: Date.now(),
-    name,
-    price,
-    old,
-    badge,
-    active: true,
-    img
-  };
+  const newProduct = { id: Date.now(), name, price, old, badge, active: true, img };
 
   PRODUCTS.unshift(newProduct);
-  saveProducts(PRODUCTS);
+  await saveProducts(PRODUCTS);
   renderProducts();
   closeAddProductModal();
   document.getElementById('addProductForm').reset();
   showToast('تمت إضافة المنتج بنجاح ✓');
 });
 
-function toggleProductActive(id) {
+async function toggleProductActive(id) {
   PRODUCTS = PRODUCTS.map(p => {
     if (p.id === id) {
       return { ...p, active: p.active === false ? true : false };
     }
     return p;
   });
-  saveProducts(PRODUCTS);
+  await saveProducts(PRODUCTS);
   renderProducts();
   showToast('تم تغيير حالة المنتج ✓');
 }
 
-function deleteProduct(id) {
+async function deleteProduct(id) {
   if (!confirm('متأكد إنك عايز تحذف المنتج ده نهائياً؟')) return;
   PRODUCTS = PRODUCTS.filter(p => p.id !== id);
-  saveProducts(PRODUCTS);
+  await saveProducts(PRODUCTS);
   renderProducts();
   showToast('تم حذف المنتج ✓');
 }
@@ -879,7 +906,6 @@ function productCardHTML(p){
   const isActive = p.active !== false;
   const isAdmin = isAdminAuthed();
 
-  // زر الإضافة للعربة أو رسالة غير متوفر
   let buyBtnHTML = '';
   if (isActive) {
     buyBtnHTML = `<button class="btn-add" data-action="add" data-id="${p.id}">أضف للعربة</button>`;
@@ -887,7 +913,6 @@ function productCardHTML(p){
     buyBtnHTML = `<div class="out-of-stock-badge">المنتج ليس متوفر حالياً</div>`;
   }
 
-  // أدوات التحكم بالمنتج للأدمن فقط
   let adminControlsHTML = '';
   if (isAdmin) {
     adminControlsHTML = `
@@ -1235,11 +1260,10 @@ function updateAdminNavVisibility(){
     el.classList.toggle('is-visible', isAuthed);
   });
   
-  // ظهور زر إضافة منتج جديد للآدمن فقط
   const addBtn = document.getElementById('openAddProductBtn');
   if (addBtn) addBtn.style.display = isAuthed ? 'inline-flex' : 'none';
   
-  renderProducts(); // إعادة رسم المنتجات لإظهار أزرار التحكم للأدمن
+  renderProducts(); 
 }
 
 async function handleGoogleCredentialResponse(response){
@@ -1252,7 +1276,6 @@ async function handleGoogleCredentialResponse(response){
     const email = payload.email;
     const verified = payload.email_verified === 'true' || payload.email_verified === true;
 
-    // حفظ بيانات المستخدم العامة
     setUserData({
       name: payload.name || payload.email,
       email: payload.email,
@@ -1261,7 +1284,6 @@ async function handleGoogleCredentialResponse(response){
     closeUserAuthModal();
     showToast(`أهلاً بك، ${payload.name || payload.email} 👋`);
 
-    // لو الإيميل مسموحله بإدارة المتجر
     if(email && verified && ADMIN_ALLOWED_EMAILS.includes(email)){
       localStorage.setItem(ADMIN_EMAIL_KEY, email);
       updateAdminNavVisibility();
@@ -1290,12 +1312,10 @@ function initGoogleSignIn(){
       callback: handleGoogleCredentialResponse 
     });
     
-    // زر تسجيل الدخول للوحة التحكم
     const btnAdmin = document.getElementById('googleSignInBtn');
     if(btnAdmin){
       google.accounts.id.renderButton(btnAdmin, { theme:'outline', size:'large', text:'signin_with', shape:'pill', locale:'ar', width:280 });
     }
-    // زر تسجيل الدخول للمستخدمين في النافذة
     const btnUser = document.getElementById('userGoogleSignInBtn');
     if(btnUser){
       google.accounts.id.renderButton(btnUser, { theme:'outline', size:'large', text:'continue_with', shape:'pill', locale:'ar', width:280 });
@@ -1362,12 +1382,18 @@ const observer = new IntersectionObserver(entries=>{
 }, {threshold:.12});
 document.querySelectorAll('.reveal').forEach(el=>observer.observe(el));
 
-/* ============ INIT ============ */
-renderProducts();
-renderCart();
-updateUserUI();
-updateAdminNavVisibility();
-checkRoute();
+/* ============ INIT (تهيئة التطبيق) ============ */
+async function initializeApp() {
+  PRODUCTS = await fetchProducts();
+  renderProducts();
+  renderCart();
+  updateUserUI();
+  updateAdminNavVisibility();
+  checkRoute();
+}
+
+initializeApp();
+
 </script>
 </body>
 </html>
