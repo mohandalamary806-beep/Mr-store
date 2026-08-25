@@ -347,7 +347,8 @@ h1,h2,h3,h4{font-weight:inherit;}
 .admin-login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;}
 .admin-login-card{background:var(--paper);border-radius:var(--radius-m);box-shadow:var(--shadow-l);padding:44px 34px;width:380px;max-width:100%;text-align:center;}
 .admin-badge{width:64px;height:64px;border-radius:50%;border:3px solid var(--denim);display:flex;align-items:center;justify-content:center;margin:0 auto 18px;background:var(--paper);position:relative;}
-.admin-badge::before{content:'absolute;inset:6px;border:1px dashed var(--denim);border-radius:50%;opacity:.5;}
+/* تم إصلاح الخطأ المطبعي هنا الذي كان يعطل تنسيقات الأدمن */
+.admin-badge::before{content:'';position:absolute;inset:6px;border:1px dashed var(--denim);border-radius:50%;opacity:.5;}
 .admin-badge svg{width:24px;height:24px;color:var(--denim);}
 .admin-login-card h2{font-family:var(--ff-display);font-size:2.1rem;font-weight:400;margin-bottom:8px;}
 .admin-login-card p{color:var(--ink-soft);font-size:.88rem;margin-bottom:24px;line-height:1.6;}
@@ -757,12 +758,17 @@ const DEFAULT_PRODUCTS = [
 
 let PRODUCTS = [];
 
-// دالة جلب المنتجات (تعمل سحابياً إذا توفرت الإعدادات، أو محلياً كوضع افتراضي)
+// تم إضافة فحص لإرجاع البيانات في شكل Array وتجنب الانهيار
 async function fetchProducts() {
   if (useFirebase) {
     try {
       const snapshot = await firebase.database().ref('products').once('value');
-      return snapshot.exists() ? snapshot.val() : DEFAULT_PRODUCTS;
+      if (snapshot.exists()) {
+        const data = snapshot.val();
+        // إرجاعها مصفوفة في حال قام فايربيس بتحويلها لكائن بعد حذف عنصر
+        return Array.isArray(data) ? data : Object.values(data);
+      }
+      return DEFAULT_PRODUCTS;
     } catch (error) {
       console.error("Firebase Error:", error);
       return DEFAULT_PRODUCTS;
@@ -777,11 +783,17 @@ async function fetchProducts() {
   }
 }
 
-// دالة حفظ المنتجات 
+// تم إضافة try/catch للتعامل مع أخطاء صلاحيات Firebase حتى لا يتوقف الكود
 async function saveProducts(products) {
-  if (useFirebase) {
-    await firebase.database().ref('products').set(products);
-  } else {
+  try {
+    if (useFirebase) {
+      await firebase.database().ref('products').set(products);
+    } else {
+      localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(products));
+    }
+  } catch (error) {
+    console.error("Save Error:", error);
+    // كبديل احتياطي لو فايربيس رفض الحفظ، بنحفظ في التخزين المحلي عشان الموقع ميقفش
     localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(products));
   }
 }
