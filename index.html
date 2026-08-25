@@ -680,7 +680,7 @@ h1,h2,h3,h4{font-weight:inherit;}
 /* ============ CONFIG ============ */
 const STORE_WHATSAPP_NUMBER = "01027883297";
 const ADMIN_PASSWORD = "mrstore2026";
-const GOOGLE_CLIENT_ID = "366744614163-uj73iqu3hca8q25un8sten0j6h9ol81f.apps.googleusercontent.com";
+const GOOGLE_CLIENT_ID = "443646227114-vbstcio2leo5l5ene86mtmd9cv6djdln.apps.googleusercontent.com";
 const ADMIN_ALLOWED_EMAILS = ["mrstore010011@gmail.com", "mohandalamary806@gmail.com"];
 const ADMIN_EMAIL_KEY = 'mrstore_admin_google_email';
 const USER_AUTH_KEY = 'mrstore_user_data';
@@ -1112,7 +1112,7 @@ function initGoogleSignIn(){
   try{
     if(typeof google === 'undefined' || !google.accounts || !google.accounts.id) return;
     google.accounts.id.initialize({ 
-      client_id: 366744614163-uj73iqu3hca8q25un8sten0j6h9ol81f.apps.googleusercontent.com, 
+      client_id: GOOGLE_CLIENT_ID, 
       callback: handleGoogleCredentialResponse 
     });
     
