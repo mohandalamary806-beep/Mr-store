@@ -2,11 +2,6 @@
 <!--
   MR Store — متجر إلكتروني (نسخة أولى جاهزة للنشر)
   ===================================================
-  حاجات مهمة قبل ما تنشر الموقع:
-  1) دوّر على STORE_WHATSAPP_NUMBER في الجافاسكريبت تحت وحط رقم واتساب متجرك الحقيقي.
-  2) دوّر على PRODUCTS في الجافاسكريبت وغيّر قيمة "img" لكل منتج بصور المنتجات الحقيقية.
-  3) دوّر على GOOGLE_CLIENT_ID في الجافاسكريبت وحط فيه Client ID بتاع تسجيل الدخول بجوجل
-     (تسجيل الدخول بجوجل مش هيشتغل غير بعد ما تحط ده — التعليمات في آخر الرد).
 -->
 <html lang="ar" dir="rtl">
 <head>
@@ -87,6 +82,7 @@ h1,h2,h3,h4{font-weight:inherit;}
   transition:transform .18s ease, box-shadow .18s ease, background .18s ease;
   white-space:nowrap;
 }
+.btn-sm{padding:8px 16px;font-size:.82rem;}
 .btn-primary{background:var(--denim);color:var(--paper);box-shadow:var(--shadow-s);}
 .btn-primary:hover{background:var(--denim-deep);transform:translateY(-2px);box-shadow:var(--shadow-m);}
 .btn-primary:disabled{background:var(--line);color:var(--ink-soft);cursor:not-allowed;transform:none;box-shadow:none;}
@@ -112,7 +108,9 @@ h1,h2,h3,h4{font-weight:inherit;}
 .main-nav a:hover{color:var(--ink);}
 .admin-nav-link{display:none;}
 .admin-nav-link.is-visible{display:inline;}
-.header-actions{display:flex;align-items:center;gap:4px;}
+.header-actions{display:flex;align-items:center;gap:10px;}
+.user-auth-wrap,.user-profile-wrap{display:flex;align-items:center;gap:8px;}
+.user-profile-wrap{font-family:var(--ff-mono);font-size:.82rem;font-weight:700;color:var(--denim);}
 .icon-btn{position:relative;width:42px;height:42px;display:flex;align-items:center;justify-content:center;border-radius:50%;transition:background .2s;}
 .icon-btn svg{width:21px;height:21px;}
 .icon-btn:hover{background:var(--canvas-deep);}
@@ -126,6 +124,9 @@ h1,h2,h3,h4{font-weight:inherit;}
 @media (max-width:900px){
   .main-nav{display:none;}
   .menu-toggle{display:flex;}
+}
+@media (max-width:600px){
+  .user-auth-wrap .btn-sm{padding:6px 10px;font-size:.75rem;}
 }
 
 /* Mobile menu overlay */
@@ -296,7 +297,7 @@ h1,h2,h3,h4{font-weight:inherit;}
 .drawer-subtotal{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:18px;font-size:1.05rem;font-weight:700;}
 .drawer-subtotal span:last-child{font-family:var(--ff-mono);color:var(--brass);font-size:1.2rem;}
 
-/* ============ CHECKOUT MODAL ============ */
+/* ============ MODAL (GENERIC & CHECKOUT & AUTH) ============ */
 .modal{
   position:fixed;top:50%;left:50%;transform:translate(-50%,-48%);z-index:95;background:var(--paper);
   border-radius:var(--radius-m);width:460px;max-width:92vw;max-height:88vh;overflow-y:auto;
@@ -412,6 +413,17 @@ h1,h2,h3,h4{font-weight:inherit;}
       <a href="#admin" class="admin-nav-link" id="adminNavLink">صفحة الطلبات</a>
     </nav>
     <div class="header-actions">
+
+      <!-- أزرار تسجيل الدخول وإنشاء حساب -->
+      <div class="user-auth-wrap" id="userAuthWrap">
+        <button class="btn btn-outline btn-sm" id="userLoginBtn" onclick="openUserAuthModal()">تسجيل الدخول</button>
+        <button class="btn btn-primary btn-sm" id="userSignupBtn" onclick="openUserAuthModal()">إنشاء حساب</button>
+      </div>
+      <div class="user-profile-wrap" id="userProfileWrap" style="display:none;">
+        <span id="userNameDisplay"></span>
+        <button class="btn btn-outline btn-sm" onclick="handleUserLogout()">خروج</button>
+      </div>
+
       <button class="icon-btn" id="searchToggle" aria-label="بحث" onclick="document.getElementById('searchInput').focus();document.getElementById('products').scrollIntoView({behavior:'smooth'});">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/></svg>
       </button>
@@ -587,6 +599,21 @@ h1,h2,h3,h4{font-weight:inherit;}
   </div>
 </div>
 
+<!-- ============ USER AUTH MODAL (تسجيل دخول العملاء) ============ -->
+<div class="overlay" id="userAuthOverlay" onclick="closeUserAuthModal()"></div>
+<div class="modal" id="userAuthModal">
+  <div class="modal-head">
+    <h3>تسجيل الدخول / إنشاء حساب</h3>
+    <button class="icon-btn" onclick="closeUserAuthModal()" aria-label="إغلاق">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
+    </button>
+  </div>
+  <div class="modal-body" style="text-align:center; padding: 32px 20px;">
+    <p style="margin-bottom: 22px; color: var(--ink-soft); font-size: 0.95rem;">سجّل دخولك بضغطة واحدة باستخدام حساب جوجل لتجربة تسوق أفضل.</p>
+    <div class="google-signin-wrap" id="userGoogleSignInBtn" style="display:flex; justify-content:center;"></div>
+  </div>
+</div>
+
 <!-- ============ TOAST ============ -->
 <div class="toast" id="toast"></div>
 
@@ -651,18 +678,14 @@ h1,h2,h3,h4{font-weight:inherit;}
 
 <script>
 /* ============ CONFIG ============ */
-// TODO: عدّل الرقم ده لرقم واتساب متجرك الحقيقي (بصيغة الكود الدولي بدون + أو صفر البداية، مثال لمصر: 201012345678)
 const STORE_WHATSAPP_NUMBER = "01027883297";
-// TODO: غيّر كلمة المرور دي لكلمة سرية تعرفها انت بس، عشان تدخل بيها على لوحة الطلبات (الرابط + #admin)
 const ADMIN_PASSWORD = "mrstore2026";
-// TODO: حط هنا Client ID بتاع تسجيل الدخول بجوجل (Google Cloud Console). من غيره زرار "الدخول بجوجل" مش هيشتغل.
 const GOOGLE_CLIENT_ID = "366744614163-uj73iqu3hca8q25un8sten0j6h9ol81f.apps.googleusercontent.com";
-// الإيميلات المسموحلها بس تدخل لوحة الطلبات وتشوف رابط "صفحة الطلبات"
 const ADMIN_ALLOWED_EMAILS = ["mrstore010011@gmail.com", "mohandalamary806@gmail.com"];
 const ADMIN_EMAIL_KEY = 'mrstore_admin_google_email';
+const USER_AUTH_KEY = 'mrstore_user_data';
 
 /* ============ PRODUCT DATA ============ */
-// TODO: غيّر "img" بصور المنتجات الحقيقية بتاعتك لما تبعتهالي أو تستضيفهم بنفسك
 const PRODUCTS = [
   {id:1, name:"قميص كلاسيك أبيض", price:450, old:null, badge:null, img:"https://placehold.co/600x750/ece5d3/221f1a?text=Classic+Shirt"},
   {id:2, name:"تيشيرت قطن أزرق", price:250, old:300, badge:"sale", img:"https://placehold.co/600x750/dfe6ee/2b3b68?text=Cotton+Tee"},
@@ -674,6 +697,52 @@ const PRODUCTS = [
 const state = { cart: [], filter: "all", search: "" };
 
 function money(n){ return n.toLocaleString('en-US') + ' ج.م'; }
+
+/* ============ USER AUTH UI & HELPERS ============ */
+function getUserData() {
+  try { return JSON.parse(localStorage.getItem(USER_AUTH_KEY)); } catch(e) { return null; }
+}
+
+function setUserData(data) {
+  if (data) localStorage.setItem(USER_AUTH_KEY, JSON.stringify(data));
+  else localStorage.removeItem(USER_AUTH_KEY);
+  updateUserUI();
+}
+
+function updateUserUI() {
+  const user = getUserData();
+  const authWrap = document.getElementById('userAuthWrap');
+  const profileWrap = document.getElementById('userProfileWrap');
+  const nameDisplay = document.getElementById('userNameDisplay');
+
+  if (user && user.name) {
+    authWrap.style.display = 'none';
+    profileWrap.style.display = 'flex';
+    nameDisplay.textContent = user.name.split(' ')[0];
+  } else {
+    authWrap.style.display = 'flex';
+    profileWrap.style.display = 'none';
+    nameDisplay.textContent = '';
+  }
+}
+
+function openUserAuthModal() {
+  document.getElementById('userAuthModal').classList.add('open');
+  document.getElementById('userAuthOverlay').classList.add('open');
+  if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
+    google.accounts.id.prompt();
+  }
+}
+
+function closeUserAuthModal() {
+  document.getElementById('userAuthModal').classList.remove('open');
+  document.getElementById('userAuthOverlay').classList.remove('open');
+}
+
+function handleUserLogout() {
+  setUserData(null);
+  showToast('تم تسجيل الخروج');
+}
 
 /* ============ RENDER PRODUCTS ============ */
 function productCardHTML(p){
@@ -829,6 +898,10 @@ const successView = document.getElementById('successView');
 
 function openCheckout(){
   if(state.cart.length === 0) return;
+  const user = getUserData();
+  if (user && user.name) {
+    document.getElementById('custName').value = user.name;
+  }
   checkoutForm.style.display = 'block';
   successView.classList.remove('show');
   checkoutModal.classList.add('open');
@@ -859,7 +932,6 @@ checkoutForm.addEventListener('submit', e=>{
   const waUrl = `https://wa.me/${STORE_WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
   document.getElementById('waFallback').href = waUrl;
 
-  // يسجّل الطلب في لوحة تحكم صاحب المتجر (الرابط + #admin)
   addOrder({
     id: Date.now(),
     date: new Date().toLocaleString('ar-EG', {dateStyle:'medium', timeStyle:'short'}),
@@ -872,7 +944,7 @@ checkoutForm.addEventListener('submit', e=>{
   checkoutForm.style.display = 'none';
   successView.classList.add('show');
 
-  try{ window.open(waUrl, '_blank'); }catch(err){ /* popup blocked — user can use the fallback button */ }
+  try{ window.open(waUrl, '_blank'); }catch(err){ }
 
   state.cart = [];
   renderCart();
@@ -987,7 +1059,7 @@ document.getElementById('ordersList').addEventListener('click', e=>{
   renderOrders();
 });
 
-/* ============ GOOGLE SIGN-IN (تسجيل دخول صاحب المتجر بجوجل) ============ */
+/* ============ GOOGLE SIGN-IN ============ */
 function getAdminGoogleEmail(){
   const email = localStorage.getItem(ADMIN_EMAIL_KEY);
   return (email && ADMIN_ALLOWED_EMAILS.includes(email)) ? email : null;
@@ -1002,37 +1074,59 @@ function updateAdminNavVisibility(){
 
 async function handleGoogleCredentialResponse(response){
   const googleErr = document.getElementById('googleLoginError');
-  googleErr.classList.remove('show');
+  if (googleErr) googleErr.classList.remove('show');
   try{
-    // بنتأكد من صحة التوكن مباشرة مع سيرفرات جوجل، من غير ما نحتاج باك اند
     const res = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(response.credential)}`);
     if(!res.ok) throw new Error('token-invalid');
     const payload = await res.json();
     const email = payload.email;
     const verified = payload.email_verified === 'true' || payload.email_verified === true;
+
+    // حفظ بيانات المستخدم العامة
+    setUserData({
+      name: payload.name || payload.email,
+      email: payload.email,
+      picture: payload.picture
+    });
+    closeUserAuthModal();
+    showToast(`أهلاً بك، ${payload.name || payload.email} 👋`);
+
+    // لو الإيميل مسموحله بإدارة المتجر
     if(email && verified && ADMIN_ALLOWED_EMAILS.includes(email)){
       localStorage.setItem(ADMIN_EMAIL_KEY, email);
       updateAdminNavVisibility();
-      showAdminDashboard();
-    } else {
+      if (location.hash === '#admin') showAdminDashboard();
+    } else if (location.hash === '#admin') {
       googleErr.textContent = 'الحساب ده مش من ضمن الحسابات المسموحلها تدخل لوحة التحكم.';
       googleErr.classList.add('show');
     }
   }catch(err){
-    googleErr.textContent = 'حصلت مشكلة في تسجيل الدخول بجوجل. جرّب تاني.';
-    googleErr.classList.add('show');
+    if (googleErr) {
+      googleErr.textContent = 'حصلت مشكلة في تسجيل الدخول بجوجل. جرّب تاني.';
+      googleErr.classList.add('show');
+    }
   }
 }
 
 function initGoogleSignIn(){
   try{
     if(typeof google === 'undefined' || !google.accounts || !google.accounts.id) return;
-    google.accounts.id.initialize({ client_id: 366744614163-uj73iqu3hca8q25un8sten0j6h9ol81f.apps.googleusercontent.com, callback: handleGoogleCredentialResponse });
-    const btnWrap = document.getElementById('googleSignInBtn');
-    if(btnWrap){
-      google.accounts.id.renderButton(btnWrap, { theme:'outline', size:'large', text:'signin_with', shape:'pill', locale:'ar', width:280 });
+    google.accounts.id.initialize({ 
+      client_id: GOOGLE_CLIENT_ID, 
+      callback: handleGoogleCredentialResponse 
+    });
+    
+    // زر تسجيل الدخول للوحة التحكم
+    const btnAdmin = document.getElementById('googleSignInBtn');
+    if(btnAdmin){
+      google.accounts.id.renderButton(btnAdmin, { theme:'outline', size:'large', text:'signin_with', shape:'pill', locale:'ar', width:280 });
     }
-  }catch(err){ /* لو جوجل مش متظبطة لسه، الدخول بكلمة السر لسه شغال عادي */ }
+    // زر تسجيل الدخول للمستخدمين في النافذة
+    const btnUser = document.getElementById('userGoogleSignInBtn');
+    if(btnUser){
+      google.accounts.id.renderButton(btnUser, { theme:'outline', size:'large', text:'continue_with', shape:'pill', locale:'ar', width:280 });
+    }
+  }catch(err){ }
 }
 window.addEventListener('load', initGoogleSignIn);
 
@@ -1098,6 +1192,7 @@ document.querySelectorAll('.reveal').forEach(el=>observer.observe(el));
 /* ============ INIT ============ */
 renderProducts();
 renderCart();
+updateUserUI();
 updateAdminNavVisibility();
 checkRoute();
 </script>
