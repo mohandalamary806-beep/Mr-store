@@ -741,6 +741,17 @@ function closeUserAuthModal() {
 
 function handleUserLogout() {
   setUserData(null);
+  
+  // مسح بيانات لوحة التحكم من المتصفح وتحديث القائمة
+  localStorage.removeItem(ADMIN_EMAIL_KEY);
+  sessionStorage.removeItem('mrstore_admin_auth');
+  updateAdminNavVisibility();
+  
+  // توجيه المستخدم للرئيسية لو كان داخل لوحة التحكم
+  if (location.hash === '#admin') {
+    location.hash = '';
+  }
+
   showToast('تم تسجيل الخروج');
 }
 
@@ -1096,9 +1107,13 @@ async function handleGoogleCredentialResponse(response){
       localStorage.setItem(ADMIN_EMAIL_KEY, email);
       updateAdminNavVisibility();
       if (location.hash === '#admin') showAdminDashboard();
-    } else if (location.hash === '#admin') {
-      googleErr.textContent = 'الحساب ده مش من ضمن الحسابات المسموحلها تدخل لوحة التحكم.';
-      googleErr.classList.add('show');
+    } else {
+      localStorage.removeItem(ADMIN_EMAIL_KEY);
+      updateAdminNavVisibility();
+      if (location.hash === '#admin') {
+        googleErr.textContent = 'الحساب ده مش من ضمن الحسابات المسموحلها تدخل لوحة التحكم.';
+        googleErr.classList.add('show');
+      }
     }
   }catch(err){
     if (googleErr) {
@@ -1160,9 +1175,11 @@ document.getElementById('adminLoginForm').addEventListener('submit', e=>{
     document.getElementById('adminLoginError').classList.add('show');
   }
 });
+
 document.getElementById('adminLogoutBtn').addEventListener('click', ()=>{
   sessionStorage.removeItem('mrstore_admin_auth');
   localStorage.removeItem(ADMIN_EMAIL_KEY);
+  setUserData(null);
   updateAdminNavVisibility();
   if(typeof google !== 'undefined' && google.accounts && google.accounts.id){
     google.accounts.id.disableAutoSelect();
