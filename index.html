@@ -659,7 +659,12 @@ h1,h2,h3,h4{font-weight:inherit;}
         </div>
       </div>
 
-      <div class="field"><label for="prodImg">رابط الصورة (URL)</label><input type="url" id="prodImg" required placeholder="https://example.com/image.jpg"></div>
+      <!-- التعديل الجديد: رفع صورة من الجهاز بدلاً من الرابط -->
+      <div class="field">
+        <label for="prodImg">صورة المنتج (من الجهاز)</label>
+        <input type="file" id="prodImg" accept="image/*" required>
+      </div>
+
       <div class="field">
         <label for="prodBadge">الشارة (اختياري)</label>
         <select id="prodBadge">
@@ -893,6 +898,22 @@ function handleUserLogout() {
 }
 
 /* ============ CREATE & TOGGLE PRODUCTS ============ */
+
+// التعديل الجديد: متغير لتخزين الصورة بصيغة Base64
+let uploadedImageBase64 = "";
+
+// التعديل الجديد: وظيفة قراءة الصورة المرفوعة وتحويلها
+document.getElementById('prodImg').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = function(event) {
+      uploadedImageBase64 = event.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+});
+
 function openAddProductModal() {
   document.getElementById('addProductModal').classList.add('open');
   document.getElementById('addProductOverlay').classList.add('open');
@@ -909,12 +930,21 @@ document.getElementById('addProductForm').addEventListener('submit', async e => 
   const price = Number(document.getElementById('prodPrice').value);
   const oldVal = document.getElementById('prodOldPrice').value;
   const old = oldVal ? Number(oldVal) : null;
-  const img = document.getElementById('prodImg').value.trim();
+  
+  // التعديل الجديد: استخدام الصورة المحولة بدلاً من الرابط
+  const img = uploadedImageBase64; 
+  
   const badge = document.getElementById('prodBadge').value || null;
   
   // تجميع المقاسات المختارة
   const sizeCheckboxes = document.querySelectorAll('input[name="prodSizes"]:checked');
   const sizes = Array.from(sizeCheckboxes).map(cb => cb.value);
+
+  // تأكد من أن المستخدم رفع صورة
+  if (!img) {
+    showToast('يرجى اختيار صورة للمنتج');
+    return;
+  }
 
   const newProduct = { 
     id: Date.now(), 
@@ -926,6 +956,7 @@ document.getElementById('addProductForm').addEventListener('submit', async e => 
   renderProducts();
   closeAddProductModal();
   document.getElementById('addProductForm').reset();
+  uploadedImageBase64 = ""; // التعديل الجديد: تفريغ المتغير بعد الحفظ
   showToast('تمت إضافة المنتج بنجاح ✓');
 });
 
