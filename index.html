@@ -1598,45 +1598,11 @@ checkoutForm.addEventListener('submit', async e=>{
   state.cart.forEach(i=>{
     const p = findProduct(i.id);
     if(p) {
+        msg += `- ${p.name} × ${i.qty} = ${money(p.price*i.qty)}\n`;
+        // نقص المخزون
+        p.stock = Math.max(0, (p.stock !== undefined ? p.stock : 100) - i.qty);
     }
   });
-  
-  });
-  
-  msg += `\nالإجمالي النهائي: ${money(cartTotal())}`;
-  
-  if(state.appliedCoupon){
-    msg += `\n(تم تطبيق كود خصم: ${state.appliedCoupon.code})`;
-  }
-
-  // تحويل الرسالة لرابط واتساب
-  const waLink = `https://wa.me/2${STORE_WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
-  
-  // إضافة الطلب لقاعدة البيانات محلياً
-  const newOrder = {
-    id: Math.floor(Math.random() * 100000),
-    date: new Date().toLocaleDateString('ar-EG'),
-    status: 'pending',
-    total: cartTotal(),
-    customerName: name,
-    customerPhone: phone
-  };
-  
-  addOrder(newOrder).then(() => {
-    // مسح السلة بعد الطلب
-    state.cart = [];
-    state.appliedCoupon = null;
-    renderCart();
-    
-    // إظهار رسالة النجاح
-    checkoutForm.style.display = 'none';
-    successView.classList.add('show');
-    document.getElementById('waFallback').href = waLink;
-    
-    // فتح الواتساب تلقائياً
-    window.open(waLink, '_blank');
-  });
-
   
   if (state.appliedCoupon) { msg += `\nكوبون الخصم: ${state.appliedCoupon.code} (${state.appliedCoupon.discount}%)`; }
   msg += `\nالإجمالي النهائي: ${money(cartTotal())}`;
@@ -1661,7 +1627,7 @@ checkoutForm.addEventListener('submit', async e=>{
 
   state.cart = []; state.appliedCoupon = null;
   renderCart(); renderProducts(); checkoutForm.reset(); document.getElementById('couponInput').value = '';
-
+});
 
 document.getElementById('waFloat').href = `https://wa.me/${STORE_WHATSAPP_NUMBER}?text=${encodeURIComponent('عايز أستفسر عن منتج في MR Store')}`;
 
