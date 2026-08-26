@@ -16,11 +16,10 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Jomhuria&family=Tajawal:wght@300;400;500;700;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<!-- إضافة مكتبات Firebase للاتصال بقاعدة البيانات -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
-<!-- Firebase: قاعدة بيانات مشتركة عشان المنتجات والطلبات تظهر لكل الأجهزة، مش جهازك بس -->
-<script src="https://www.gstatic.com/firebasejs/12.17.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/12.17.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore-compat.js"></script>
 <style>
 /* ============ TOKENS ============ */
 :root{
@@ -613,7 +612,7 @@ h1,h2,h3,h4{font-weight:inherit;}
   </div>
 </div>
 
-<!-- ============ ADD PRODUCT MODAL (نافذة إضافة منتج جديد) ============ -->
+<!-- ============ ADD PRODUCT MODAL ============ -->
 <div class="overlay" id="addProductOverlay" onclick="closeAddProductModal()"></div>
 <div class="modal" id="addProductModal">
   <div class="modal-head">
@@ -629,7 +628,18 @@ h1,h2,h3,h4{font-weight:inherit;}
         <div class="field"><label for="prodPrice">السعر الحالي (ج.م)</label><input type="number" id="prodPrice" required placeholder="450"></div>
         <div class="field"><label for="prodOldPrice">السعر القديم (اختياري)</label><input type="number" id="prodOldPrice" placeholder="550"></div>
       </div>
-      <div class="field"><label for="prodImg">رابط الصورة (URL)</label><input type="url" id="prodImg" required placeholder="https://example.com/image.jpg"></div>
+      
+      <!-- التعديل الجديد: رفع الصورة من الجهاز بدل الرابط -->
+      <div class="field">
+        <label>صورة المنتج</label>
+        <!-- إخفاء زرار الرفع الافتراضي وعمل زرار مخصص شكله أنظف -->
+        <input type="file" id="prodImg" accept="image/*" style="display:none;">
+        <button type="button" class="btn btn-outline btn-block" onclick="document.getElementById('prodImg').click()">
+          📁 اختر صورة من الجهاز
+        </button>
+        <span id="fileNameDisplay" style="display:block; margin-top:8px; font-size:0.85rem; color:var(--ink-soft); text-align:center;">لم يتم اختيار صورة</span>
+      </div>
+
       <div class="field">
         <label for="prodBadge">الشارة (اختياري)</label>
         <select id="prodBadge">
@@ -643,7 +653,7 @@ h1,h2,h3,h4{font-weight:inherit;}
   </div>
 </div>
 
-<!-- ============ USER AUTH MODAL (تسجيل دخول العملاء) ============ -->
+<!-- ============ USER AUTH MODAL ============ -->
 <div class="overlay" id="userAuthOverlay" onclick="closeUserAuthModal()"></div>
 <div class="modal" id="userAuthModal">
   <div class="modal-head">
@@ -661,7 +671,7 @@ h1,h2,h3,h4{font-weight:inherit;}
 <!-- ============ TOAST ============ -->
 <div class="toast" id="toast"></div>
 
-<!-- ============ ADMIN VIEW (لوحة صاحب المتجر — يدخلها بإضافة #admin آخر رابط الموقع) ============ -->
+<!-- ============ ADMIN VIEW ============ -->
 <div class="admin-view" id="adminView">
 
   <div class="admin-login-wrap" id="adminLoginWrap">
@@ -724,31 +734,26 @@ h1,h2,h3,h4{font-weight:inherit;}
 /* ============ CONFIG ============ */
 const STORE_WHATSAPP_NUMBER = "01027883297";
 const ADMIN_PASSWORD = "mrstore2026";
-// ⚠️ لازم تستبدل ده بـ "Web client ID" اللي بيظهرلك في Firebase Console
-// (Authentication > Sign-in method > Google > Web SDK configuration)
-// عشان تسجيل الدخول بجوجل يشتغل صح مع قاعدة البيانات. اقرأ الشرح تحت.
 const GOOGLE_CLIENT_ID = "443646227114-vbstcio2leo5l5ene86mtmd9cv6djdln.apps.googleusercontent.com";
 const ADMIN_ALLOWED_EMAILS = ["mrstore010011@gmail.com", "mohandalamary806@gmail.com"];
 const ADMIN_EMAIL_KEY = 'mrstore_admin_google_email';
 const USER_AUTH_KEY = 'mrstore_user_data';
+const PRODUCTS_STORAGE_KEY = 'mrstore_products_data';
 
-/* ============ FIREBASE (قاعدة البيانات المشتركة) ============
-   حط هنا بيانات مشروع Firebase بتاعك (من Project settings > عام > "تطبيقاتك").
-   من غير البيانات دي، المنتجات والطلبات مش هتتزامن بين الأجهزة. */
-const FIREBASE_CONFIG = {
-  apiKey: "ضع_apiKey_هنا",
-  authDomain: "ضع_authDomain_هنا",
-  projectId: "ضع_projectId_هنا",
-  storageBucket: "ضع_storageBucket_هنا",
-  messagingSenderId: "ضع_messagingSenderId_هنا",
-  appId: "ضع_appId_هنا"
+/* ============ FIREBASE CONFIG ============ */
+const firebaseConfig = {
+ apiKey: "AIzaSyCQdprjl67J6xQ-hssegcPCr2fSZgUqz4k",
+  authDomain: "mr-gaming-24803.firebaseapp.com",
+  databaseURL: "https://mr-gaming-24803-default-rtdb.firebaseio.com",
+  projectId: "mr-gaming-24803",
+  storageBucket: "mr-gaming-24803.firebasestorage.app",
+  messagingSenderId: "443646227114",
+  appId: "1:443646227114:web:788aaa68488c085ced96d3",
 };
-let db = null;
-try{
-  firebase.initializeApp(FIREBASE_CONFIG);
-  db = firebase.firestore();
-}catch(err){
-  console.error('Firebase init error — راجع بيانات FIREBASE_CONFIG:', err);
+
+const useFirebase = firebaseConfig.apiKey !== "";
+if (useFirebase) {
+  firebase.initializeApp(firebaseConfig);
 }
 
 /* ============ PRODUCT DATA STORE ============ */
@@ -759,27 +764,41 @@ const DEFAULT_PRODUCTS = [
   {id:4, name:"جاكيت شتوي", price:900, old:null, badge:"new", active:true, img:"https://placehold.co/600x750/ece5d3/2b3b68?text=Winter+Jacket"},
 ];
 
-// المنتجات بقت متزامنة لحظيًا مع Firestore، مش متخزنة جوه المتصفح بس.
-// أي تغيير (إضافة / توقيف / حذف) من أي جهاز بيوصل لكل الأجهزة التانية أوتوماتيك.
 let PRODUCTS = [];
-let productsReady = false;
 
-function listenToProducts(){
-  if(!db){ productsReady = true; renderProducts(); return; }
-  try{
-    db.collection('products').orderBy('id', 'desc').onSnapshot(snapshot => {
-      productsReady = true;
-      PRODUCTS = snapshot.docs.map(doc => doc.data());
-      renderProducts();
-    }, err => {
-      console.error('Firestore products error:', err);
-      productsReady = true;
-      renderProducts();
-    });
-  }catch(err){
-    console.error('Firestore products error:', err);
-    productsReady = true;
-    renderProducts();
+async function fetchProducts() {
+  if (useFirebase) {
+    try {
+      const snapshot = await firebase.database().ref('products').once('value');
+      if (snapshot.exists()) {
+        const data = snapshot.val();
+        return Array.isArray(data) ? data : Object.values(data);
+      }
+      return DEFAULT_PRODUCTS;
+    } catch (error) {
+      console.error("Firebase Error:", error);
+      return DEFAULT_PRODUCTS;
+    }
+  } else {
+    try {
+      const saved = localStorage.getItem(PRODUCTS_STORAGE_KEY);
+      return saved ? JSON.parse(saved) : DEFAULT_PRODUCTS;
+    } catch(e) {
+      return DEFAULT_PRODUCTS;
+    }
+  }
+}
+
+async function saveProducts(products) {
+  try {
+    if (useFirebase) {
+      await firebase.database().ref('products').set(products);
+    } else {
+      localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(products));
+    }
+  } catch (error) {
+    console.error("Save Error:", error);
+    localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(products));
   }
 }
 
@@ -836,10 +855,8 @@ function closeUserAuthModal() {
 function handleUserLogout() {
   setUserData(null);
   
-  // مسح بيانات لوحة التحكم وتحديث القائمة
   localStorage.removeItem(ADMIN_EMAIL_KEY);
   sessionStorage.removeItem('mrstore_admin_auth');
-  try{ firebase.auth().signOut().catch(()=>{}); }catch(err){}
   updateAdminNavVisibility();
   
   if (location.hash === '#admin') {
@@ -849,7 +866,7 @@ function handleUserLogout() {
   showToast('تم تسجيل الخروج');
 }
 
-/* ============ CREATE & TOGGLE PRODUCTS (التحكم بالمنتجات) ============ */
+/* ============ CREATE & TOGGLE PRODUCTS ============ */
 function openAddProductModal() {
   document.getElementById('addProductModal').classList.add('open');
   document.getElementById('addProductOverlay').classList.add('open');
@@ -860,57 +877,69 @@ function closeAddProductModal() {
   document.getElementById('addProductOverlay').classList.remove('open');
 }
 
+// عرض اسم الصورة المختارة بمجرد التحديد
+document.getElementById('prodImg').addEventListener('change', function() {
+  const fileName = this.files[0] ? this.files[0].name : 'لم يتم اختيار صورة';
+  document.getElementById('fileNameDisplay').textContent = fileName;
+});
+
+// التعديل الأساسي هنا: قراءة الصورة كملف بدل رابط
 document.getElementById('addProductForm').addEventListener('submit', async e => {
   e.preventDefault();
   const name = document.getElementById('prodName').value.trim();
   const price = Number(document.getElementById('prodPrice').value);
   const oldVal = document.getElementById('prodOldPrice').value;
   const old = oldVal ? Number(oldVal) : null;
-  const img = document.getElementById('prodImg').value.trim();
   const badge = document.getElementById('prodBadge').value || null;
 
-  const newProduct = {
-    id: Date.now(),
-    name,
-    price,
-    old,
-    badge,
-    active: true,
-    img
-  };
+  const fileInput = document.getElementById('prodImg');
+  
+  // التأكد من اختيار صورة
+  if (!fileInput.files || fileInput.files.length === 0) {
+    showToast('الرجاء اختيار صورة للمنتج ⚠️');
+    return;
+  }
 
-  try{
-    await db.collection('products').doc(String(newProduct.id)).set(newProduct);
+  const file = fileInput.files[0];
+  const reader = new FileReader();
+  
+  // تحويل الصورة لـ Base64 عشان تتسجل في الداتا بيز بسهولة
+  reader.onload = async function(event) {
+    const imgBase64 = event.target.result; 
+
+    const newProduct = { id: Date.now(), name, price, old, badge, active: true, img: imgBase64 };
+
+    PRODUCTS.unshift(newProduct);
+    await saveProducts(PRODUCTS);
+    renderProducts();
     closeAddProductModal();
     document.getElementById('addProductForm').reset();
+    document.getElementById('fileNameDisplay').textContent = 'لم يتم اختيار صورة';
     showToast('تمت إضافة المنتج بنجاح ✓');
-  }catch(err){
-    console.error(err);
-    showToast('⚠️ متعرفش يحفظ — سجّل دخول بجوجل كأدمن وجرّب تاني');
-  }
+  };
+  
+  // بدأ عملية القراءة
+  reader.readAsDataURL(file);
 });
 
 async function toggleProductActive(id) {
-  const p = PRODUCTS.find(p => p.id === id);
-  if (!p) return;
-  try{
-    await db.collection('products').doc(String(id)).update({ active: p.active === false ? true : false });
-    showToast('تم تغيير حالة المنتج ✓');
-  }catch(err){
-    console.error(err);
-    showToast('⚠️ متعرفش يحفظ — سجّل دخول بجوجل كأدمن وجرّب تاني');
-  }
+  PRODUCTS = PRODUCTS.map(p => {
+    if (p.id === id) {
+      return { ...p, active: p.active === false ? true : false };
+    }
+    return p;
+  });
+  await saveProducts(PRODUCTS);
+  renderProducts();
+  showToast('تم تغيير حالة المنتج ✓');
 }
 
 async function deleteProduct(id) {
   if (!confirm('متأكد إنك عايز تحذف المنتج ده نهائياً؟')) return;
-  try{
-    await db.collection('products').doc(String(id)).delete();
-    showToast('تم حذف المنتج ✓');
-  }catch(err){
-    console.error(err);
-    showToast('⚠️ متعرفش يحذف — سجّل دخول بجوجل كأدمن وجرّب تاني');
-  }
+  PRODUCTS = PRODUCTS.filter(p => p.id !== id);
+  await saveProducts(PRODUCTS);
+  renderProducts();
+  showToast('تم حذف المنتج ✓');
 }
 
 /* ============ RENDER PRODUCTS ============ */
@@ -920,7 +949,6 @@ function productCardHTML(p){
   const isActive = p.active !== false;
   const isAdmin = isAdminAuthed();
 
-  // زر الإضافة للعربة أو رسالة غير متوفر
   let buyBtnHTML = '';
   if (isActive) {
     buyBtnHTML = `<button class="btn-add" data-action="add" data-id="${p.id}">أضف للعربة</button>`;
@@ -928,7 +956,6 @@ function productCardHTML(p){
     buyBtnHTML = `<div class="out-of-stock-badge">المنتج ليس متوفر حالياً</div>`;
   }
 
-  // أدوات التحكم بالمنتج للأدمن فقط
   let adminControlsHTML = '';
   if (isAdmin) {
     adminControlsHTML = `
@@ -966,14 +993,6 @@ function productCardHTML(p){
 
 function renderProducts(){
   const grid = document.getElementById('productGrid');
-  if(!productsReady){
-    grid.innerHTML = `<div class="empty-state"><strong>بيتم تحميل المنتجات...</strong></div>`;
-    return;
-  }
-  if(PRODUCTS.length === 0){
-    grid.innerHTML = `<div class="empty-state"><strong>لسه مفيش منتجات</strong>المتجر هيتحدّث بمنتجات جديدة قريبًا، تابعونا.</div>`;
-    return;
-  }
   const term = state.search.trim();
   const filtered = PRODUCTS.filter(p =>
     (state.filter === 'all' || p.badge === state.filter) &&
@@ -1142,7 +1161,7 @@ checkoutForm.addEventListener('submit', e=>{
   const waUrl = `https://wa.me/${STORE_WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
   document.getElementById('waFallback').href = waUrl;
 
-  const order = {
+  addOrder({
     id: Date.now(),
     date: new Date().toLocaleString('ar-EG', {dateStyle:'medium', timeStyle:'short'}),
     name, phone, city, address,
@@ -1152,9 +1171,7 @@ checkoutForm.addEventListener('submit', e=>{
     }),
     total: cartTotal(),
     status: 'pending'
-  };
-  // بيتحفظ في الخلفية عشان يظهر في لوحة التحكم؛ من غير ما يعطّل إرسال واتساب لو النت بطيء
-  addOrder(order).catch(err => console.error('Firestore order save error:', err));
+  });
 
   checkoutForm.style.display = 'none';
   successView.classList.add('show');
@@ -1180,31 +1197,20 @@ function showToast(text){
 }
 
 /* ============ ADMIN ORDERS ============ */
-// الطلبات بقت في Firestore بدل localStorage، عشان طلب العميل (من جهازه)
-// يظهر في لوحة تحكم الأدمن (من جهاز تاني) — ده كان سبب إنك ماكنتش شايف الطلبات كلها.
+const ORDERS_KEY = 'mrstore_orders';
 const adminState = { status: 'all', search: '' };
-let ORDERS = [];
-let ordersListenerStarted = false;
 
-function listenToOrders(){
-  if(ordersListenerStarted) return; // مايتكررش لو دخلت لوحة التحكم أكتر من مرة
-  ordersListenerStarted = true;
-  if(!db) return;
-  try{
-    db.collection('orders').orderBy('id', 'desc').onSnapshot(snapshot => {
-      ORDERS = snapshot.docs.map(doc => doc.data());
-      renderOrders();
-    }, err => {
-      console.error('Firestore orders error:', err);
-      showToast('⚠️ متعرفش يحمّل الطلبات — سجّل دخول بجوجل كأدمن');
-    });
-  }catch(err){
-    console.error('Firestore orders error:', err);
-  }
+function getOrders(){
+  try{ return JSON.parse(localStorage.getItem(ORDERS_KEY)) || []; }
+  catch(err){ return []; }
 }
-
-async function addOrder(order){
-  await db.collection('orders').doc(String(order.id)).set(order);
+function saveOrders(orders){
+  localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
+}
+function addOrder(order){
+  const orders = getOrders();
+  orders.unshift(order);
+  saveOrders(orders);
 }
 
 function orderCardHTML(o){
@@ -1237,7 +1243,7 @@ function orderCardHTML(o){
 }
 
 function renderOrders(){
-  const orders = ORDERS;
+  const orders = getOrders();
   document.getElementById('statTotal').textContent = orders.length;
   document.getElementById('statPending').textContent = orders.filter(o=>o.status!=='delivered').length;
   document.getElementById('statDelivered').textContent = orders.filter(o=>o.status==='delivered').length;
@@ -1268,23 +1274,21 @@ document.getElementById('adminSearchInput').addEventListener('input', e=>{
   adminState.search = e.target.value;
   renderOrders();
 });
-document.getElementById('ordersList').addEventListener('click', async e=>{
+document.getElementById('ordersList').addEventListener('click', e=>{
   const btn = e.target.closest('button[data-action]');
   if(!btn) return;
   const id = btn.dataset.id;
-  try{
-    if(btn.dataset.action === 'deliver'){
-      await db.collection('orders').doc(id).update({status:'delivered'});
-    } else if(btn.dataset.action === 'undo'){
-      await db.collection('orders').doc(id).update({status:'pending'});
-    } else if(btn.dataset.action === 'delete'){
-      if(!confirm('متأكد إنك عايز تحذف الطلب ده؟')) return;
-      await db.collection('orders').doc(id).delete();
-    }
-  }catch(err){
-    console.error(err);
-    showToast('⚠️ متعرفش يحفظ التغيير — سجّل دخول بجوجل كأدمن');
+  let orders = getOrders();
+  if(btn.dataset.action === 'deliver'){
+    orders = orders.map(o => String(o.id) === id ? {...o, status:'delivered'} : o);
+  } else if(btn.dataset.action === 'undo'){
+    orders = orders.map(o => String(o.id) === id ? {...o, status:'pending'} : o);
+  } else if(btn.dataset.action === 'delete'){
+    if(!confirm('متأكد إنك عايز تحذف الطلب ده؟')) return;
+    orders = orders.filter(o => String(o.id) !== id);
   }
+  saveOrders(orders);
+  renderOrders();
 });
 
 /* ============ GOOGLE SIGN-IN ============ */
@@ -1299,26 +1303,15 @@ function updateAdminNavVisibility(){
     el.classList.toggle('is-visible', isAuthed);
   });
   
-  // ظهور زر إضافة منتج جديد للآدمن فقط
   const addBtn = document.getElementById('openAddProductBtn');
   if (addBtn) addBtn.style.display = isAuthed ? 'inline-flex' : 'none';
   
-  renderProducts(); // إعادة رسم المنتجات لإظهار أزرار التحكم للأدمن
+  renderProducts(); 
 }
 
 async function handleGoogleCredentialResponse(response){
   const googleErr = document.getElementById('googleLoginError');
   if (googleErr) googleErr.classList.remove('show');
-
-  // تسجيل الدخول في Firebase كمان بنفس حساب جوجل، عشان قاعدة البيانات
-  // (Firestore) تقدر تتعرف على الأدمن وتسمحله يعدّل المنتجات والطلبات
-  try{
-    const fbCredential = firebase.auth.GoogleAuthProvider.credential(response.credential);
-    await firebase.auth().signInWithCredential(fbCredential);
-  }catch(err){
-    console.error('Firebase auth error:', err);
-  }
-
   try{
     const res = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(response.credential)}`);
     if(!res.ok) throw new Error('token-invalid');
@@ -1326,7 +1319,6 @@ async function handleGoogleCredentialResponse(response){
     const email = payload.email;
     const verified = payload.email_verified === 'true' || payload.email_verified === true;
 
-    // حفظ بيانات المستخدم العامة
     setUserData({
       name: payload.name || payload.email,
       email: payload.email,
@@ -1335,7 +1327,6 @@ async function handleGoogleCredentialResponse(response){
     closeUserAuthModal();
     showToast(`أهلاً بك، ${payload.name || payload.email} 👋`);
 
-    // لو الإيميل مسموحله بإدارة المتجر
     if(email && verified && ADMIN_ALLOWED_EMAILS.includes(email)){
       localStorage.setItem(ADMIN_EMAIL_KEY, email);
       updateAdminNavVisibility();
@@ -1364,12 +1355,10 @@ function initGoogleSignIn(){
       callback: handleGoogleCredentialResponse 
     });
     
-    // زر تسجيل الدخول للوحة التحكم
     const btnAdmin = document.getElementById('googleSignInBtn');
     if(btnAdmin){
       google.accounts.id.renderButton(btnAdmin, { theme:'outline', size:'large', text:'signin_with', shape:'pill', locale:'ar', width:280 });
     }
-    // زر تسجيل الدخول للمستخدمين في النافذة
     const btnUser = document.getElementById('userGoogleSignInBtn');
     if(btnUser){
       google.accounts.id.renderButton(btnUser, { theme:'outline', size:'large', text:'continue_with', shape:'pill', locale:'ar', width:280 });
@@ -1382,15 +1371,8 @@ window.addEventListener('load', initGoogleSignIn);
 function showAdminDashboard(){
   document.getElementById('adminLoginWrap').style.display = 'none';
   document.getElementById('adminDashboard').style.display = 'block';
-  let fbUser = null;
-  try{ fbUser = firebase.auth().currentUser; }catch(err){}
-  const authedAsEl = document.getElementById('adminAuthedAs');
-  if (fbUser) {
-    authedAsEl.textContent = `مسجل دخول بحساب: ${fbUser.email}`;
-  } else {
-    authedAsEl.textContent = '⚠️ سجّل دخول بزرار جوجل عشان تقدر تضيف/تعدّل منتجات أو تشوف الطلبات';
-  }
-  listenToOrders();
+  const googleEmail = getAdminGoogleEmail();
+  document.getElementById('adminAuthedAs').textContent = googleEmail ? `مسجل دخول بحساب: ${googleEmail}` : '';
   renderOrders();
 }
 function showAdminLogin(){
@@ -1417,7 +1399,6 @@ document.getElementById('adminLogoutBtn').addEventListener('click', ()=>{
   sessionStorage.removeItem('mrstore_admin_auth');
   localStorage.removeItem(ADMIN_EMAIL_KEY);
   setUserData(null);
-  try{ firebase.auth().signOut().catch(()=>{}); }catch(err){}
   updateAdminNavVisibility();
   if(typeof google !== 'undefined' && google.accounts && google.accounts.id){
     google.accounts.id.disableAutoSelect();
@@ -1445,11 +1426,17 @@ const observer = new IntersectionObserver(entries=>{
 document.querySelectorAll('.reveal').forEach(el=>observer.observe(el));
 
 /* ============ INIT ============ */
-listenToProducts();
-renderCart();
-updateUserUI();
-updateAdminNavVisibility();
-checkRoute();
+async function initializeApp() {
+  PRODUCTS = await fetchProducts();
+  renderProducts();
+  renderCart();
+  updateUserUI();
+  updateAdminNavVisibility();
+  checkRoute();
+}
+
+initializeApp();
+
 </script>
 </body>
 </html>
