@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!--
-  MR Store — متجر إلكتروني (نسخة مطورة بالكامل شاملة الإدارة المتقدمة)
+  MR Store — متجر إلكتروني (نسخة مطورة بالكامل شاملة الإدارة المتقدمة ونظام تتبع الطلبات)
   ===================================================
 -->
 <html lang="ar" dir="rtl">
@@ -92,6 +92,8 @@ h1,h2,h3,h4{font-weight:inherit;}
 .btn-outline{border:2px solid var(--ink);background:transparent;}
 .btn-outline:hover{background:var(--ink);color:var(--paper);}
 .btn-block{width:100%;}
+.btn-danger{background:var(--stamp);color:#fff;}
+.btn-danger:hover{background:#8c2d1e;}
 
 /* ============ LABEL / EYEBROW ============ */
 .eyebrow{
@@ -107,7 +109,7 @@ h1,h2,h3,h4{font-weight:inherit;}
 .logo{display:flex;align-items:center;gap:10px;font-family:var(--ff-mono);font-weight:700;font-size:1.2rem;letter-spacing:.05em;}
 .logo svg{width:26px;height:26px;color:var(--denim);flex-shrink:0;}
 .main-nav{display:flex;gap:30px;}
-.main-nav a{font-size:.95rem;font-weight:500;color:var(--ink-soft);transition:color .2s;padding:6px 0;}
+.main-nav a{font-size:.95rem;font-weight:500;color:var(--ink-soft);transition:color .2s;padding:6px 0; cursor:pointer;}
 .main-nav a:hover{color:var(--ink);}
 .admin-nav-link{display:none;}
 .admin-nav-link.is-visible{display:inline;}
@@ -141,7 +143,7 @@ h1,h2,h3,h4{font-weight:inherit;}
 .mobile-menu.open{transform:translateY(0);}
 .mobile-menu-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:50px;}
 .mobile-menu nav{display:flex;flex-direction:column;gap:8px;}
-.mobile-menu nav a{font-family:var(--ff-display);font-size:2.6rem;padding:14px 4px;border-bottom:1px dashed var(--line);}
+.mobile-menu nav a{font-family:var(--ff-display);font-size:2.6rem;padding:14px 4px;border-bottom:1px dashed var(--line); cursor:pointer;}
 
 /* ============ HERO ============ */
 .hero{padding:64px 0 56px;}
@@ -406,6 +408,7 @@ h1,h2,h3,h4{font-weight:inherit;}
 .order-date{font-family:var(--ff-mono);font-size:.75rem;color:var(--ink-soft);display:block;margin-top:4px;}
 .order-status{font-family:var(--ff-mono);font-size:.66rem;font-weight:700;padding:6px 14px;border-radius:999px;letter-spacing:.05em;white-space:nowrap;height:fit-content;}
 .order-status.pending{background:#F3E6DA;color:var(--stamp);}
+.order-status.shipped{background:#FFF3CD;color:#856404;}
 .order-status.delivered{background:#DCEEE3;color:var(--ok);}
 .order-cust{display:grid;grid-template-columns:1fr 1fr;gap:10px 20px;margin-bottom:16px;font-size:.9rem;}
 .order-cust div span{display:block;font-family:var(--ff-mono);font-size:.63rem;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;}
@@ -450,6 +453,7 @@ h1,h2,h3,h4{font-weight:inherit;}
       <a href="#top">الرئيسية</a>
       <a href="#products">المنتجات</a>
       <a href="#footer">تواصل معنا</a>
+      <a onclick="openMyOrdersModal()">الطلبات</a>
       <a href="#admin" class="admin-nav-link" id="adminNavLink">لوحة التحكم</a>
     </nav>
     <div class="header-actions">
@@ -490,6 +494,7 @@ h1,h2,h3,h4{font-weight:inherit;}
     <a href="#top">الرئيسية</a>
     <a href="#products">المنتجات</a>
     <a href="#footer">تواصل معنا</a>
+    <a onclick="openMyOrdersModal()">الطلبات</a>
     <a href="#admin" class="admin-nav-link" id="adminNavLinkMobile">لوحة التحكم</a>
   </nav>
 </div>
@@ -544,7 +549,6 @@ h1,h2,h3,h4{font-weight:inherit;}
         </div>
         
         <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-          <!-- زر إضافة منتج يظهر للأدمن فقط -->
           <button class="btn btn-primary btn-sm" id="openAddProductBtn" style="display:none;" onclick="openAddProductModal()">+ إضافة منتج جديد</button>
           
           <div class="search-box">
@@ -579,6 +583,7 @@ h1,h2,h3,h4{font-weight:inherit;}
         <ul>
           <li><a href="#top">الرئيسية</a></li>
           <li><a href="#products">المنتجات</a></li>
+          <li><a style="cursor:pointer;" onclick="openMyOrdersModal()">تتبع طلبك</a></li>
         </ul>
       </div>
       <div class="footer-col">
@@ -601,6 +606,26 @@ h1,h2,h3,h4{font-weight:inherit;}
 <a href="#" id="waFloat" class="wa-float" target="_blank" rel="noopener" aria-label="تواصل عبر واتساب">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.5 8.5 0 0 1-8.9 8.49 8.6 8.6 0 0 1-3.8-.9L3 20l1-4.8A8.5 8.5 0 1 1 21 11.5z"/></svg>
 </a>
+
+<!-- ============ MY ORDERS MODAL (NEW) ============ -->
+<div class="overlay" id="myOrdersOverlay" onclick="closeMyOrdersModal()"></div>
+<div class="modal" id="myOrdersModal">
+  <div class="modal-head">
+    <h3>الطلبات المسبقة</h3>
+    <button class="icon-btn" onclick="closeMyOrdersModal()" aria-label="إغلاق">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
+    </button>
+  </div>
+  <div class="modal-body">
+    <div class="field" style="display:flex; gap:10px;">
+      <input type="text" id="trackOrderInput" placeholder="أدخل كود الطلب (مثل MR-123456)" style="flex:1;">
+      <button class="btn btn-outline" onclick="searchMyOrder()">تتبع</button>
+    </div>
+    <div id="myOrdersListContainer" style="margin-top:20px; border-top:2px dashed var(--line); padding-top:20px;">
+      <!-- Orders will be rendered here -->
+    </div>
+  </div>
+</div>
 
 <!-- ============ CART DRAWER ============ -->
 <div class="overlay" id="cartOverlay"></div>
@@ -651,6 +676,8 @@ h1,h2,h3,h4{font-weight:inherit;}
     <div class="success-view" id="successView">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
       <h4>طلبك جاهز</h4>
+      <p id="orderCodeDisplay" style="font-family:var(--ff-mono); font-weight:700; color:var(--denim); font-size:1.1rem; margin-bottom:10px;"></p>
+      <p>احتفظ بهذا الكود للرجوع إليه عند وجود مشكلة أو لتتبع طلبك.</p>
       <p>لو صفحة واتساب ماتفتحتش لوحدها، دوس على الزرار وكمّل الإرسال عشان نأكّد طلبك.</p>
       <a href="#" id="waFallback" target="_blank" rel="noopener" class="btn btn-primary btn-block">إرسال الطلب على واتساب</a>
     </div>
@@ -673,13 +700,10 @@ h1,h2,h3,h4{font-weight:inherit;}
         <div class="field"><label for="prodPrice">السعر الحالي (ج.م)</label><input type="number" id="prodPrice" required placeholder="450"></div>
         <div class="field"><label for="prodOldPrice">السعر القديم (اختياري)</label><input type="number" id="prodOldPrice" placeholder="550"></div>
       </div>
-      
       <div class="field">
         <label for="prodStock">المخزون المتوفر (Stock)</label>
         <input type="number" id="prodStock" required placeholder="مثال: 50" value="50">
       </div>
-
-      <!-- تحديد المقاسات -->
       <div class="field">
         <label>المقاسات المتاحة</label>
         <div class="size-checkboxes">
@@ -690,13 +714,10 @@ h1,h2,h3,h4{font-weight:inherit;}
           <label><input type="checkbox" name="prodSizes" value="XXL"> XXL</label>
         </div>
       </div>
-
-      <!-- رفع صورة من الجهاز -->
       <div class="field">
         <label for="prodImg">صورة المنتج (من الجهاز)</label>
         <input type="file" id="prodImg" accept="image/*" required>
       </div>
-
       <div class="field">
         <label for="prodBadge">الشارة (اختياري)</label>
         <select id="prodBadge">
@@ -869,7 +890,7 @@ h1,h2,h3,h4{font-weight:inherit;}
       <!-- Stats -->
       <div class="admin-stats">
         <div class="admin-stat-card"><div class="admin-stat-label">كل الطلبات</div><div class="admin-stat-value" id="statTotal">0</div></div>
-        <div class="admin-stat-card"><div class="admin-stat-label">قيد التوصيل</div><div class="admin-stat-value" id="statPending">0</div></div>
+        <div class="admin-stat-card"><div class="admin-stat-label">قيد الانتظار</div><div class="admin-stat-value" id="statPending">0</div></div>
         <div class="admin-stat-card"><div class="admin-stat-label">تم التوصيل</div><div class="admin-stat-value" id="statDelivered">0</div></div>
         <div class="admin-stat-card"><div class="admin-stat-label">إجمالي المبيعات</div><div class="admin-stat-value" id="statRevenue">0 ج.م</div></div>
       </div>
@@ -886,12 +907,13 @@ h1,h2,h3,h4{font-weight:inherit;}
         <div class="admin-toolbar">
           <div class="filter-tabs" id="adminFilterTabs">
             <button class="filter-tab active" data-status="all">الكل</button>
-            <button class="filter-tab" data-status="pending">قيد التوصيل</button>
+            <button class="filter-tab" data-status="pending">قيد الانتظار</button>
+            <button class="filter-tab" data-status="shipped">في الطريق</button>
             <button class="filter-tab" data-status="delivered">تم التوصيل</button>
           </div>
           <div class="search-box">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/></svg>
-            <input type="text" id="adminSearchInput" placeholder="دور بالاسم أو رقم الهاتف...">
+            <input type="text" id="adminSearchInput" placeholder="دور بالكود أو الاسم...">
           </div>
         </div>
         <div id="ordersList"></div>
@@ -927,7 +949,6 @@ h1,h2,h3,h4{font-weight:inherit;}
 
     </div>
   </div>
-
 </div>
 
 <script>
@@ -942,6 +963,8 @@ const PRODUCTS_STORAGE_KEY = 'mrstore_products_data';
 const BANNER_STORAGE_KEY = 'mrstore_banner_data';
 const COUPONS_STORAGE_KEY = 'mrstore_coupons_data';
 const REVIEWS_STORAGE_KEY = 'mrstore_reviews_data';
+const ORDERS_KEY = 'mrstore_orders';
+const MY_ORDER_CODES_KEY = 'mrstore_my_order_codes'; // لحفظ أكواد العميل محلياً
 
 /* ============ FIREBASE CONFIG ============ */
 const firebaseConfig = {
@@ -964,6 +987,7 @@ let PRODUCTS = [];
 let BANNER_DATA = { eyebrow: "NEW COLLECTION — NO. 014", title: "أناقتك تبدأ من هنا", sub: "تشكيلة رجالي مختارة بعناية. اطلب دلوقتي واستلم في بيتك بالدفع عند الاستلام.", stampText: "MR STORE", stampSub: "EST. 2026 · EGYPT", btnText: "تسوق دلوقتي", fineprint: "SHIPPING · ALL EGYPT" };
 let COUPONS = [];
 let REVIEWS = [];
+let ALL_ORDERS = []; // سيتم سحبها من قاعدة البيانات للأدمن وللعميل للتحقق
 
 const DEFAULT_PRODUCTS = [
   {id:1, name:"قميص كلاسيك أبيض", price:450, old:null, stock:100, badge:null, active:true, likes: 12, sizes: ["M", "L", "XL"], img:"https://placehold.co/600x750/ece5d3/221f1a?text=Classic+Shirt"},
@@ -997,6 +1021,20 @@ async function saveDataStore(path, storageKey, data) {
   } catch(e) { localStorage.setItem(storageKey, JSON.stringify(data)); }
 }
 
+/* ============ INIT DATA ============ */
+window.onload = async () => {
+    PRODUCTS = await fetchDataStore('products', PRODUCTS_STORAGE_KEY, DEFAULT_PRODUCTS);
+    BANNER_DATA = await fetchDataStore('banner', BANNER_STORAGE_KEY, BANNER_DATA);
+    COUPONS = await fetchDataStore('coupons', COUPONS_STORAGE_KEY, []);
+    REVIEWS = await fetchDataStore('reviews', REVIEWS_STORAGE_KEY, []);
+    ALL_ORDERS = await fetchDataStore('orders', ORDERS_KEY, []);
+    
+    updateBannerUI();
+    renderProducts();
+    updateUserUI();
+    updateAdminNavVisibility();
+}
+
 /* ============ STATE ============ */
 const state = { cart: [], filter: "all", search: "", appliedCoupon: null };
 function money(n){ return n.toLocaleString('en-US') + ' ج.م'; }
@@ -1016,10 +1054,24 @@ function updateUserUI() {
     document.getElementById('userNameDisplay').textContent = '';
   }
 }
+function getAdminGoogleEmail(){ return localStorage.getItem(ADMIN_EMAIL_KEY); }
 function isAdminAuthed(){ return sessionStorage.getItem('mrstore_admin_auth') === '1' || !!getAdminGoogleEmail(); }
+function updateAdminNavVisibility(){
+  const links = document.querySelectorAll('.admin-nav-link');
+  if(isAdminAuthed()) {
+    links.forEach(l => l.classList.add('is-visible'));
+    document.getElementById('editBannerBtn').style.display = 'inline-flex';
+    document.getElementById('openAddProductBtn').style.display = 'inline-flex';
+  } else {
+    links.forEach(l => l.classList.remove('is-visible'));
+    document.getElementById('editBannerBtn').style.display = 'none';
+    document.getElementById('openAddProductBtn').style.display = 'none';
+  }
+  renderProducts();
+}
+
 function openUserAuthModal() {
   document.getElementById('userAuthModal').classList.add('open'); document.getElementById('userAuthOverlay').classList.add('open');
-  if (typeof google !== 'undefined' && google.accounts && google.accounts.id) google.accounts.id.prompt();
 }
 function closeUserAuthModal() { document.getElementById('userAuthModal').classList.remove('open'); document.getElementById('userAuthOverlay').classList.remove('open'); }
 function handleUserLogout() {
@@ -1070,7 +1122,7 @@ document.getElementById('editBannerForm').addEventListener('submit', async (e) =
   showToast('تم تحديث البانر بنجاح ✓');
 });
 
-/* ============ ADD & EDIT PRODUCTS ============ */
+/* ============ PRODUCTS LOGIC ============ */
 let uploadedImageBase64 = "";
 document.getElementById('prodImg').addEventListener('change', e => {
   const file = e.target.files[0];
@@ -1102,7 +1154,6 @@ document.getElementById('addProductForm').addEventListener('submit', async e => 
   showToast('تمت إضافة المنتج بنجاح ✓');
 });
 
-// Edit Product
 let editUploadedImageBase64 = "";
 document.getElementById('editProdImg').addEventListener('change', e => {
   const file = e.target.files[0];
@@ -1119,9 +1170,7 @@ function openEditProductModal(id) {
   document.getElementById('editProdStock').value = p.stock !== undefined ? p.stock : 100;
   document.getElementById('editProdBadge').value = p.badge || '';
   
-  document.querySelectorAll('input[name="editProdSizes"]').forEach(cb => {
-    cb.checked = p.sizes && p.sizes.includes(cb.value);
-  });
+  document.querySelectorAll('input[name="editProdSizes"]').forEach(cb => { cb.checked = p.sizes && p.sizes.includes(cb.value); });
   
   editUploadedImageBase64 = p.img;
   document.getElementById('editProductModal').classList.add('open');
@@ -1145,37 +1194,24 @@ document.getElementById('editProductForm').addEventListener('submit', async e =>
   const sizeCheckboxes = document.querySelectorAll('input[name="editProdSizes"]:checked');
   const sizes = Array.from(sizeCheckboxes).map(cb => cb.value);
 
-  PRODUCTS = PRODUCTS.map(p => {
-    if(p.id === id) {
-      return { ...p, name, price, old, stock, badge, sizes, img: editUploadedImageBase64 };
-    }
-    return p;
-  });
+  PRODUCTS = PRODUCTS.map(p => { if(p.id === id) return { ...p, name, price, old, stock, badge, sizes, img: editUploadedImageBase64 }; return p; });
 
   await saveDataStore('products', PRODUCTS_STORAGE_KEY, PRODUCTS);
-  renderProducts(); closeEditProductModal();
-  showToast('تم تعديل المنتج بنجاح ✓');
+  renderProducts(); closeEditProductModal(); showToast('تم تعديل المنتج بنجاح ✓');
 });
 
-// Reordering & Active Status
 async function moveProductUp(id) {
   const index = PRODUCTS.findIndex(p => p.id === id);
   if (index > 0) {
-    const temp = PRODUCTS[index - 1];
-    PRODUCTS[index - 1] = PRODUCTS[index];
-    PRODUCTS[index] = temp;
-    await saveDataStore('products', PRODUCTS_STORAGE_KEY, PRODUCTS);
-    renderProducts();
+    const temp = PRODUCTS[index - 1]; PRODUCTS[index - 1] = PRODUCTS[index]; PRODUCTS[index] = temp;
+    await saveDataStore('products', PRODUCTS_STORAGE_KEY, PRODUCTS); renderProducts();
   }
 }
 async function moveProductDown(id) {
   const index = PRODUCTS.findIndex(p => p.id === id);
   if (index > -1 && index < PRODUCTS.length - 1) {
-    const temp = PRODUCTS[index + 1];
-    PRODUCTS[index + 1] = PRODUCTS[index];
-    PRODUCTS[index] = temp;
-    await saveDataStore('products', PRODUCTS_STORAGE_KEY, PRODUCTS);
-    renderProducts();
+    const temp = PRODUCTS[index + 1]; PRODUCTS[index + 1] = PRODUCTS[index]; PRODUCTS[index] = temp;
+    await saveDataStore('products', PRODUCTS_STORAGE_KEY, PRODUCTS); renderProducts();
   }
 }
 
@@ -1190,49 +1226,6 @@ async function deleteProduct(id) {
   await saveDataStore('products', PRODUCTS_STORAGE_KEY, PRODUCTS);
   renderProducts(); showToast('تم حذف المنتج ✓');
 }
-
-/* ============ REVIEWS SYSTEM ============ */
-function viewProductReviews(prodId) {
-  const list = document.getElementById('productReviewsList');
-  document.getElementById('revProdId').value = prodId;
-  const prodRevs = REVIEWS.filter(r => r.prodId === prodId);
-  if (prodRevs.length === 0) {
-    list.innerHTML = `<div style="text-align:center; color:var(--ink-soft); padding:20px;">لا توجد تقييمات لهذا المنتج بعد.</div>`;
-  } else {
-    list.innerHTML = prodRevs.map(r => `
-      <div style="border-bottom:1px dashed var(--line); padding:10px 0;">
-        <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
-          <strong>${r.userName}</strong>
-          <span style="color:var(--brass);">${'⭐'.repeat(r.rating)}</span>
-        </div>
-        <p style="color:var(--ink-soft);">${r.text}</p>
-      </div>
-    `).join('');
-  }
-  document.getElementById('reviewsModal').classList.add('open');
-  document.getElementById('reviewsOverlay').classList.add('open');
-}
-function closeReviewsModal() {
-  document.getElementById('reviewsModal').classList.remove('open');
-  document.getElementById('reviewsOverlay').classList.remove('open');
-}
-document.getElementById('addReviewForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const user = getUserData();
-  if(!user) { showToast('يجب تسجيل الدخول لإضافة تقييم!'); openUserAuthModal(); return; }
-  
-  const prodId = Number(document.getElementById('revProdId').value);
-  const rating = Number(document.getElementById('revRating').value);
-  const text = document.getElementById('revText').value.trim();
-  
-  const newRev = { id: Date.now(), prodId, userName: user.name.split(' ')[0], rating, text };
-  REVIEWS.push(newRev);
-  await saveDataStore('reviews', REVIEWS_STORAGE_KEY, REVIEWS);
-  showToast('تمت إضافة تقييمك ✓');
-  document.getElementById('addReviewForm').reset();
-  viewProductReviews(prodId); // refresh
-  if(isAdminAuthed()) renderAdminReviews();
-});
 
 /* ============ RENDER PRODUCTS ============ */
 function productCardHTML(p){
@@ -1277,10 +1270,7 @@ function productCardHTML(p){
       <div class="product-img">${badge}<img src="${p.img}" alt="${p.name}" loading="lazy"></div>
       <div class="product-perf"></div>
       <div class="product-info">
-        <div style="display:flex; justify-content:space-between; align-items:start;">
-          ${sizesHTML}
-          ${stockBadge}
-        </div>
+        <div style="display:flex; justify-content:space-between; align-items:start;">${sizesHTML}${stockBadge}</div>
         <h3 class="product-name">${p.name}</h3>
         <div class="product-price-row">
           <div class="price-wrap"><span class="product-price">${money(p.price)}</span>${oldPrice}</div>
@@ -1313,7 +1303,9 @@ function renderProducts(){
   grid.innerHTML = filtered.map(productCardHTML).join('');
 }
 
-/* ============ FILTER TABS + SEARCH ============ */
+document.getElementById('filterTabs').addEventListener('click', e=>{ const btn = e.target.closest('.filter-tab'); if(btn) applyFilter(btn.dataset.badge); });
+document.getElementById('searchInput').addEventListener('input', e=>{ state.search = e.target.value; renderProducts(); });
+
 function applyFilter(badge){
   if (badge === 'favorites') {
     const user = getUserData();
@@ -1323,8 +1315,6 @@ function applyFilter(badge){
   document.querySelectorAll('#filterTabs .filter-tab').forEach(btn=>btn.classList.toggle('active', btn.dataset.badge === badge));
   renderProducts();
 }
-document.getElementById('filterTabs').addEventListener('click', e=>{ const btn = e.target.closest('.filter-tab'); if(btn) applyFilter(btn.dataset.badge); });
-document.getElementById('searchInput').addEventListener('input', e=>{ state.search = e.target.value; renderProducts(); });
 
 /* ============ CART & LIKE LOGIC ============ */
 function findProduct(id){ return PRODUCTS.find(p=>p.id===id); }
@@ -1339,8 +1329,7 @@ function addToCart(id){
   
   if(item) item.qty++;
   else state.cart.push({id, qty:1});
-  renderCart();
-  showToast('تمت الإضافة للعربة ✓');
+  renderCart(); showToast('تمت الإضافة للعربة ✓');
 }
 
 async function handleLikeAction(id) {
@@ -1370,9 +1359,7 @@ function changeQty(id, delta){
 function cartCount(){ return state.cart.reduce((s,i)=>s+i.qty,0); }
 function cartTotal(){ 
   let total = state.cart.reduce((s,i)=>s+(findProduct(i.id) ? findProduct(i.id).price : 0)*i.qty,0);
-  if (state.appliedCoupon) {
-      total = total - (total * (state.appliedCoupon.discount / 100));
-  }
+  if (state.appliedCoupon) { total = total - (total * (state.appliedCoupon.discount / 100)); }
   return total;
 }
 
@@ -1380,14 +1367,8 @@ function applyCouponCode() {
   const code = document.getElementById('couponInput').value.trim().toUpperCase();
   const coupon = COUPONS.find(c => c.code === code);
   if (coupon) {
-      state.appliedCoupon = coupon;
-      showToast('تم تطبيق الكوبون!');
-      renderCart();
-  } else {
-      showToast('كوبون غير صالح');
-      state.appliedCoupon = null;
-      renderCart();
-  }
+      state.appliedCoupon = coupon; showToast('تم تطبيق الكوبون!'); renderCart();
+  } else { showToast('كوبون غير صالح'); state.appliedCoupon = null; renderCart(); }
 }
 
 function cartItemHTML(i){
@@ -1400,12 +1381,12 @@ function cartItemHTML(i){
       <h4>${p.name}</h4>
       <span class="cart-item-price">${money(p.price)}</span>
       <div class="qty-control">
-        <button data-action="dec" data-id="${p.id}" aria-label="تقليل">−</button>
+        <button data-action="dec" data-id="${p.id}">−</button>
         <span>${i.qty}</span>
-        <button data-action="inc" data-id="${p.id}" aria-label="زيادة">+</button>
+        <button data-action="inc" data-id="${p.id}">+</button>
       </div>
     </div>
-    <button class="cart-item-remove" data-action="remove" data-id="${p.id}" aria-label="حذف">×</button>
+    <button class="cart-item-remove" data-action="remove" data-id="${p.id}">×</button>
   </div>`;
 }
 
@@ -1417,15 +1398,9 @@ function renderCart(){
   badge.style.display = count>0 ? 'flex' : 'none';
   wrap.innerHTML = state.cart.length === 0 ? `<div class="cart-empty">لسه مفيش حاجة في العربة.<br>يلا نتصفح المنتجات؟</div>` : state.cart.map(cartItemHTML).join('');
   
-  const origTotal = state.cart.reduce((s,i)=>s+(findProduct(i.id) ? findProduct(i.id).price : 0)*i.qty,0);
   const finalTotal = cartTotal();
-  
-  if (state.appliedCoupon) {
-      document.getElementById('discountRow').style.display = 'flex';
-      document.getElementById('discountAmountText').textContent = state.appliedCoupon.discount + '%';
-  } else {
-      document.getElementById('discountRow').style.display = 'none';
-  }
+  if (state.appliedCoupon) { document.getElementById('discountRow').style.display = 'flex'; document.getElementById('discountAmountText').textContent = state.appliedCoupon.discount + '%'; } 
+  else { document.getElementById('discountRow').style.display = 'none'; }
 
   document.getElementById('cartSubtotal').textContent = money(finalTotal);
   document.getElementById('checkoutTotal').textContent = money(finalTotal);
@@ -1452,7 +1427,6 @@ document.getElementById('cartItems').addEventListener('click', e=>{
   if(btn.dataset.action==='remove') removeFromCart(id);
 });
 
-/* ============ CART DRAWER TOGGLE ============ */
 const cartDrawer = document.getElementById('cartDrawer');
 const cartOverlay = document.getElementById('cartOverlay');
 function openCart(){ cartDrawer.classList.add('open'); cartOverlay.classList.add('open'); }
@@ -1461,13 +1435,7 @@ document.getElementById('cartToggle').addEventListener('click', openCart);
 document.getElementById('cartCloseBtn').addEventListener('click', closeCart);
 cartOverlay.addEventListener('click', closeCart);
 
-/* ============ MOBILE MENU ============ */
-const mobileMenu = document.getElementById('mobileMenu');
-document.getElementById('menuOpenBtn').addEventListener('click', ()=>mobileMenu.classList.add('open'));
-document.getElementById('menuCloseBtn').addEventListener('click', ()=>mobileMenu.classList.remove('open'));
-mobileMenu.querySelectorAll('a').forEach(a=>a.addEventListener('click', ()=>mobileMenu.classList.remove('open')));
-
-/* ============ CHECKOUT MODAL ============ */
+/* ============ CHECKOUT & ORDER CREATION ============ */
 const checkoutModal = document.getElementById('checkoutModal');
 const checkoutOverlay = document.getElementById('checkoutOverlay');
 const checkoutForm = document.getElementById('checkoutForm');
@@ -1494,12 +1462,14 @@ checkoutForm.addEventListener('submit', async e=>{
   const city = document.getElementById('custCity').value.trim();
   const address = document.getElementById('custAddress').value.trim();
 
-  let msg = `طلب جديد من MR Store\n\nالاسم: ${name}\nالهاتف: ${phone}\nالمحافظة: ${city}\nالعنوان: ${address}\n\nالمنتجات:\n`;
+  // Create Unique Order Code
+  const newOrderCode = 'MR-' + Math.floor(100000 + Math.random() * 900000);
+
+  let msg = `طلب جديد من MR Store\nكود الطلب: ${newOrderCode}\n\nالاسم: ${name}\nالهاتف: ${phone}\nالمحافظة: ${city}\nالعنوان: ${address}\n\nالمنتجات:\n`;
   state.cart.forEach(i=>{
     const p = findProduct(i.id);
     if(p) {
         msg += `- ${p.name} × ${i.qty} = ${money(p.price*i.qty)}\n`;
-        // نقص المخزون
         p.stock = Math.max(0, (p.stock !== undefined ? p.stock : 100) - i.qty);
     }
   });
@@ -1510,38 +1480,111 @@ checkoutForm.addEventListener('submit', async e=>{
   const waUrl = `https://wa.me/${STORE_WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
   document.getElementById('waFallback').href = waUrl;
 
-  addOrder({
+  const orderData = {
     id: Date.now(),
+    code: newOrderCode,
     date: new Date().toLocaleString('ar-EG', {dateStyle:'medium', timeStyle:'short'}),
     name, phone, city, address,
     items: state.cart.map(i=>{ const p = findProduct(i.id); return {name: p ? p.name : 'منتج', qty:i.qty, price: p ? p.price : 0}; }),
-    total: cartTotal(), status: 'pending'
-  });
+    total: cartTotal(), 
+    status: 'pending' // pending -> shipped -> delivered
+  };
 
-  // حفظ التعديلات على المخزون
+  // Save order globally
+  ALL_ORDERS.unshift(orderData);
+  await saveDataStore('orders', ORDERS_KEY, ALL_ORDERS);
+
+  // Save order code to user's local storage for tracking
+  let myCodes = JSON.parse(localStorage.getItem(MY_ORDER_CODES_KEY) || '[]');
+  myCodes.push(newOrderCode);
+  localStorage.setItem(MY_ORDER_CODES_KEY, JSON.stringify(myCodes));
+
+  // Update inventory
   await saveDataStore('products', PRODUCTS_STORAGE_KEY, PRODUCTS);
 
+  // UI Updates
+  document.getElementById('orderCodeDisplay').textContent = `كود الطلب: ${newOrderCode}`;
   checkoutForm.style.display = 'none';
   successView.classList.add('show');
   try{ window.open(waUrl, '_blank'); }catch(err){ }
 
   state.cart = []; state.appliedCoupon = null;
   renderCart(); renderProducts(); checkoutForm.reset(); document.getElementById('couponInput').value = '';
+  
+  // Refresh Admin view if open
+  if(isAdminAuthed()) { renderAdminOrders(); updateAdminStats(); }
 });
 
-document.getElementById('waFloat').href = `https://wa.me/${STORE_WHATSAPP_NUMBER}?text=${encodeURIComponent('عايز أستفسر عن منتج في MR Store')}`;
-
-/* ============ TOAST ============ */
-let toastTimer;
-function showToast(text){
-  const toast = document.getElementById('toast');
-  toast.textContent = text; toast.classList.add('show');
-  clearTimeout(toastTimer); toastTimer = setTimeout(()=>toast.classList.remove('show'), 2400);
+/* ============ MY ORDERS / TRACKING SYSTEM ============ */
+function openMyOrdersModal() {
+  document.getElementById('myOrdersModal').classList.add('open');
+  document.getElementById('myOrdersOverlay').classList.add('open');
+  renderMyOrders();
+}
+function closeMyOrdersModal() {
+  document.getElementById('myOrdersModal').classList.remove('open');
+  document.getElementById('myOrdersOverlay').classList.remove('open');
 }
 
-/* ============ ADMIN ORDERS & TABS ============ */
-const ORDERS_KEY = 'mrstore_orders';
-const adminState = { status: 'all', search: '' };
+function renderMyOrders(specificCode = null) {
+  const container = document.getElementById('myOrdersListContainer');
+  let myCodes = JSON.parse(localStorage.getItem(MY_ORDER_CODES_KEY) || '[]');
+  
+  let ordersToShow = ALL_ORDERS.filter(o => specificCode ? o.code === specificCode : myCodes.includes(o.code));
+
+  if (ordersToShow.length === 0) {
+    container.innerHTML = `<div style="text-align:center; color:var(--ink-soft); font-size:0.9rem;">لا توجد طلبات سابقة مسجلة أو الكود غير صحيح.</div>`;
+    return;
+  }
+
+  container.innerHTML = ordersToShow.map(o => {
+    let statusText = "قيد الانتظار"; let statusColor = "var(--stamp)";
+    if(o.status === 'shipped') { statusText = "المنتج في الطريق"; statusColor = "#A9762E"; }
+    else if(o.status === 'delivered') { statusText = "تم التوصيل"; statusColor = "var(--ok)"; }
+
+    let cancelBtn = "";
+    if (o.status === 'pending') {
+      cancelBtn = `<button class="btn btn-sm btn-danger" style="margin-top:10px; width:100%;" onclick="customerCancelOrder(${o.id})">إلغاء وحذف الطلب 🗑️</button>`;
+    }
+
+    return `
+    <div style="background:var(--canvas-deep); border-radius:var(--radius-s); padding:16px; margin-bottom:12px;">
+      <div style="display:flex; justify-content:space-between; margin-bottom:10px; font-family:var(--ff-mono); font-weight:700;">
+        <span style="color:var(--denim);">${o.code}</span>
+        <span style="color:${statusColor}; font-size:0.8rem;">${statusText}</span>
+      </div>
+      <div style="font-size:0.8rem; color:var(--ink-soft); margin-bottom:8px;">التاريخ: ${o.date}</div>
+      <ul style="font-size:0.85rem; margin-bottom:10px;">
+        ${o.items.map(i => `<li>- ${i.name} (${i.qty})</li>`).join('')}
+      </ul>
+      <div style="font-weight:700; font-size:0.95rem;">الإجمالي: ${money(o.total)}</div>
+      ${cancelBtn}
+    </div>`;
+  }).join('');
+}
+
+function searchMyOrder() {
+  const code = document.getElementById('trackOrderInput').value.trim().toUpperCase();
+  if(!code) return renderMyOrders();
+  renderMyOrders(code);
+}
+
+async function customerCancelOrder(id) {
+  if(!confirm('هل أنت متأكد من إلغاء هذا الطلب؟')) return;
+  const orderIndex = ALL_ORDERS.findIndex(o => o.id === id);
+  if(orderIndex > -1 && ALL_ORDERS[orderIndex].status === 'pending') {
+    ALL_ORDERS.splice(orderIndex, 1);
+    await saveDataStore('orders', ORDERS_KEY, ALL_ORDERS);
+    showToast('تم إلغاء الطلب بنجاح ✓');
+    renderMyOrders();
+    if(isAdminAuthed()) { renderAdminOrders(); updateAdminStats(); }
+  } else {
+    showToast('لا يمكن إلغاء الطلب في هذه المرحلة');
+  }
+}
+
+/* ============ ADMIN ORDERS LOGIC (COMPLETING THE CUT-OFF) ============ */
+let adminOrderFilter = 'all';
 
 function switchAdminTab(tabName) {
   document.querySelectorAll('#adminMainTabs button').forEach(b => b.classList.remove('active'));
@@ -1549,272 +1592,138 @@ function switchAdminTab(tabName) {
   document.getElementById('adminTabOrders').style.display = tabName === 'orders' ? 'block' : 'none';
   document.getElementById('adminTabCoupons').style.display = tabName === 'coupons' ? 'block' : 'none';
   document.getElementById('adminTabReviews').style.display = tabName === 'reviews' ? 'block' : 'none';
-  if(tabName === 'coupons') renderAdminCoupons();
-  if(tabName === 'reviews') renderAdminReviews();
+  
+  if (tabName === 'orders') { renderAdminOrders(); updateAdminStats(); }
 }
 
-function getOrders(){ try{ return JSON.parse(localStorage.getItem(ORDERS_KEY)) || []; } catch(err){ return []; } }
-function saveOrders(orders){ localStorage.setItem(ORDERS_KEY, JSON.stringify(orders)); }
-function addOrder(order){ const orders = getOrders(); orders.unshift(order); saveOrders(orders); }
+function updateAdminStats() {
+  const pending = ALL_ORDERS.filter(o => o.status === 'pending').length;
+  const delivered = ALL_ORDERS.filter(o => o.status === 'delivered').length;
+  const totalRev = ALL_ORDERS.filter(o => o.status === 'delivered').reduce((sum, o) => sum + o.total, 0);
 
-function orderCardHTML(o){
-  const itemsHTML = o.items.map(i=>`<div><span>${i.name} × ${i.qty}</span><span>${money(i.price*i.qty)}</span></div>`).join('');
-  const isDelivered = o.status === 'delivered';
-  return `
-  <div class="order-card">
-    <div class="order-card-head">
-      <div><span class="order-num">#${String(o.id).slice(-5)}</span><span class="order-date">${o.date}</span></div>
-      <span class="order-status ${isDelivered ? 'delivered' : 'pending'}">${isDelivered ? 'تم التوصيل' : 'قيد التوصيل'}</span>
-    </div>
-    <div class="order-cust">
-      <div><span>الاسم</span>${o.name}</div>
-      <div><span>الهاتف</span><a href="tel:${o.phone}">${o.phone}</a></div>
-      <div><span>المحافظة</span>${o.city}</div>
-      <div><span>العنوان</span>${o.address}</div>
-    </div>
-    <div class="order-items">${itemsHTML}</div>
-    <div class="order-total-row"><span>الإجمالي</span><span>${money(o.total)}</span></div>
-    <div class="order-actions">
-      ${isDelivered ? `<button class="btn-undo" data-action="undo" data-id="${o.id}">رجّعه قيد التوصيل</button>` : `<button class="btn-mark" data-action="deliver" data-id="${o.id}">تم التوصيل ✓</button>`}
-      <button class="btn-delete" data-action="delete" data-id="${o.id}">حذف</button>
-    </div>
-  </div>`;
+  document.getElementById('statTotal').textContent = ALL_ORDERS.length;
+  document.getElementById('statPending').textContent = pending;
+  document.getElementById('statDelivered').textContent = delivered;
+  document.getElementById('statRevenue').textContent = totalRev + ' ج.م';
 }
 
-function renderOrders(){
-  const orders = getOrders();
-  document.getElementById('statTotal').textContent = orders.length;
-  document.getElementById('statPending').textContent = orders.filter(o=>o.status!=='delivered').length;
-  document.getElementById('statDelivered').textContent = orders.filter(o=>o.status==='delivered').length;
-  document.getElementById('statRevenue').textContent = money(orders.reduce((s,o)=>s+o.total,0));
-
-  const term = adminState.search.trim();
-  const filtered = orders.filter(o=>{
-    const statusMatch = adminState.status === 'all' || (adminState.status === 'delivered' ? o.status === 'delivered' : o.status !== 'delivered');
-    const termMatch = term === '' || o.name.includes(term) || o.phone.includes(term);
-    return statusMatch && termMatch;
+function renderAdminOrders() {
+  const list = document.getElementById('ordersList');
+  const term = document.getElementById('adminSearchInput').value.trim().toLowerCase();
+  
+  const filtered = ALL_ORDERS.filter(o => {
+    if (adminOrderFilter !== 'all' && o.status !== adminOrderFilter) return false;
+    if (term) {
+      if (!o.name.toLowerCase().includes(term) && !o.phone.includes(term) && !o.code.toLowerCase().includes(term)) return false;
+    }
+    return true;
   });
 
-  const list = document.getElementById('ordersList');
-  list.innerHTML = filtered.length === 0 ? `<div class="admin-empty"><strong>لسه مفيش طلبات</strong>الطلبات اللي هتوصل من العملاء هتظهر هنا.</div>` : filtered.map(orderCardHTML).join('');
+  if (filtered.length === 0) {
+    list.innerHTML = `<div class="admin-empty"><strong>لا توجد طلبات</strong></div>`;
+    return;
+  }
+
+  list.innerHTML = filtered.map(o => {
+    let statBadge = `<span class="order-status pending">قيد الانتظار</span>`;
+    if (o.status === 'shipped') statBadge = `<span class="order-status shipped">في الطريق</span>`;
+    if (o.status === 'delivered') statBadge = `<span class="order-status delivered">تم التوصيل</span>`;
+
+    let actions = '';
+    if (o.status === 'pending') {
+      actions += `<button class="btn-mark" onclick="changeOrderStatus(${o.id}, 'shipped')">موافقة (في الطريق)</button>`;
+    } else if (o.status === 'shipped') {
+      actions += `<button class="btn-mark" onclick="changeOrderStatus(${o.id}, 'delivered')">تم التوصيل ✔️</button>`;
+      actions += `<button class="btn-undo" onclick="changeOrderStatus(${o.id}, 'pending')">تراجع</button>`;
+    } else {
+      actions += `<button class="btn-undo" onclick="changeOrderStatus(${o.id}, 'shipped')">تراجع</button>`;
+    }
+
+    return `
+    <div class="order-card">
+      <div class="order-card-head">
+        <div><span class="order-num">${o.code}</span><span class="order-date">${o.date}</span></div>
+        ${statBadge}
+      </div>
+      <div class="order-cust">
+        <div><span>الاسم</span>${o.name}</div>
+        <div><span>الموبايل</span>${o.phone}</div>
+        <div><span>المحافظة</span>${o.city}</div>
+        <div><span>العنوان</span>${o.address}</div>
+      </div>
+      <div class="order-items">
+        ${o.items.map(i => `<div><span>${i.qty}× ${i.name}</span><span>${money(i.price * i.qty)}</span></div>`).join('')}
+      </div>
+      <div class="order-total-row"><span>الإجمالي</span><span>${money(o.total)}</span></div>
+      <div class="order-actions">
+        ${actions}
+        <button class="btn-delete" onclick="adminDeleteOrder(${o.id})">حذف الطلب</button>
+      </div>
+    </div>`;
+  }).join('');
 }
 
-document.getElementById('adminFilterTabs').addEventListener('click', e=>{
+document.getElementById('adminFilterTabs').addEventListener('click', e => {
   const btn = e.target.closest('.filter-tab');
   if(!btn) return;
-  adminState.status = btn.dataset.status;
-  document.querySelectorAll('#adminFilterTabs .filter-tab').forEach(b=>b.classList.toggle('active', b===btn));
-  renderOrders();
-});
-document.getElementById('adminSearchInput').addEventListener('input', e=>{ adminState.search = e.target.value; renderOrders(); });
-document.getElementById('ordersList').addEventListener('click', e=>{
-  const btn = e.target.closest('button[data-action]');
-  if(!btn) return;
-  const id = btn.dataset.id;
-  let orders = getOrders();
-  if(btn.dataset.action === 'deliver'){ orders = orders.map(o => String(o.id) === id ? {...o, status:'delivered'} : o); } 
-  else if(btn.dataset.action === 'undo'){ orders = orders.map(o => String(o.id) === id ? {...o, status:'pending'} : o); } 
-  else if(btn.dataset.action === 'delete'){ if(!confirm('متأكد إنك عايز تحذف الطلب ده؟')) return; orders = orders.filter(o => String(o.id) !== id); }
-  saveOrders(orders); renderOrders();
+  document.querySelectorAll('#adminFilterTabs .filter-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  adminOrderFilter = btn.dataset.status;
+  renderAdminOrders();
 });
 
-/* ============ ADMIN COUPONS & REVIEWS ============ */
-function renderAdminCoupons() {
-  const t = document.getElementById('couponsListTable');
-  if (COUPONS.length === 0) { t.innerHTML = '<tr><td colspan="4" style="text-align:center;">لا توجد كوبونات</td></tr>'; return; }
-  t.innerHTML = COUPONS.map(c => `
-    <tr>
-      <td><strong style="font-family:var(--ff-mono);">${c.code}</strong></td>
-      <td>${c.discount}%</td>
-      <td>مفعل</td>
-      <td><button onclick="deleteCoupon('${c.code}')" style="color:var(--stamp); font-weight:700;">حذف</button></td>
-    </tr>
-  `).join('');
+document.getElementById('adminSearchInput').addEventListener('input', renderAdminOrders);
+
+async function changeOrderStatus(id, newStatus) {
+  ALL_ORDERS = ALL_ORDERS.map(o => o.id === id ? { ...o, status: newStatus } : o);
+  await saveDataStore('orders', ORDERS_KEY, ALL_ORDERS);
+  renderAdminOrders();
+  updateAdminStats();
 }
-document.getElementById('addCouponForm').addEventListener('submit', async (e) => {
+
+async function adminDeleteOrder(id) {
+  if (!confirm('تأكيد حذف الطلب نهائياً من قاعدة البيانات؟')) return;
+  ALL_ORDERS = ALL_ORDERS.filter(o => o.id !== id);
+  await saveDataStore('orders', ORDERS_KEY, ALL_ORDERS);
+  renderAdminOrders();
+  updateAdminStats();
+}
+
+/* ============ ADMIN AUTH AND ROUTING ============ */
+window.addEventListener('hashchange', () => {
+  if (location.hash === '#admin') {
+    document.getElementById('adminView').classList.add('open');
+    if (isAdminAuthed()) { document.getElementById('adminLoginWrap').style.display = 'none'; document.getElementById('adminDashboard').style.display = 'block'; updateAdminStats(); renderAdminOrders(); } 
+    else { document.getElementById('adminLoginWrap').style.display = 'flex'; document.getElementById('adminDashboard').style.display = 'none'; }
+  } else { document.getElementById('adminView').classList.remove('open'); }
+});
+if (location.hash === '#admin') { window.dispatchEvent(new Event('hashchange')); }
+
+document.getElementById('adminLoginForm').addEventListener('submit', (e) => {
   e.preventDefault();
-  const code = document.getElementById('newCouponCode').value.trim().toUpperCase();
-  const discount = Number(document.getElementById('newCouponDisc').value);
-  if (COUPONS.find(c => c.code === code)) { showToast('الكوبون ده موجود بالفعل!'); return; }
-  COUPONS.push({ code, discount });
-  await saveDataStore('coupons', COUPONS_STORAGE_KEY, COUPONS);
-  renderAdminCoupons();
-  document.getElementById('addCouponForm').reset();
-  showToast('تمت إضافة الكوبون ✓');
-});
-async function deleteCoupon(code) {
-  if(!confirm('حذف الكوبون؟')) return;
-  COUPONS = COUPONS.filter(c => c.code !== code);
-  await saveDataStore('coupons', COUPONS_STORAGE_KEY, COUPONS);
-  renderAdminCoupons();
-}
-
-function renderAdminReviews() {
-  const t = document.getElementById('adminReviewsTable');
-  if (REVIEWS.length === 0) { t.innerHTML = '<tr><td colspan="5" style="text-align:center;">لا توجد تقييمات</td></tr>'; return; }
-  t.innerHTML = REVIEWS.map(r => {
-    const p = findProduct(r.prodId);
-    return `
-    <tr>
-      <td>${p ? p.name : 'منتج محذوف'}</td>
-      <td>${r.userName}</td>
-      <td style="color:var(--brass);">${'⭐'.repeat(r.rating)}</td>
-      <td>${r.text.substring(0, 30)}...</td>
-      <td><button onclick="deleteReview(${r.id})" style="color:var(--stamp); font-weight:700;">حذف</button></td>
-    </tr>
-  `;}).join('');
-}
-async function deleteReview(id) {
-  if(!confirm('حذف التقييم؟')) return;
-  REVIEWS = REVIEWS.filter(r => r.id !== id);
-  await saveDataStore('reviews', REVIEWS_STORAGE_KEY, REVIEWS);
-  renderAdminReviews();
-}
-
-/* ============ GOOGLE SIGN-IN ============ */
-function getAdminGoogleEmail(){
-  const email = localStorage.getItem(ADMIN_EMAIL_KEY);
-  return (email && ADMIN_ALLOWED_EMAILS.includes(email)) ? email : null;
-}
-
-function updateAdminNavVisibility(){
-  const isAuthed = isAdminAuthed();
-  document.querySelectorAll('.admin-nav-link').forEach(el=>el.classList.toggle('is-visible', isAuthed));
-  const addBtn = document.getElementById('openAddProductBtn');
-  if (addBtn) addBtn.style.display = isAuthed ? 'inline-flex' : 'none';
-  renderProducts(); 
-}
-
-async function handleGoogleCredentialResponse(response){
-  const googleErr = document.getElementById('googleLoginError');
-  if (googleErr) googleErr.classList.remove('show');
-  try{
-    const res = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(response.credential)}`);
-    if(!res.ok) throw new Error('token-invalid');
-    const payload = await res.json();
-    const email = payload.email;
-    const verified = payload.email_verified === 'true' || payload.email_verified === true;
-
-    const existingUser = getUserData() || {}; 
-    const isSameEmail = existingUser.email === email;
-
-    setUserData({
-      ...existingUser,
-      favorites: isSameEmail ? (existingUser.favorites || []) : [],
-      name: payload.name || payload.email,
-      email: payload.email,
-      picture: payload.picture
-    });
-    
-    closeUserAuthModal();
-    showToast(`أهلاً بك، ${payload.name || payload.email} 👋`);
-    renderProducts(); 
-
-    if(email && verified && ADMIN_ALLOWED_EMAILS.includes(email)){
-      localStorage.setItem(ADMIN_EMAIL_KEY, email);
-      updateAdminNavVisibility();
-      if (location.hash === '#admin') showAdminDashboard();
-    } else {
-      localStorage.removeItem(ADMIN_EMAIL_KEY);
-      updateAdminNavVisibility();
-      if (location.hash === '#admin') {
-        googleErr.textContent = 'الحساب ده مش من ضمن الحسابات المسموحلها تدخل لوحة التحكم.';
-        googleErr.classList.add('show');
-      }
-    }
-  }catch(err){
-    if (googleErr) { googleErr.textContent = 'حصلت مشكلة. جرّب تاني.'; googleErr.classList.add('show'); }
-  }
-}
-
-function initGoogleSignIn(){
-  try{
-    if(typeof google === 'undefined' || !google.accounts || !google.accounts.id) return;
-    google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: handleGoogleCredentialResponse });
-    const btnAdmin = document.getElementById('googleSignInBtn');
-    if(btnAdmin) google.accounts.id.renderButton(btnAdmin, { theme:'outline', size:'large', text:'signin_with', shape:'pill', locale:'ar', width:280 });
-    const btnUser = document.getElementById('userGoogleSignInBtn');
-    if(btnUser) google.accounts.id.renderButton(btnUser, { theme:'outline', size:'large', text:'continue_with', shape:'pill', locale:'ar', width:280 });
-  }catch(err){ }
-}
-window.addEventListener('load', initGoogleSignIn);
-
-/* ============ ADMIN ROUTING ============ */
-function showAdminDashboard(){
-  document.getElementById('adminLoginWrap').style.display = 'none';
-  document.getElementById('adminDashboard').style.display = 'block';
-  const googleEmail = getAdminGoogleEmail();
-  document.getElementById('adminAuthedAs').textContent = googleEmail ? `حساب: ${googleEmail}` : '';
-  renderOrders();
-}
-function showAdminLogin(){
-  document.getElementById('adminLoginWrap').style.display = 'flex';
-  document.getElementById('adminDashboard').style.display = 'none';
-  document.getElementById('adminLoginError').classList.remove('show');
-  document.getElementById('googleLoginError').classList.remove('show');
-}
-
-document.getElementById('adminLoginForm').addEventListener('submit', e=>{
-  e.preventDefault();
-  const input = document.getElementById('adminPasswordInput');
-  if(input.value === ADMIN_PASSWORD){
+  const pass = document.getElementById('adminPasswordInput').value;
+  if (pass === ADMIN_PASSWORD) {
+    document.getElementById('adminLoginError').classList.remove('show');
     sessionStorage.setItem('mrstore_admin_auth', '1');
-    input.value = ''; updateAdminNavVisibility(); showAdminDashboard();
+    updateAdminNavVisibility();
+    window.dispatchEvent(new Event('hashchange'));
   } else { document.getElementById('adminLoginError').classList.add('show'); }
 });
 
-document.getElementById('adminLogoutBtn').addEventListener('click', ()=>{
+document.getElementById('adminLogoutBtn').addEventListener('click', () => {
   sessionStorage.removeItem('mrstore_admin_auth');
   localStorage.removeItem(ADMIN_EMAIL_KEY);
-  setUserData(null);
   updateAdminNavVisibility();
-  if(typeof google !== 'undefined' && google.accounts && google.accounts.id) google.accounts.id.disableAutoSelect();
-  location.hash = '';
+  window.dispatchEvent(new Event('hashchange'));
+  showToast('تم تسجيل الخروج من لوحة التحكم');
 });
 
-function checkRoute(){
-  const isAdmin = location.hash === '#admin';
-  document.querySelector('.site-header').style.display = isAdmin ? 'none' : '';
-  document.getElementById('top').style.display = isAdmin ? 'none' : '';
-  document.querySelector('.site-footer').style.display = isAdmin ? 'none' : '';
-  document.getElementById('waFloat').style.display = isAdmin ? 'none' : '';
-  document.getElementById('adminView').classList.toggle('open', isAdmin);
-  if(isAdmin){ isAdminAuthed() ? showAdminDashboard() : showAdminLogin(); }
+let toastTimer;
+function showToast(text){
+  const toast = document.getElementById('toast');
+  toast.textContent = text; toast.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(()=>toast.classList.remove('show'), 2400);
 }
-window.addEventListener('hashchange', checkRoute);
-
-/* ============ SCROLL REVEAL ============ */
-const observer = new IntersectionObserver(entries=>{
-  entries.forEach(entry=>{
-    if(entry.isIntersecting){ entry.target.classList.add('is-visible'); observer.unobserve(entry.target); }
-  });
-}, {threshold:.12});
-document.querySelectorAll('.reveal').forEach(el=>observer.observe(el));
-
-/* ============ INIT (تهيئة التطبيق) ============ */
-async function initializeApp() {
-  PRODUCTS = await fetchDataStore('products', PRODUCTS_STORAGE_KEY, DEFAULT_PRODUCTS);
-  BANNER_DATA = await fetchDataStore('banner', BANNER_STORAGE_KEY, BANNER_DATA);
-  COUPONS = await fetchDataStore('coupons', COUPONS_STORAGE_KEY, []);
-  REVIEWS = await fetchDataStore('reviews', REVIEWS_STORAGE_KEY, []);
-  
-  PRODUCTS = PRODUCTS.map(p => ({
-    ...p,
-    sizes: p.sizes || [],
-    likes: p.likes || 0,
-    stock: p.stock !== undefined ? p.stock : 100 // حماية المنتجات القديمة التي لم يكن بها حقل stock
-  }));
-
-  updateBannerUI();
-  renderProducts();
-  renderCart();
-  updateUserUI();
-  updateAdminNavVisibility();
-  checkRoute();
-}
-
-initializeApp();
-
 </script>
 </body>
 </html>
