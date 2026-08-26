@@ -165,7 +165,7 @@ h1,h2,h3,h4{font-weight:inherit;}
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   transform:rotate(-9deg);position:relative;background:var(--paper);box-shadow:var(--shadow-m);
 }
-.hero-stamp::before{content:'';position:absolute;inset:12px;border:1px dashed var(--denim);border-radius:50%;opacity:.55;}
+.hero-stamp::before{content:'1';position:absolute;inset:12px;border:1px dashed var(--denim);border-radius:50%;opacity:.55;}
 .hero-stamp-text{font-family:var(--ff-mono);font-weight:700;font-size:1.5rem;letter-spacing:.04em;color:var(--denim);}
 .hero-stamp-sub{font-family:var(--ff-mono);font-size:.58rem;letter-spacing:.12em;color:var(--brass);margin-top:8px;text-align:center;}
 .hero-stamp-tag{position:absolute;top:-6px;right:28px;width:16px;height:16px;border-radius:50%;background:var(--canvas);border:2px solid var(--denim);}
@@ -1047,6 +1047,15 @@ function handleUserLogout() {
   if(state.filter === 'favorites') applyFilter('all'); else renderProducts();
   showToast('تم تسجيل الخروج');
 }
+
+/* ============ TOAST (تمت إضافتها) ============ */
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 3000);
+}
+
 /* ============ ORDERS MANAGEMENT (Cross-Device) ============ */
 let ORDERS = [];
 const ORDERS_STORAGE_KEY = 'mrstore_orders_data';
@@ -1131,6 +1140,7 @@ function closeMyOrdersModal() {
   document.getElementById('myOrdersModal').classList.remove('open');
   document.getElementById('myOrdersOverlay').classList.remove('open');
 }
+
 /* ============ BANNER MANAGEMENT ============ */
 function updateBannerUI() {
   document.getElementById('heroEyebrow').textContent = BANNER_DATA.eyebrow || '';
@@ -1481,7 +1491,7 @@ function applyCouponCode() {
   const coupon = COUPONS.find(c => c.code === code);
   if (coupon) {
       state.appliedCoupon = coupon;
-      showToast('تم تطبيق الكوبون!');
+      showToast('تم تطبيق الكوبون بنجاح!');
       renderCart();
   } else {
       showToast('كوبون غير صالح');
@@ -1587,6 +1597,7 @@ document.getElementById('checkoutBtn').addEventListener('click', ()=>{ closeCart
 document.getElementById('checkoutCloseBtn').addEventListener('click', closeCheckout);
 checkoutOverlay.addEventListener('click', closeCheckout);
 
+// ============ تكملة الكود وإصلاح الإرسال لواتساب (الذي كان مقطوعاً) ============
 checkoutForm.addEventListener('submit', async e=>{
   e.preventDefault();
   const name = document.getElementById('custName').value.trim();
@@ -1599,436 +1610,280 @@ checkoutForm.addEventListener('submit', async e=>{
     const p = findProduct(i.id);
     if(p) {
         msg += `- ${p.name} × ${i.qty} = ${money(p.price*i.qty)}\n`;
-        // نقص المخزون
-        p.stock = Math.max(0, (p.stock !== undefined ? p.stock : 100) - i.qty);
     }
   });
-  
-  if (state.appliedCoupon) { msg += `\nكوبون الخصم: ${state.appliedCoupon.code} (${state.appliedCoupon.discount}%)`; }
-  msg += `\nالإجمالي النهائي: ${money(cartTotal())}`;
 
-  const waUrl = `https://wa.me/${STORE_WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
+  if (state.appliedCoupon) {
+      msg += `\nكود الخصم: ${state.appliedCoupon.code} (${state.appliedCoupon.discount}%)`;
+  }
+  msg += `\n\nالإجمالي المطلوب: ${money(cartTotal())}\n(الدفع عند الاستلام)`;
+
+  // إعداد الطلب ليتم إضافته إلى قاعدة البيانات
+  const orderData = {
+    id: Date.now(),
+    name, phone, city, address,
+    items: state.cart,
+    total: cartTotal(),
+    status: 'pending',
+    date: new Date().toLocaleDateString('ar-EG')
+  };
+
+  await addOrder(orderData);
+
+  // إعداد رابط واتساب
+  const waUrl = `https://wa.me/2${STORE_WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
   document.getElementById('waFallback').href = waUrl;
 
-  addOrder({
-    id: Date.now(),
-    date: new Date().toLocaleString('ar-EG', {dateStyle:'medium', timeStyle:'short'}),
-    name, phone, city, address,
-    items: state.cart.map(i=>{ const p = findProduct(i.id); return {name: p ? p.name : 'منتج', qty:i.qty, price: p ? p.price : 0}; }),
-    total: cartTotal(), status: 'pending'
-  });
-
-  // حفظ التعديلات على المخزون
-  await saveDataStore('products', PRODUCTS_STORAGE_KEY, PRODUCTS);
-
+  // تغيير واجهة المستخدم للنجاح
   checkoutForm.style.display = 'none';
   successView.classList.add('show');
-  try{ window.open(waUrl, '_blank'); }catch(err){ }
+  
+  // إفراغ سلة التسوق
+  state.cart = [];
+  state.appliedCoupon = null;
+  renderCart();
 
-  state.cart = []; state.appliedCoupon = null;
-  renderCart(); renderProducts(); checkoutForm.reset(); document.getElementById('couponInput').value = '';
+  // فتح صفحة واتساب
+  window.open(waUrl, '_blank');
 });
 
-document.getElementById('waFloat').href = `https://wa.me/${STORE_WHATSAPP_NUMBER}?text=${encodeURIComponent('عايز أستفسر عن منتج في MR Store')}`;
+/* ============ ADMIN LOGIC (تم إضافتها وتفعيلها) ============ */
+function getAdminGoogleEmail() { return localStorage.getItem(ADMIN_EMAIL_KEY); }
 
-/* ============ TOAST ============ */
-let toastTimer;
-function showToast(text){
-  const toast = document.getElementById('toast');
-  toast.textContent = text; toast.classList.add('show');
-  clearTimeout(toastTimer); toastTimer = setTimeout(()=>toast.classList.remove('show'), 2400);
+function updateAdminNavVisibility() {
+  const isAd = isAdminAuthed();
+  document.getElementById('adminNavLink').classList.toggle('is-visible', isAd);
+  document.getElementById('adminNavLinkMobile').classList.toggle('is-visible', isAd);
+  document.getElementById('openAddProductBtn').style.display = isAd ? 'inline-flex' : 'none';
+  document.getElementById('editBannerBtn').style.display = isAd ? 'inline-flex' : 'none';
 }
 
-/* ============ ADMIN ORDERS & TABS ============ */
-const ORDERS_KEY = 'mrstore_orders';
-const adminState = { status: 'all', search: '' };
+document.getElementById('adminLoginForm').addEventListener('submit', e => {
+  e.preventDefault();
+  if (document.getElementById('adminPasswordInput').value === ADMIN_PASSWORD) {
+    sessionStorage.setItem('mrstore_admin_auth', '1');
+    document.getElementById('adminLoginError').classList.remove('show');
+    openAdminDashboard();
+  } else {
+    document.getElementById('adminLoginError').classList.add('show');
+  }
+});
 
-function switchAdminTab(tabName) {
-  document.querySelectorAll('#adminMainTabs button').forEach(b => b.classList.remove('active'));
+document.getElementById('adminLogoutBtn').addEventListener('click', () => {
+  sessionStorage.removeItem('mrstore_admin_auth');
+  localStorage.removeItem(ADMIN_EMAIL_KEY);
+  location.hash = '#top';
+  location.reload();
+});
+
+function openAdminDashboard() {
+  document.getElementById('adminLoginWrap').style.display = 'none';
+  document.getElementById('adminDashboard').style.display = 'block';
+  const email = getAdminGoogleEmail();
+  document.getElementById('adminAuthedAs').textContent = email ? `مسجل كـ: ${email}` : 'مسجل بكلمة المرور';
+  updateAdminNavVisibility();
+  loadAdminData();
+}
+
+function switchAdminTab(tab) {
+  document.querySelectorAll('.admin-main-tabs button').forEach(b => b.classList.remove('active'));
   event.target.classList.add('active');
-  document.getElementById('adminTabOrders').style.display = tabName === 'orders' ? 'block' : 'none';
-  document.getElementById('adminTabCoupons').style.display = tabName === 'coupons' ? 'block' : 'none';
-  document.getElementById('adminTabReviews').style.display = tabName === 'reviews' ? 'block' : 'none';
-  if(tabName === 'coupons') renderAdminCoupons();
-  if(tabName === 'reviews') renderAdminReviews();
+  document.getElementById('adminTabOrders').style.display = tab === 'orders' ? 'block' : 'none';
+  document.getElementById('adminTabCoupons').style.display = tab === 'coupons' ? 'block' : 'none';
+  document.getElementById('adminTabReviews').style.display = tab === 'reviews' ? 'block' : 'none';
 }
 
-function getOrders(){ try{ return JSON.parse(localStorage.getItem(ORDERS_KEY)) || []; } catch(err){ return []; } }
-function saveOrders(orders){ localStorage.setItem(ORDERS_KEY, JSON.stringify(orders)); }
-function addOrder(order){ const orders = getOrders(); orders.unshift(order); saveOrders(orders); }
-
-function orderCardHTML(o){
-  const itemsHTML = o.items.map(i=>`<div><span>${i.name} × ${i.qty}</span><span>${money(i.price*i.qty)}</span></div>`).join('');
-  const isDelivered = o.status === 'delivered';
-  return `
-  <div class="order-card">
-    <div class="order-card-head">
-      <div><span class="order-num">#${String(o.id).slice(-5)}</span><span class="order-date">${o.date}</span></div>
-      <span class="order-status ${isDelivered ? 'delivered' : 'pending'}">${isDelivered ? 'تم التوصيل' : 'قيد التوصيل'}</span>
-    </div>
-    <div class="order-cust">
-      <div><span>الاسم</span>${o.name}</div>
-      <div><span>الهاتف</span><a href="tel:${o.phone}">${o.phone}</a></div>
-      <div><span>المحافظة</span>${o.city}</div>
-      <div><span>العنوان</span>${o.address}</div>
-    </div>
-    <div class="order-items">${itemsHTML}</div>
-    <div class="order-total-row"><span>الإجمالي</span><span>${money(o.total)}</span></div>
-    <div class="order-actions">
-      ${isDelivered ? `<button class="btn-undo" data-action="undo" data-id="${o.id}">رجّعه قيد التوصيل</button>` : `<button class="btn-mark" data-action="deliver" data-id="${o.id}">تم التوصيل ✓</button>`}
-      <button class="btn-delete" data-action="delete" data-id="${o.id}">حذف</button>
-    </div>
-  </div>`;
+async function loadAdminData() {
+  renderAdminOrders();
+  renderAdminCoupons();
+  renderAdminReviews();
+  updateAdminStats();
 }
 
-function renderOrders(){
-  const orders = getOrders();
-  document.getElementById('statTotal').textContent = orders.length;
-  document.getElementById('statPending').textContent = orders.filter(o=>o.status!=='delivered').length;
-  document.getElementById('statDelivered').textContent = orders.filter(o=>o.status==='delivered').length;
-  document.getElementById('statRevenue').textContent = money(orders.reduce((s,o)=>s+o.total,0));
+function updateAdminStats() {
+  document.getElementById('statTotal').textContent = ORDERS.length;
+  document.getElementById('statPending').textContent = ORDERS.filter(o=>o.status==='pending').length;
+  document.getElementById('statDelivered').textContent = ORDERS.filter(o=>o.status==='delivered').length;
+  const totalRev = ORDERS.filter(o=>o.status==='delivered').reduce((sum, o) => sum + o.total, 0);
+  document.getElementById('statRevenue').textContent = money(totalRev);
+}
 
-  const term = adminState.search.trim();
-  const filtered = orders.filter(o=>{
-    const statusMatch = adminState.status === 'all' || (adminState.status === 'delivered' ? o.status === 'delivered' : o.status !== 'delivered');
-    const termMatch = term === '' || o.name.includes(term) || o.phone.includes(term);
-    return statusMatch && termMatch;
-  });
-
+function renderAdminOrders() {
   const list = document.getElementById('ordersList');
-  list.innerHTML = filtered.length === 0 ? `<div class="admin-empty"><strong>لسه مفيش طلبات</strong>الطلبات اللي هتوصل من العملاء هتظهر هنا.</div>` : filtered.map(orderCardHTML).join('');
-}
-
-document.getElementById('adminFilterTabs').addEventListener('click', e=>{
-  const btn = e.target.closest('.filter-tab');
-  if(!btn) return;
-  adminState.status = btn.dataset.status;
-  document.querySelectorAll('#adminFilterTabs .filter-tab').forEach(b=>b.classList.toggle('active', b===btn));
-  renderOrders();
-});
-document.getElementById('adminSearchInput').addEventListener('input', e=>{ adminState.search = e.target.value; renderOrders(); });
-document.getElementById('ordersList').addEventListener('click', e=>{
-  const btn = e.target.closest('button[data-action]');
-  if(!btn) return;
-  const id = btn.dataset.id;
-  let orders = getOrders();
-  if(btn.dataset.action === 'deliver'){ orders = orders.map(o => String(o.id) === id ? {...o, status:'delivered'} : o); } 
-  else if(btn.dataset.action === 'undo'){ orders = orders.map(o => String(o.id) === id ? {...o, status:'pending'} : o); } 
-  else if(btn.dataset.action === 'delete'){ if(!confirm('متأكد إنك عايز تحذف الطلب ده؟')) return; orders = orders.filter(o => String(o.id) !== id); }
-  saveOrders(orders); renderOrders();
-});
-
-/* ============ MY ORDERS (طلبات العميل) ============ */
-function myOrderCardHTML(o){
-  const itemsHTML = o.items.map(i=>`<div><span>${i.name} × ${i.qty}</span><span>${money(i.price*i.qty)}</span></div>`).join('');
-  const isDelivered = o.status === 'delivered';
-  return `
-  <div class="order-card">
-    <div class="order-card-head">
-      <div><span class="order-num">#${String(o.id).slice(-5)}</span><span class="order-date">${o.date}</span></div>
-      <span class="order-status ${isDelivered ? 'delivered' : 'pending'}">${isDelivered ? 'تم التوصيل' : 'قيد التوصيل'}</span>
+  if(ORDERS.length === 0) { list.innerHTML = `<div class="admin-empty"><strong>لا توجد طلبات</strong></div>`; return; }
+  list.innerHTML = ORDERS.map(o => `
+    <div class="order-card">
+      <div class="order-card-head">
+        <div><span class="order-num">#${o.id}</span><span class="order-date">${o.date}</span></div>
+        <div class="order-status ${o.status}">${o.status === 'pending' ? 'قيد التوصيل ⏳' : 'تم التوصيل ✅'}</div>
+      </div>
+      <div class="order-cust">
+        <div><span>الاسم</span>${o.name}</div>
+        <div><span>الهاتف</span>${o.phone}</div>
+        <div><span>المحافظة</span>${o.city}</div>
+        <div><span>العنوان</span>${o.address}</div>
+      </div>
+      <div class="order-total-row"><span>الإجمالي</span><span>${money(o.total)}</span></div>
+      <div class="order-actions">
+        ${o.status === 'pending' ? `<button class="btn-mark" onclick="changeOrderStatus(${o.id}, 'delivered')">تحديد كـ "تم التوصيل"</button>` : `<button class="btn-undo" onclick="changeOrderStatus(${o.id}, 'pending')">تراجع إلى "قيد التوصيل"</button>`}
+        <button class="btn-delete" onclick="deleteOrder(${o.id})">حذف الطلب 🗑️</button>
+      </div>
     </div>
-    <div class="order-cust">
-      <div><span>الاسم</span>${o.name}</div>
-      <div><span>الهاتف</span>${o.phone}</div>
-      <div><span>المحافظة</span>${o.city}</div>
-      <div><span>العنوان</span>${o.address}</div>
-    </div>
-    <div class="order-items">${itemsHTML}</div>
-    <div class="order-total-row"><span>الإجمالي</span><span>${money(o.total)}</span></div>
-    <div class="order-actions">
-      <button class="btn-delete" data-action="delete-order" data-id="${o.id}">حذف الطلب 🗑️</button>
-    </div>
-  </div>`;
-}
-
-function renderMyOrders(){
-  const orders = getOrders();
-  const list = document.getElementById('myOrdersList');
-  list.innerHTML = orders.length === 0
-    ? `<div class="admin-empty"><strong>لسه مفيش طلبات</strong>الطلبات اللي هتعملها من المتجر هتظهر هنا وهتقدر تتابع حالتها.</div>`
-    : orders.map(myOrderCardHTML).join('');
-}
-
-function openMyOrdersModal(){
-  renderMyOrders();
-  document.getElementById('myOrdersModal').classList.add('open');
-  document.getElementById('myOrdersOverlay').classList.add('open');
-}
-function closeMyOrdersModal(){
-  document.getElementById('myOrdersModal').classList.remove('open');
-  document.getElementById('myOrdersOverlay').classList.remove('open');
-}
-
-document.getElementById('myOrdersList').addEventListener('click', e=>{
-  const btn = e.target.closest('button[data-action="delete-order"]');
-  if(!btn) return;
-  if(!confirm('متأكد إنك عايز تحذف الطلب ده؟')) return;
-  const id = btn.dataset.id;
-  const orders = getOrders().filter(o => String(o.id) !== id);
-  saveOrders(orders);
-  renderMyOrders();
-  showToast('تم حذف الطلب ✓');
-});
-
-/* ============ ADMIN COUPONS & REVIEWS ============ */
-function renderAdminCoupons() {
-  const t = document.getElementById('couponsListTable');
-  if (COUPONS.length === 0) { t.innerHTML = '<tr><td colspan="4" style="text-align:center;">لا توجد كوبونات</td></tr>'; return; }
-  t.innerHTML = COUPONS.map(c => `
-    <tr>
-      <td><strong style="font-family:var(--ff-mono);">${c.code}</strong></td>
-      <td>${c.discount}%</td>
-      <td>مفعل</td>
-      <td><button onclick="deleteCoupon('${c.code}')" style="color:var(--stamp); font-weight:700;">حذف</button></td>
-    </tr>
   `).join('');
 }
-document.getElementById('addCouponForm').addEventListener('submit', async (e) => {
+
+async function changeOrderStatus(id, status) {
+  ORDERS = ORDERS.map(o => o.id === id ? {...o, status} : o);
+  await saveDataStore('orders', ORDERS_STORAGE_KEY, ORDERS);
+  renderAdminOrders(); updateAdminStats();
+  showToast('تم تحديث حالة الطلب ✓');
+}
+
+async function deleteOrder(id) {
+  if(!confirm('هل أنت متأكد من حذف هذا الطلب بشكل نهائي؟')) return;
+  ORDERS = ORDERS.filter(o => o.id !== id);
+  await saveDataStore('orders', ORDERS_STORAGE_KEY, ORDERS);
+  renderAdminOrders(); updateAdminStats();
+  showToast('تم حذف الطلب بنجاح ✓');
+}
+
+document.getElementById('addCouponForm').addEventListener('submit', async e => {
   e.preventDefault();
   const code = document.getElementById('newCouponCode').value.trim().toUpperCase();
   const discount = Number(document.getElementById('newCouponDisc').value);
-  if (COUPONS.find(c => c.code === code)) { showToast('الكوبون ده موجود بالفعل!'); return; }
-  COUPONS.push({ code, discount });
+  COUPONS.push({id: Date.now(), code, discount});
   await saveDataStore('coupons', COUPONS_STORAGE_KEY, COUPONS);
-  renderAdminCoupons();
   document.getElementById('addCouponForm').reset();
-  showToast('تمت إضافة الكوبون ✓');
+  renderAdminCoupons();
+  showToast('تمت إضافة الكوبون بنجاح ✓');
 });
-async function deleteCoupon(code) {
-  if(!confirm('حذف الكوبون؟')) return;
-  COUPONS = COUPONS.filter(c => c.code !== code);
+
+function renderAdminCoupons() {
+  const tbody = document.getElementById('couponsListTable');
+  if(COUPONS.length === 0){ tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:20px;">لا توجد كوبونات</td></tr>`; return;}
+  tbody.innerHTML = COUPONS.map(c => `
+    <tr>
+      <td style="font-family:var(--ff-mono); font-weight:bold;">${c.code}</td>
+      <td>${c.discount}%</td>
+      <td><span style="color:var(--ok); font-weight:bold;">نشط</span></td>
+      <td><button style="color:var(--stamp); font-weight:bold;" onclick="deleteCoupon(${c.id})">حذف</button></td>
+    </tr>
+  `).join('');
+}
+
+async function deleteCoupon(id) {
+  if(!confirm('حذف هذا الكوبون؟')) return;
+  COUPONS = COUPONS.filter(c => c.id !== id);
   await saveDataStore('coupons', COUPONS_STORAGE_KEY, COUPONS);
   renderAdminCoupons();
+  showToast('تم حذف الكوبون ✓');
 }
 
 function renderAdminReviews() {
-  const t = document.getElementById('adminReviewsTable');
-  if (REVIEWS.length === 0) { t.innerHTML = '<tr><td colspan="5" style="text-align:center;">لا توجد تقييمات</td></tr>'; return; }
-  t.innerHTML = REVIEWS.map(r => {
+  const tbody = document.getElementById('adminReviewsTable');
+  if(REVIEWS.length === 0){ tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:20px;">لا توجد تقييمات</td></tr>`; return;}
+  tbody.innerHTML = REVIEWS.map(r => {
     const p = findProduct(r.prodId);
     return `
     <tr>
-      <td>${p ? p.name : 'منتج محذوف'}</td>
+      <td>${p ? p.name : '<span style="color:var(--stamp);">منتج محذوف</span>'}</td>
       <td>${r.userName}</td>
-      <td style="color:var(--brass);">${'⭐'.repeat(r.rating)}</td>
-      <td>${r.text.substring(0, 30)}...</td>
-      <td><button onclick="deleteReview(${r.id})" style="color:var(--stamp); font-weight:700;">حذف</button></td>
+      <td>${'⭐'.repeat(r.rating)}</td>
+      <td>${r.text}</td>
+      <td><button style="color:var(--stamp); font-weight:bold;" onclick="deleteReview(${r.id})">حذف</button></td>
     </tr>
-  `;}).join('');
+    `;
+  }).join('');
 }
+
 async function deleteReview(id) {
-  if(!confirm('حذف التقييم؟')) return;
+  if(!confirm('حذف هذا التقييم؟')) return;
   REVIEWS = REVIEWS.filter(r => r.id !== id);
   await saveDataStore('reviews', REVIEWS_STORAGE_KEY, REVIEWS);
   renderAdminReviews();
+  showToast('تم حذف التقييم ✓');
 }
 
-/* ============ GOOGLE SIGN-IN ============ */
-function getAdminGoogleEmail(){
-  const email = localStorage.getItem(ADMIN_EMAIL_KEY);
-  return (email && ADMIN_ALLOWED_EMAILS.includes(email)) ? email : null;
-}
-
-function updateAdminNavVisibility(){
-  const isAuthed = isAdminAuthed();
-  document.querySelectorAll('.admin-nav-link').forEach(el=>el.classList.toggle('is-visible', isAuthed));
-  const addBtn = document.getElementById('openAddProductBtn');
-  if (addBtn) addBtn.style.display = isAuthed ? 'inline-flex' : 'none';
-  renderProducts(); 
-}
-
-async function handleGoogleCredentialResponse(response){
-  const googleErr = document.getElementById('googleLoginError');
-  if (googleErr) googleErr.classList.remove('show');
-  try{
-    const res = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(response.credential)}`);
-    if(!res.ok) throw new Error('token-invalid');
-    const payload = await res.json();
-    const email = payload.email;
-    const verified = payload.email_verified === 'true' || payload.email_verified === true;
-
-    const existingUser = getUserData() || {}; 
-    const isSameEmail = existingUser.email === email;
-
-   setUserData({ 
-  name: responsePayload.name, 
-  email: responsePayload.email // لازم تتأكد إن الإيميل بيتحفظ هنا
-});
-    
-    closeUserAuthModal();
-    showToast(`أهلاً بك، ${payload.name || payload.email} 👋`);
-    renderProducts(); 
-
-    if(email && verified && ADMIN_ALLOWED_EMAILS.includes(email)){
-      localStorage.setItem(ADMIN_EMAIL_KEY, email);
-      updateAdminNavVisibility();
-      if (location.hash === '#admin') showAdminDashboard();
+/* ============ ROUTING (Navigation Handler) ============ */
+window.addEventListener('hashchange', handleRoute);
+function handleRoute() {
+  if (location.hash === '#admin') {
+    document.getElementById('top').style.display = 'none';
+    document.getElementById('footer').style.display = 'none';
+    document.getElementById('adminView').classList.add('open');
+    if (isAdminAuthed()) {
+      openAdminDashboard();
     } else {
-      localStorage.removeItem(ADMIN_EMAIL_KEY);
-      updateAdminNavVisibility();
-      if (location.hash === '#admin') {
-        googleErr.textContent = 'الحساب ده مش من ضمن الحسابات المسموحلها تدخل لوحة التحكم.';
-        googleErr.classList.add('show');
-      }
+      document.getElementById('adminLoginWrap').style.display = 'flex';
+      document.getElementById('adminDashboard').style.display = 'none';
     }
-  }catch(err){
-    if (googleErr) { googleErr.textContent = 'حصلت مشكلة. جرّب تاني.'; googleErr.classList.add('show'); }
+  } else {
+    document.getElementById('top').style.display = 'block';
+    document.getElementById('footer').style.display = 'block';
+    document.getElementById('adminView').classList.remove('open');
+    renderProducts();
   }
 }
 
-function initGoogleSignIn(){
-  try{
-    if(typeof google === 'undefined' || !google.accounts || !google.accounts.id) return;
-    google.accounts.id.initialize({ client_id: GOOGLE_CLIENT_ID, callback: handleGoogleCredentialResponse });
-    const btnAdmin = document.getElementById('googleSignInBtn');
-    if(btnAdmin) google.accounts.id.renderButton(btnAdmin, { theme:'outline', size:'large', text:'signin_with', shape:'pill', locale:'ar', width:280 });
-    const btnUser = document.getElementById('userGoogleSignInBtn');
-    if(btnUser) google.accounts.id.renderButton(btnUser, { theme:'outline', size:'large', text:'continue_with', shape:'pill', locale:'ar', width:280 });
-  }catch(err){ }
-}
-window.addEventListener('load', initGoogleSignIn);
-
-/* ============ ADMIN ROUTING ============ */
-function showAdminDashboard(){
-  document.getElementById('adminLoginWrap').style.display = 'none';
-  document.getElementById('adminDashboard').style.display = 'block';
-  const googleEmail = getAdminGoogleEmail();
-  document.getElementById('adminAuthedAs').textContent = googleEmail ? `حساب: ${googleEmail}` : '';
-  renderOrders();
-}
-function showAdminLogin(){
-  document.getElementById('adminLoginWrap').style.display = 'flex';
-  document.getElementById('adminDashboard').style.display = 'none';
-  document.getElementById('adminLoginError').classList.remove('show');
-  document.getElementById('googleLoginError').classList.remove('show');
-}
-
-document.getElementById('adminLoginForm').addEventListener('submit', e=>{
-  e.preventDefault();
-  const input = document.getElementById('adminPasswordInput');
-  if(input.value === ADMIN_PASSWORD){
-    sessionStorage.setItem('mrstore_admin_auth', '1');
-    input.value = ''; updateAdminNavVisibility(); showAdminDashboard();
-  } else { document.getElementById('adminLoginError').classList.add('show'); }
-});
-
-document.getElementById('adminLogoutBtn').addEventListener('click', ()=>{
-  sessionStorage.removeItem('mrstore_admin_auth');
-  localStorage.removeItem(ADMIN_EMAIL_KEY);
-  setUserData(null);
-  updateAdminNavVisibility();
-  if(typeof google !== 'undefined' && google.accounts && google.accounts.id) google.accounts.id.disableAutoSelect();
-  location.hash = '';
-});
-
-function checkRoute(){
-  const isAdmin = location.hash === '#admin';
-  document.querySelector('.site-header').style.display = isAdmin ? 'none' : '';
-  document.getElementById('top').style.display = isAdmin ? 'none' : '';
-  document.querySelector('.site-footer').style.display = isAdmin ? 'none' : '';
-  document.getElementById('waFloat').style.display = isAdmin ? 'none' : '';
-  document.getElementById('adminView').classList.toggle('open', isAdmin);
-  if(isAdmin){ isAdminAuthed() ? showAdminDashboard() : showAdminLogin(); }
-}
-window.addEventListener('hashchange', checkRoute);
-
-/* ============ SCROLL REVEAL ============ */
-const observer = new IntersectionObserver(entries=>{
-  entries.forEach(entry=>{
-    if(entry.isIntersecting){ entry.target.classList.add('is-visible'); observer.unobserve(entry.target); }
+/* ============ INITIALIZATION & GOOGLE AUTH ============ */
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(entry => {
+    if(entry.isIntersecting) {
+      entry.target.classList.add('is-visible');
+      observer.unobserve(entry.target);
+    }
   });
-}, {threshold:.12});
-document.querySelectorAll('.reveal').forEach(el=>observer.observe(el));
+}, { threshold: 0.1 });
 
-/* ============ INIT (تهيئة التطبيق) ============ */
-async function initializeApp() {
+function handleCredentialResponse(response) {
+  try {
+    const payload = JSON.parse(atob(response.credential.split('.')[1]));
+    const email = payload.email;
+    
+    if (location.hash === '#admin') {
+      if (ADMIN_ALLOWED_EMAILS.includes(email)) {
+        localStorage.setItem(ADMIN_EMAIL_KEY, email);
+        document.getElementById('googleLoginError').classList.remove('show');
+        openAdminDashboard();
+      } else {
+        document.getElementById('googleLoginError').classList.add('show');
+      }
+    } else {
+      setUserData({ name: payload.name, email: payload.email, favorites: [] });
+      closeUserAuthModal();
+      showToast('تم تسجيل الدخول بنجاح ✓');
+      renderProducts();
+    }
+  } catch (e) { console.error("Error decoding Google response", e); }
+}
+
+window.onload = async () => {
   PRODUCTS = await fetchDataStore('products', PRODUCTS_STORAGE_KEY, DEFAULT_PRODUCTS);
   BANNER_DATA = await fetchDataStore('banner', BANNER_STORAGE_KEY, BANNER_DATA);
   COUPONS = await fetchDataStore('coupons', COUPONS_STORAGE_KEY, []);
   REVIEWS = await fetchDataStore('reviews', REVIEWS_STORAGE_KEY, []);
   
-  PRODUCTS = PRODUCTS.map(p => ({
-    ...p,
-    sizes: p.sizes || [],
-    likes: p.likes || 0,
-    stock: p.stock !== undefined ? p.stock : 100 // حماية المنتجات القديمة التي لم يكن بها حقل stock
-  }));
-
   updateBannerUI();
-  renderProducts();
-  renderCart();
-  updateUserUI();
   updateAdminNavVisibility();
-  checkRoute();
-}
-
-initializeApp();
-// دالة لفك تشفير بيانات جوجل (JWT) عشان نقرأ الاسم والإيميل
-function parseJwt(token) {
-  var base64Url = token.split('.')[1];
-  var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-  var jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-  }).join(''));
-  return JSON.parse(jsonPayload);
-}
-
-// الدالة اللي بتشتغل بعد ما المستخدم يختار حسابه في جوجل
-function handleCredentialResponse(response) {
-  const data = parseJwt(response.credential);
+  updateUserUI();
+  handleRoute();
   
-  // تجهيز بيانات المستخدم
-  const user = {
-    name: data.name,
-    email: data.email,
-    picture: data.picture,
-    favorites: [] // مصفوفة فاضية عشان لو هيضيف منتجات للمفضلة
-  };
-
-  // حفظ البيانات وتحديث الواجهة
-  setUserData(user);
-
-  // التأكد لو الإيميل ده تبع الإدارة
-  if (ADMIN_ALLOWED_EMAILS.includes(data.email)) {
-     localStorage.setItem(ADMIN_EMAIL_KEY, data.email);
-  }
-
-  // قفل المودال وإظهار رسالة ترحيب
-  closeUserAuthModal();
-  showToast('تم تسجيل الدخول بنجاح يا ' + data.given_name + '!');
-}
-
-// تهيئة جوجل ورسم الزرار عند تحميل الصفحة
-window.addEventListener('load', function () {
-  if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
-    // تهيئة إعدادات جوجل
+  // تشغيل الأنيميشن للعناصر
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+  
+  if(typeof google !== 'undefined') {
     google.accounts.id.initialize({
       client_id: GOOGLE_CLIENT_ID,
       callback: handleCredentialResponse
     });
-
-    // رسم زرار تسجيل دخول المستخدمين
-    const userBtnWrap = document.getElementById("userGoogleSignInBtn");
-    if (userBtnWrap) {
-      google.accounts.id.renderButton(userBtnWrap, { 
-        theme: "outline", 
-        size: "large", 
-        text: "continue_with" 
-      });
-    }
-
-    // رسم زرار تسجيل دخول الإدارة (في لوحة التحكم)
-    const adminBtnWrap = document.getElementById("googleSignInBtn");
-    if (adminBtnWrap) {
-      google.accounts.id.renderButton(adminBtnWrap, { 
-        theme: "outline", 
-        size: "large", 
-        text: "continue_with" 
-      });
-    }
+    // زر تسجيل الدخول للمستخدم العادي
+    const userBtn = document.getElementById("userGoogleSignInBtn");
+    if(userBtn) google.accounts.id.renderButton(userBtn, { theme: "outline", size: "large" });
+    // زر تسجيل الدخول للإدارة
+    const adminBtn = document.getElementById("googleSignInBtn");
+    if(adminBtn) google.accounts.id.renderButton(adminBtn, { theme: "outline", size: "large" });
   }
-});
+};
 </script>
 </body>
 </html>
