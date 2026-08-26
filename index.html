@@ -669,12 +669,8 @@ h1,h2,h3,h4{font-weight:inherit;}
     </button>
   </div>
   <div class="modal-body">
-    <p style="font-size:.82rem; color:var(--ink-soft); margin-bottom:18px;">اكتب رقم الهاتف اللي طلبت بيه عشان تلاقي طلباتك من أي جهاز، وتتابع حالة كل طلب أول بأول.</p>
-    <div class="coupon-box" style="margin-top:0; padding-bottom:0; border-bottom:none;">
-      <input type="tel" id="myOrdersPhoneInput" placeholder="رقم الهاتف" onkeyup="if(event.key==='Enter') renderMyOrders();">
-      <button onclick="renderMyOrders()">بحث عن طلباتي</button>
-    </div>
-    <div id="myOrdersList" style="margin-top:18px;"></div>
+    <p style="font-size:.82rem; color:var(--ink-soft); margin-bottom:18px;">دي الطلبات اللي عملتها من المتصفح ده. تقدر تتابع حالة كل طلب أول بأول.</p>
+    <div id="myOrdersList"></div>
   </div>
 </div>
 
@@ -985,7 +981,6 @@ let PRODUCTS = [];
 let BANNER_DATA = { eyebrow: "NEW COLLECTION — NO. 014", title: "أناقتك تبدأ من هنا", sub: "تشكيلة رجالي مختارة بعناية. اطلب دلوقتي واستلم في بيتك بالدفع عند الاستلام.", stampText: "MR STORE", stampSub: "EST. 2026 · EGYPT", btnText: "تسوق دلوقتي", fineprint: "SHIPPING · ALL EGYPT" };
 let COUPONS = [];
 let REVIEWS = [];
-let ORDERS = []; // الطلبات — بقت متزامنة مع Firebase زي باقي البيانات بدل ما تفضل محبوسة في جهاز واحد بس
 
 const DEFAULT_PRODUCTS = [
   {id:1, name:"قميص كلاسيك أبيض", price:450, old:null, stock:100, badge:null, active:true, likes: 12, sizes: ["M", "L", "XL"], img:"https://placehold.co/600x750/ece5d3/221f1a?text=Classic+Shirt"},
@@ -1609,14 +1604,13 @@ checkoutForm.addEventListener('submit', async e=>{
   const waUrl = `https://wa.me/${STORE_WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
   document.getElementById('waFallback').href = waUrl;
 
-  await addOrder({
+  addOrder({
     id: Date.now(),
     date: new Date().toLocaleString('ar-EG', {dateStyle:'medium', timeStyle:'short'}),
     name, phone, city, address,
     items: state.cart.map(i=>{ const p = findProduct(i.id); return {name: p ? p.name : 'منتج', qty:i.qty, price: p ? p.price : 0}; }),
     total: cartTotal(), status: 'pending'
   });
-  localStorage.setItem(MY_PHONE_KEY, phone); // نتذكر رقم هاتف العميل في الجهاز ده عشان يلاقي طلباته من أي جهاز في "الطلبات"
 
   // حفظ التعديلات على المخزون
   await saveDataStore('products', PRODUCTS_STORAGE_KEY, PRODUCTS);
@@ -1641,7 +1635,6 @@ function showToast(text){
 
 /* ============ ADMIN ORDERS & TABS ============ */
 const ORDERS_KEY = 'mrstore_orders';
-const MY_PHONE_KEY = 'mrstore_my_phone'; // بيتذكر رقم هاتف العميل في هذا الجهاز عشان "طلباتي" تلاقي طلباته من أي جهاز تاني
 const adminState = { status: 'all', search: '' };
 
 function switchAdminTab(tabName) {
@@ -1654,10 +1647,9 @@ function switchAdminTab(tabName) {
   if(tabName === 'reviews') renderAdminReviews();
 }
 
-function getOrders(){ return ORDERS; }
-function normalizePhone(p){ return (p || '').toString().replace(/\D/g, ''); } // بيشيل أي مسافات/رموز من رقم الهاتف عشان المقارنة تظبط
-async function saveOrders(orders){ ORDERS = orders; await saveDataStore('orders', ORDERS_KEY, orders); }
-async function addOrder(order){ const orders = getOrders(); orders.unshift(order); await saveOrders(orders); }
+function getOrders(){ try{ return JSON.parse(localStorage.getItem(ORDERS_KEY)) || []; } catch(err){ return []; } }
+function saveOrders(orders){ localStorage.setItem(ORDERS_KEY, JSON.stringify(orders)); }
+function addOrder(order){ const orders = getOrders(); orders.unshift(order); saveOrders(orders); }
 
 function orderCardHTML(o){
   const itemsHTML = o.items.map(i=>`<div><span>${i.name} × ${i.qty}</span><span>${money(i.price*i.qty)}</span></div>`).join('');
@@ -1745,16 +1737,10 @@ function myOrderCardHTML(o){
 }
 
 function renderMyOrders(){
-  const phoneInput = document.getElementById('myOrdersPhoneInput');
-  if (phoneInput && !phoneInput.value.trim()) {
-    const rememberedPhone = localStorage.getItem(MY_PHONE_KEY);
-    if (rememberedPhone) phoneInput.value = rememberedPhone;
-  }
-  const myPhone = normalizePhone(phoneInput ? phoneInput.value : '');
-  const orders = myPhone ? getOrders().filter(o => normalizePhone(o.phone) === myPhone) : [];
+  const orders = getOrders();
   const list = document.getElementById('myOrdersList');
   list.innerHTML = orders.length === 0
-    ? `<div class="admin-empty"><strong>لسه مفيش طلبات</strong>${myPhone ? 'مفيش طلبات مسجلة بالرقم ده. تأكد إنك كاتب نفس رقم الهاتف اللي استخدمته وقت الطلب.' : 'اكتب رقم الهاتف اللي طلبت بيه وقت الشراء عشان تلاقي طلباتك من أي جهاز.'}</div>`
+    ? `<div class="admin-empty"><strong>لسه مفيش طلبات</strong>الطلبات اللي هتعملها من المتجر هتظهر هنا وهتقدر تتابع حالتها.</div>`
     : orders.map(myOrderCardHTML).join('');
 }
 
@@ -1958,17 +1944,6 @@ async function initializeApp() {
   BANNER_DATA = await fetchDataStore('banner', BANNER_STORAGE_KEY, BANNER_DATA);
   COUPONS = await fetchDataStore('coupons', COUPONS_STORAGE_KEY, []);
   REVIEWS = await fetchDataStore('reviews', REVIEWS_STORAGE_KEY, []);
-  ORDERS = await fetchDataStore('orders', ORDERS_KEY, []);
-
-  // ترحيل ولمرة واحدة: أي طلبات قديمة كانت متخزنة في هذا الجهاز بس (قبل ربط الطلبات بقاعدة البيانات) بتتضاف لقاعدة البيانات المشتركة عشان محدش يفقد طلباته القديمة
-  try {
-    const oldLocalOrders = JSON.parse(localStorage.getItem(ORDERS_KEY)) || [];
-    const missingOrders = oldLocalOrders.filter(o => !ORDERS.some(existing => existing.id === o.id));
-    if (missingOrders.length > 0) {
-      ORDERS = [...missingOrders, ...ORDERS];
-      await saveDataStore('orders', ORDERS_KEY, ORDERS);
-    }
-  } catch(e) {}
   
   PRODUCTS = PRODUCTS.map(p => ({
     ...p,
