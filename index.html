@@ -1653,6 +1653,9 @@ function myOrderCardHTML(o){
     </div>
     <div class="order-items">${itemsHTML}</div>
     <div class="order-total-row"><span>الإجمالي</span><span>${money(o.total)}</span></div>
+    <div class="order-actions">
+      <button class="btn-delete" data-action="delete-order" data-id="${o.id}">حذف الطلب 🗑️</button>
+    </div>
   </div>`;
 }
 
@@ -1673,6 +1676,17 @@ function closeMyOrdersModal(){
   document.getElementById('myOrdersModal').classList.remove('open');
   document.getElementById('myOrdersOverlay').classList.remove('open');
 }
+
+document.getElementById('myOrdersList').addEventListener('click', e=>{
+  const btn = e.target.closest('button[data-action="delete-order"]');
+  if(!btn) return;
+  if(!confirm('متأكد إنك عايز تحذف الطلب ده؟')) return;
+  const id = btn.dataset.id;
+  const orders = getOrders().filter(o => String(o.id) !== id);
+  saveOrders(orders);
+  renderMyOrders();
+  showToast('تم حذف الطلب ✓');
+});
 
 /* ============ ADMIN COUPONS & REVIEWS ============ */
 function renderAdminCoupons() {
