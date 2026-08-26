@@ -1047,7 +1047,90 @@ function handleUserLogout() {
   if(state.filter === 'favorites') applyFilter('all'); else renderProducts();
   showToast('تم تسجيل الخروج');
 }
+/* ============ ORDERS MANAGEMENT (Cross-Device) ============ */
+let ORDERS = [];
+const ORDERS_STORAGE_KEY = 'mrstore_orders_data';
 
+// 1. تحميل الطلبات من قاعدة البيانات
+async function loadOrders() {
+  ORDERS = await fetchDataStore('orders', ORDERS_STORAGE_KEY, []);
+}
+loadOrders();
+
+// 2. دالة حفظ الطلب وربطه بحساب الجيميل
+async function addOrder(orderData) {
+  const user = getUserData();
+  
+  // استخدام الإيميل كمعرف فريد لضمان عدم ظهور الطلبات في حساب آخر
+  if (user && user.email) {
+    orderData.customerAuthId = user.email; 
+  } else if (user && user.name) {
+    orderData.customerAuthId = user.name; // كحل بديل
+  } else {
+    orderData.customerAuthId = 'guest_' + Date.now();
+  }
+
+  ORDERS.unshift(orderData);
+  await saveDataStore('orders', ORDERS_STORAGE_KEY, ORDERS);
+}
+
+// 3. فتح نافذة "الطلبات" وعرض طلبات الجيميل المسجل فقط مع تحديث لحظي
+async function openMyOrdersModal() {
+  const modal = document.getElementById('myOrdersModal');
+  const overlay = document.getElementById('myOrdersOverlay');
+  const list = document.getElementById('myOrdersList');
+  const user = getUserData();
+
+  if (!user || (!user.email && !user.name)) {
+    list.innerHTML = `
+      <div style="text-align:center; padding:40px 10px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--ink-soft)" stroke-width="1.5" style="width:48px;height:48px;margin-bottom:12px;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <p style="color:var(--stamp); font-weight:700; font-size:1rem;">عشان تتابع طلباتك من أي جهاز، لازم تسجل دخول بحساب جوجل الأول.</p>
+        <button class="btn btn-outline btn-sm" style="margin-top:16px;" onclick="closeMyOrdersModal(); openUserAuthModal();">تسجيل الدخول دلوقتي</button>
+      </div>`;
+  } else {
+    // إظهار حالة تحميل وجلب أحدث البيانات من السيرفر فوراً
+    list.innerHTML = `<div style="text-align:center; padding:40px 10px; color:var(--denim); font-weight:700;">جاري مزامنة طلباتك... ⏳</div>`;
+    modal.classList.add('open');
+    overlay.classList.add('open');
+
+    // جلب البيانات الجديدة عشان تظهر لو طلبتها من جهاز تاني
+    await loadOrders(); 
+
+    // فلترة الطلبات بناءً على إيميل المستخدم لضمان الخصوصية
+    const myOrders = ORDERS.filter(o => 
+      (user.email && o.customerAuthId === user.email) || 
+      (!user.email && user.name && o.customerAuthId === user.name)
+    );
+
+    if (myOrders.length === 0) {
+      list.innerHTML = `<div style="text-align:center; padding:40px 10px; color:var(--ink-soft); font-weight:500;">لسه معملتش أي طلبات حتى الآن.</div>`;
+    } else {
+      list.innerHTML = myOrders.map(o => `
+        <div style="background:var(--paper); padding:16px; border-radius:var(--radius-s); margin-bottom:14px; border:2px solid var(--line); box-shadow:var(--shadow-s);">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; border-bottom:1px dashed var(--line); padding-bottom:10px;">
+            <strong style="color:var(--denim); font-family:var(--ff-mono);">طلب #${o.id || Math.floor(Math.random() * 10000)}</strong>
+            <span style="font-size:0.75rem; font-weight:700; padding:4px 10px; border-radius:999px; ${o.status === 'pending' ? 'background:#F3E6DA; color:var(--stamp);' : 'background:#DCEEE3; color:var(--ok);'}">
+              ${o.status === 'pending' ? 'قيد التوصيل ⏳' : 'تم التوصيل ✅'}
+            </span>
+          </div>
+          <div style="font-size:0.88rem; color:var(--ink-soft); line-height:1.8;">
+            <div style="display:flex; justify-content:space-between;"><span>التاريخ:</span> <span style="font-family:var(--ff-mono);">${o.date || 'اليوم'}</span></div>
+            <div style="display:flex; justify-content:space-between; margin-top:4px;"><span>الإجمالي:</span> <strong style="color:var(--brass); font-family:var(--ff-mono); font-size:1rem;">${o.total} ج.م</strong></div>
+          </div>
+        </div>
+      `).join('');
+    }
+  }
+  modal.classList.add('open');
+  overlay.classList.add('open');
+}
+
+// 4. إغلاق النافذة
+function closeMyOrdersModal() {
+  document.getElementById('myOrdersModal').classList.remove('open');
+  document.getElementById('myOrdersOverlay').classList.remove('open');
+}
 /* ============ BANNER MANAGEMENT ============ */
 function updateBannerUI() {
   document.getElementById('heroEyebrow').textContent = BANNER_DATA.eyebrow || '';
