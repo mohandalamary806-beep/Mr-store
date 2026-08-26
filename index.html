@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!--
-  MR Store — متجر إلكتروني (نسخة مطورة مع إدارة المنتجات + المقاسات والمفضلة)
+  MR Store — متجر إلكتروني (نسخة مطورة مع رفع الصور من الجهاز وإدارة المنتجات + المقاسات والمفضلة)
   ===================================================
 -->
 <html lang="ar" dir="rtl">
@@ -647,7 +647,7 @@ h1,h2,h3,h4{font-weight:inherit;}
         <div class="field"><label for="prodOldPrice">السعر القديم (اختياري)</label><input type="number" id="prodOldPrice" placeholder="550"></div>
       </div>
       
-      <!-- إضافة تحديد المقاسات هنا -->
+      <!-- إضافة تحديد المقاسات -->
       <div class="field">
         <label>المقاسات المتاحة</label>
         <div class="size-checkboxes">
@@ -659,7 +659,16 @@ h1,h2,h3,h4{font-weight:inherit;}
         </div>
       </div>
 
-      <div class="field"><label for="prodImg">رابط الصورة (URL)</label><input type="url" id="prodImg" required placeholder="https://example.com/image.jpg"></div>
+      <!-- اختيار الصور من الجهاز -->
+      <div class="field">
+        <label>صور المنتج (اختر صورة أو أكثر من جهازك)</label>
+        <input type="file" id="prodImgs" accept="image/*" multiple style="display:none;" onchange="previewSelectedImages(event)">
+        <button type="button" class="btn btn-outline btn-block" onclick="document.getElementById('prodImgs').click()" style="margin-bottom:8px;">
+          📁 اختيار الصور من الجهاز
+        </button>
+        <div id="imagePreviewGrid" style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;"></div>
+      </div>
+
       <div class="field">
         <label for="prodBadge">الشارة (اختياري)</label>
         <select id="prodBadge">
@@ -762,7 +771,7 @@ const PRODUCTS_STORAGE_KEY = 'mrstore_products_data';
 
 /* ============ FIREBASE CONFIG ============ */
 const firebaseConfig = {
- apiKey: "AIzaSyCQdprjl67J6xQ-hssegcPCr2fSZgUqz4k",
+  apiKey: "AIzaSyCQdprjl67J6xQ-hssegcPCr2fSZgUqz4k",
   authDomain: "mr-gaming-24803.firebaseapp.com",
   databaseURL: "https://mr-gaming-24803-default-rtdb.firebaseio.com",
   projectId: "mr-gaming-24803",
@@ -893,6 +902,35 @@ function handleUserLogout() {
 }
 
 /* ============ CREATE & TOGGLE PRODUCTS ============ */
+let uploadedBase64Images = [];
+
+function previewSelectedImages(event) {
+  const files = Array.from(event.target.files);
+  const previewContainer = document.getElementById('imagePreviewGrid');
+  previewContainer.innerHTML = '';
+  uploadedBase64Images = [];
+
+  if (files.length === 0) return;
+
+  files.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const base64Str = e.target.result;
+      uploadedBase64Images.push(base64Str);
+
+      const imgThumb = document.createElement('img');
+      imgThumb.src = base64Str;
+      imgThumb.style.width = '60px';
+      imgThumb.style.height = '60px';
+      imgThumb.style.objectFit = 'cover';
+      imgThumb.style.borderRadius = 'var(--radius-s)';
+      imgThumb.style.border = '2px solid var(--line)';
+      previewContainer.appendChild(imgThumb);
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
 function openAddProductModal() {
   document.getElementById('addProductModal').classList.add('open');
   document.getElementById('addProductOverlay').classList.add('open');
@@ -901,15 +939,24 @@ function openAddProductModal() {
 function closeAddProductModal() {
   document.getElementById('addProductModal').classList.remove('open');
   document.getElementById('addProductOverlay').classList.remove('open');
+  document.getElementById('addProductForm').reset();
+  uploadedBase64Images = [];
+  const grid = document.getElementById('imagePreviewGrid');
+  if (grid) grid.innerHTML = '';
 }
 
 document.getElementById('addProductForm').addEventListener('submit', async e => {
   e.preventDefault();
+
+  if (uploadedBase64Images.length === 0) {
+    showToast('برجاء اختيار صورة واحدة على الأقل من الجهاز!');
+    return;
+  }
+
   const name = document.getElementById('prodName').value.trim();
   const price = Number(document.getElementById('prodPrice').value);
   const oldVal = document.getElementById('prodOldPrice').value;
   const old = oldVal ? Number(oldVal) : null;
-  const img = document.getElementById('prodImg').value.trim();
   const badge = document.getElementById('prodBadge').value || null;
   
   // تجميع المقاسات المختارة
@@ -918,14 +965,21 @@ document.getElementById('addProductForm').addEventListener('submit', async e => 
 
   const newProduct = { 
     id: Date.now(), 
-    name, price, old, badge, active: true, img, sizes, likes: 0 
+    name, 
+    price, 
+    old, 
+    badge, 
+    active: true, 
+    img: uploadedBase64Images[0], 
+    images: [...uploadedBase64Images], 
+    sizes, 
+    likes: 0 
   };
 
   PRODUCTS.unshift(newProduct);
   await saveProducts(PRODUCTS);
   renderProducts();
   closeAddProductModal();
-  document.getElementById('addProductForm').reset();
   showToast('تمت إضافة المنتج بنجاح ✓');
 });
 
@@ -1054,7 +1108,7 @@ function applyFilter(badge){
     if (!user || !user.name) {
       showToast('يجب تسجيل الدخول لرؤية مفضلتك ❤️');
       openUserAuthModal();
-      return; // نمنع تفعيل الفلتر إذا لم يكن مسجلاً
+      return;
     }
   }
 
@@ -1401,7 +1455,6 @@ async function handleGoogleCredentialResponse(response){
     const email = payload.email;
     const verified = payload.email_verified === 'true' || payload.email_verified === true;
 
-    // للحفاظ على بيانات المستخدم القديمة مثل مفضلته إذا كان يسجل دخول بنفس الإيميل
     const existingUser = getUserData() || {}; 
     const isSameEmail = existingUser.email === email;
 
@@ -1416,7 +1469,6 @@ async function handleGoogleCredentialResponse(response){
     closeUserAuthModal();
     showToast(`أهلاً بك، ${payload.name || payload.email} 👋`);
     
-    // تحديث المنتجات عشان زرار اللايك ينور
     renderProducts(); 
 
     if(email && verified && ADMIN_ALLOWED_EMAILS.includes(email)){
@@ -1521,7 +1573,6 @@ document.querySelectorAll('.reveal').forEach(el=>observer.observe(el));
 async function initializeApp() {
   PRODUCTS = await fetchProducts();
   
-  // دمج تحديثات الحقول الجديدة للمنتجات القديمة لو مفيهاش (المقاسات واللايكات)
   PRODUCTS = PRODUCTS.map(p => ({
     ...p,
     sizes: p.sizes || [],
