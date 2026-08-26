@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!--
-  MR Store — متجر إلكتروني (نسخة مطورة مع إدارة المنتجات)
+  MR Store — متجر إلكتروني (نسخة مطورة مع إدارة المنتجات + المقاسات والمفضلة)
   ===================================================
 -->
 <html lang="ar" dir="rtl">
@@ -235,8 +235,19 @@ h1,h2,h3,h4{font-weight:inherit;}
 .stamp-sale{background:var(--stamp);}
 .product-perf{border-top:2px dashed var(--line);}
 .product-info{padding:18px 18px 20px;}
+
+/* اضافات المقاسات والإعجابات */
+.size-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.size-tag { font-family: var(--ff-mono); font-size: 0.75rem; font-weight: 700; border: 1px solid var(--line); border-radius: 4px; padding: 2px 6px; color: var(--ink-soft); background: var(--canvas); }
+.like-btn { display: flex; align-items: center; gap: 5px; color: var(--ink-soft); font-family: var(--ff-mono); font-weight: 700; font-size: 0.95rem; transition: color 0.2s, transform 0.2s; }
+.like-btn svg { width: 22px; height: 22px; transition: fill 0.2s, color 0.2s; }
+.like-btn:hover { color: var(--stamp); transform: scale(1.05); }
+.like-btn.liked { color: var(--stamp); }
+.like-btn.liked svg { fill: var(--stamp); }
+
 .product-name{font-size:1rem;font-weight:700;margin:0 0 12px;line-height:1.4;}
-.product-price-row{display:flex;align-items:baseline;gap:10px;margin-bottom:14px;}
+.product-price-row{display:flex;align-items:center;justify-content:space-between; margin-bottom:14px;}
+.price-wrap { display: flex; align-items: baseline; gap: 10px; }
 .product-price{font-weight:800;font-size:1.15rem;}
 .product-old{font-size:.82rem;color:var(--ink-soft);text-decoration:line-through;}
 .btn-add{
@@ -304,7 +315,7 @@ h1,h2,h3,h4{font-weight:inherit;}
 .drawer-subtotal{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:18px;font-size:1.05rem;font-weight:700;}
 .drawer-subtotal span:last-child{font-family:var(--ff-mono);color:var(--brass);font-size:1.2rem;}
 
-/* ============ MODAL (GENERIC & CHECKOUT & AUTH) ============ */
+/* ============ MODAL (GENERIC & CHECKOUT & AUTH & ADMIN) ============ */
 .modal{
   position:fixed;top:50%;left:50%;transform:translate(-50%,-48%);z-index:95;background:var(--paper);
   border-radius:var(--radius-m);width:460px;max-width:92vw;max-height:88vh;overflow-y:auto;
@@ -323,6 +334,12 @@ h1,h2,h3,h4{font-weight:inherit;}
 .field input:focus,.field textarea:focus,.field select:focus{border-color:var(--denim);}
 .field-row{display:flex;gap:12px;}
 .field-row .field{flex:1;}
+
+/* Checkboxes للمقاسات */
+.size-checkboxes { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 8px; }
+.size-checkboxes label { display: flex; align-items: center; gap: 6px; font-family: var(--ff-mono); font-weight: 700; cursor: pointer; color: var(--ink); }
+.size-checkboxes input { width: auto; }
+
 .checkout-summary{background:var(--canvas);border-radius:var(--radius-s);padding:14px 16px;margin-bottom:18px;font-size:.85rem;color:var(--ink-soft);}
 .checkout-summary strong{color:var(--ink);}
 .success-view{display:none;text-align:center;padding:10px 4px 4px;}
@@ -506,6 +523,7 @@ h1,h2,h3,h4{font-weight:inherit;}
           <button class="filter-tab active" data-badge="all">الكل</button>
           <button class="filter-tab" data-badge="new">جديد</button>
           <button class="filter-tab" data-badge="sale">تخفيضات</button>
+          <button class="filter-tab" data-badge="favorites">المفضلة ❤️</button>
         </div>
         
         <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
@@ -629,17 +647,19 @@ h1,h2,h3,h4{font-weight:inherit;}
         <div class="field"><label for="prodOldPrice">السعر القديم (اختياري)</label><input type="number" id="prodOldPrice" placeholder="550"></div>
       </div>
       
-      <!-- التعديل الجديد: رفع الصورة من الجهاز بدل الرابط -->
+      <!-- إضافة تحديد المقاسات هنا -->
       <div class="field">
-        <label>صورة المنتج</label>
-        <!-- إخفاء زرار الرفع الافتراضي وعمل زرار مخصص شكله أنظف -->
-        <input type="file" id="prodImg" accept="image/*" style="display:none;">
-        <button type="button" class="btn btn-outline btn-block" onclick="document.getElementById('prodImg').click()">
-          📁 اختر صورة من الجهاز
-        </button>
-        <span id="fileNameDisplay" style="display:block; margin-top:8px; font-size:0.85rem; color:var(--ink-soft); text-align:center;">لم يتم اختيار صورة</span>
+        <label>المقاسات المتاحة</label>
+        <div class="size-checkboxes">
+          <label><input type="checkbox" name="prodSizes" value="S"> S</label>
+          <label><input type="checkbox" name="prodSizes" value="M"> M</label>
+          <label><input type="checkbox" name="prodSizes" value="L"> L</label>
+          <label><input type="checkbox" name="prodSizes" value="XL"> XL</label>
+          <label><input type="checkbox" name="prodSizes" value="XXL"> XXL</label>
+        </div>
       </div>
 
+      <div class="field"><label for="prodImg">رابط الصورة (URL)</label><input type="url" id="prodImg" required placeholder="https://example.com/image.jpg"></div>
       <div class="field">
         <label for="prodBadge">الشارة (اختياري)</label>
         <select id="prodBadge">
@@ -663,7 +683,7 @@ h1,h2,h3,h4{font-weight:inherit;}
     </button>
   </div>
   <div class="modal-body" style="text-align:center; padding: 32px 20px;">
-    <p style="margin-bottom: 22px; color: var(--ink-soft); font-size: 0.95rem;">سجّل دخولك بضغطة واحدة باستخدام حساب جوجل لتجربة تسوق أفضل.</p>
+    <p style="margin-bottom: 22px; color: var(--ink-soft); font-size: 0.95rem;">سجّل دخولك بضغطة واحدة باستخدام حساب جوجل لتجربة تسوق أفضل وحفظ منتجاتك المفضلة.</p>
     <div class="google-signin-wrap" id="userGoogleSignInBtn" style="display:flex; justify-content:center;"></div>
   </div>
 </div>
@@ -758,10 +778,10 @@ if (useFirebase) {
 
 /* ============ PRODUCT DATA STORE ============ */
 const DEFAULT_PRODUCTS = [
-  {id:1, name:"قميص كلاسيك أبيض", price:450, old:null, badge:null, active:true, img:"https://placehold.co/600x750/ece5d3/221f1a?text=Classic+Shirt"},
-  {id:2, name:"تيشيرت قطن أزرق", price:250, old:300, badge:"sale", active:true, img:"https://placehold.co/600x750/dfe6ee/2b3b68?text=Cotton+Tee"},
-  {id:3, name:"بنطلون جينز رجالي", price:550, old:null, badge:null, active:true, img:"https://placehold.co/600x750/e1d9c3/221f1a?text=Denim+Jeans"},
-  {id:4, name:"جاكيت شتوي", price:900, old:null, badge:"new", active:true, img:"https://placehold.co/600x750/ece5d3/2b3b68?text=Winter+Jacket"},
+  {id:1, name:"قميص كلاسيك أبيض", price:450, old:null, badge:null, active:true, likes: 12, sizes: ["M", "L", "XL"], img:"https://placehold.co/600x750/ece5d3/221f1a?text=Classic+Shirt"},
+  {id:2, name:"تيشيرت قطن أزرق", price:250, old:300, badge:"sale", active:true, likes: 4, sizes: ["S", "M", "L"], img:"https://placehold.co/600x750/dfe6ee/2b3b68?text=Cotton+Tee"},
+  {id:3, name:"بنطلون جينز رجالي", price:550, old:null, badge:null, active:true, likes: 8, sizes: ["L", "XL", "XXL"], img:"https://placehold.co/600x750/e1d9c3/221f1a?text=Denim+Jeans"},
+  {id:4, name:"جاكيت شتوي", price:900, old:null, badge:"new", active:true, likes: 25, sizes: ["M", "L", "XL", "XXL"], img:"https://placehold.co/600x750/ece5d3/2b3b68?text=Winter+Jacket"},
 ];
 
 let PRODUCTS = [];
@@ -862,7 +882,13 @@ function handleUserLogout() {
   if (location.hash === '#admin') {
     location.hash = '';
   }
-
+  
+  if(state.filter === 'favorites') {
+     applyFilter('all');
+  } else {
+     renderProducts();
+  }
+  
   showToast('تم تسجيل الخروج');
 }
 
@@ -877,49 +903,30 @@ function closeAddProductModal() {
   document.getElementById('addProductOverlay').classList.remove('open');
 }
 
-// عرض اسم الصورة المختارة بمجرد التحديد
-document.getElementById('prodImg').addEventListener('change', function() {
-  const fileName = this.files[0] ? this.files[0].name : 'لم يتم اختيار صورة';
-  document.getElementById('fileNameDisplay').textContent = fileName;
-});
-
-// التعديل الأساسي هنا: قراءة الصورة كملف بدل رابط
 document.getElementById('addProductForm').addEventListener('submit', async e => {
   e.preventDefault();
   const name = document.getElementById('prodName').value.trim();
   const price = Number(document.getElementById('prodPrice').value);
   const oldVal = document.getElementById('prodOldPrice').value;
   const old = oldVal ? Number(oldVal) : null;
+  const img = document.getElementById('prodImg').value.trim();
   const badge = document.getElementById('prodBadge').value || null;
-
-  const fileInput = document.getElementById('prodImg');
   
-  // التأكد من اختيار صورة
-  if (!fileInput.files || fileInput.files.length === 0) {
-    showToast('الرجاء اختيار صورة للمنتج ⚠️');
-    return;
-  }
+  // تجميع المقاسات المختارة
+  const sizeCheckboxes = document.querySelectorAll('input[name="prodSizes"]:checked');
+  const sizes = Array.from(sizeCheckboxes).map(cb => cb.value);
 
-  const file = fileInput.files[0];
-  const reader = new FileReader();
-  
-  // تحويل الصورة لـ Base64 عشان تتسجل في الداتا بيز بسهولة
-  reader.onload = async function(event) {
-    const imgBase64 = event.target.result; 
-
-    const newProduct = { id: Date.now(), name, price, old, badge, active: true, img: imgBase64 };
-
-    PRODUCTS.unshift(newProduct);
-    await saveProducts(PRODUCTS);
-    renderProducts();
-    closeAddProductModal();
-    document.getElementById('addProductForm').reset();
-    document.getElementById('fileNameDisplay').textContent = 'لم يتم اختيار صورة';
-    showToast('تمت إضافة المنتج بنجاح ✓');
+  const newProduct = { 
+    id: Date.now(), 
+    name, price, old, badge, active: true, img, sizes, likes: 0 
   };
-  
-  // بدأ عملية القراءة
-  reader.readAsDataURL(file);
+
+  PRODUCTS.unshift(newProduct);
+  await saveProducts(PRODUCTS);
+  renderProducts();
+  closeAddProductModal();
+  document.getElementById('addProductForm').reset();
+  showToast('تمت إضافة المنتج بنجاح ✓');
 });
 
 async function toggleProductActive(id) {
@@ -948,6 +955,20 @@ function productCardHTML(p){
   const oldPrice = p.old ? `<span class="product-old">${money(p.old)}</span>` : '';
   const isActive = p.active !== false;
   const isAdmin = isAdminAuthed();
+  
+  // إعدادات المقاسات
+  let sizesHTML = '';
+  if (p.sizes && p.sizes.length > 0) {
+    sizesHTML = `<div class="size-tags">
+      ${p.sizes.map(s => `<span class="size-tag">${s}</span>`).join('')}
+    </div>`;
+  }
+  
+  // إعدادات الإعجابات والمفضلة
+  const user = getUserData();
+  const isLiked = user && user.favorites && user.favorites.includes(p.id);
+  const heartClass = isLiked ? 'like-btn liked' : 'like-btn';
+  const likeCount = p.likes || 0;
 
   let buyBtnHTML = '';
   if (isActive) {
@@ -979,10 +1000,19 @@ function productCardHTML(p){
       </div>
       <div class="product-perf"></div>
       <div class="product-info">
+        ${sizesHTML}
         <h3 class="product-name">${p.name}</h3>
         <div class="product-price-row">
-          <span class="product-price">${money(p.price)}</span>
-          ${oldPrice}
+          <div class="price-wrap">
+            <span class="product-price">${money(p.price)}</span>
+            ${oldPrice}
+          </div>
+          <button class="${heartClass}" data-action="like" data-id="${p.id}" aria-label="أضف للمفضلة">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+            </svg>
+            <span>${likeCount}</span>
+          </button>
         </div>
         ${buyBtnHTML}
         ${adminControlsHTML}
@@ -994,10 +1024,22 @@ function productCardHTML(p){
 function renderProducts(){
   const grid = document.getElementById('productGrid');
   const term = state.search.trim();
-  const filtered = PRODUCTS.filter(p =>
-    (state.filter === 'all' || p.badge === state.filter) &&
-    (term === '' || p.name.includes(term))
-  );
+  const user = getUserData();
+  
+  const filtered = PRODUCTS.filter(p => {
+    // التحقق من فلتر المفضلة
+    if (state.filter === 'favorites') {
+      if (!user || !user.favorites || !user.favorites.includes(p.id)) return false;
+    } else if (state.filter !== 'all' && p.badge !== state.filter) {
+      return false;
+    }
+    
+    // التحقق من البحث
+    if (term !== '' && !p.name.includes(term)) return false;
+    
+    return true;
+  });
+  
   if(filtered.length === 0){
     grid.innerHTML = `<div class="empty-state"><strong>مفيش نتايج مطابقة</strong>جرّب كلمة تانية أو اختار فلتر مختلف.</div>`;
     return;
@@ -1007,6 +1049,15 @@ function renderProducts(){
 
 /* ============ FILTER TABS + SEARCH ============ */
 function applyFilter(badge){
+  if (badge === 'favorites') {
+    const user = getUserData();
+    if (!user || !user.name) {
+      showToast('يجب تسجيل الدخول لرؤية مفضلتك ❤️');
+      openUserAuthModal();
+      return; // نمنع تفعيل الفلتر إذا لم يكن مسجلاً
+    }
+  }
+
   state.filter = badge;
   document.querySelectorAll('#filterTabs .filter-tab').forEach(btn=>{
     btn.classList.toggle('active', btn.dataset.badge === badge);
@@ -1025,7 +1076,7 @@ document.getElementById('searchInput').addEventListener('input', e=>{
   renderProducts();
 });
 
-/* ============ CART ============ */
+/* ============ CART & LIKE LOGIC ============ */
 function findProduct(id){ return PRODUCTS.find(p=>p.id===id); }
 
 function addToCart(id){
@@ -1035,6 +1086,36 @@ function addToCart(id){
   renderCart();
   showToast('تمت الإضافة للعربة ✓');
 }
+
+async function handleLikeAction(id) {
+  let user = getUserData();
+  if (!user || !user.name) {
+    showToast('سجل دخولك عشان تقدر تحفظ المنتجات اللي بتعجبك ❤️');
+    openUserAuthModal();
+    return;
+  }
+
+  user.favorites = user.favorites || [];
+  const product = findProduct(id);
+  if(!product) return;
+  
+  product.likes = product.likes || 0;
+
+  if (user.favorites.includes(id)) {
+    // إزالة من المفضلة
+    user.favorites = user.favorites.filter(favId => favId !== id);
+    product.likes = Math.max(0, product.likes - 1);
+  } else {
+    // إضافة للمفضلة
+    user.favorites.push(id);
+    product.likes++;
+  }
+
+  setUserData(user);
+  await saveProducts(PRODUCTS);
+  renderProducts();
+}
+
 function removeFromCart(id){
   state.cart = state.cart.filter(i=>i.id!==id);
   renderCart();
@@ -1091,6 +1172,7 @@ document.getElementById('productGrid').addEventListener('click', e=>{
   const id = Number(btn.dataset.id);
 
   if (action === 'add') addToCart(id);
+  if (action === 'like') handleLikeAction(id);
   if (action === 'toggle-active') toggleProductActive(id);
   if (action === 'delete-prod') deleteProduct(id);
 });
@@ -1319,13 +1401,23 @@ async function handleGoogleCredentialResponse(response){
     const email = payload.email;
     const verified = payload.email_verified === 'true' || payload.email_verified === true;
 
+    // للحفاظ على بيانات المستخدم القديمة مثل مفضلته إذا كان يسجل دخول بنفس الإيميل
+    const existingUser = getUserData() || {}; 
+    const isSameEmail = existingUser.email === email;
+
     setUserData({
+      ...existingUser,
+      favorites: isSameEmail ? (existingUser.favorites || []) : [],
       name: payload.name || payload.email,
       email: payload.email,
       picture: payload.picture
     });
+    
     closeUserAuthModal();
     showToast(`أهلاً بك، ${payload.name || payload.email} 👋`);
+    
+    // تحديث المنتجات عشان زرار اللايك ينور
+    renderProducts(); 
 
     if(email && verified && ADMIN_ALLOWED_EMAILS.includes(email)){
       localStorage.setItem(ADMIN_EMAIL_KEY, email);
@@ -1425,9 +1517,17 @@ const observer = new IntersectionObserver(entries=>{
 }, {threshold:.12});
 document.querySelectorAll('.reveal').forEach(el=>observer.observe(el));
 
-/* ============ INIT ============ */
+/* ============ INIT (تهيئة التطبيق) ============ */
 async function initializeApp() {
   PRODUCTS = await fetchProducts();
+  
+  // دمج تحديثات الحقول الجديدة للمنتجات القديمة لو مفيهاش (المقاسات واللايكات)
+  PRODUCTS = PRODUCTS.map(p => ({
+    ...p,
+    sizes: p.sizes || [],
+    likes: p.likes || 0
+  }));
+
   renderProducts();
   renderCart();
   updateUserUI();
