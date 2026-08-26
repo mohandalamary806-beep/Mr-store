@@ -450,6 +450,7 @@ h1,h2,h3,h4{font-weight:inherit;}
       <a href="#top">الرئيسية</a>
       <a href="#products">المنتجات</a>
       <a href="#footer">تواصل معنا</a>
+      <a href="#" onclick="openMyOrdersModal(); return false;">الطلبات</a>
       <a href="#admin" class="admin-nav-link" id="adminNavLink">لوحة التحكم</a>
     </nav>
     <div class="header-actions">
@@ -490,6 +491,7 @@ h1,h2,h3,h4{font-weight:inherit;}
     <a href="#top">الرئيسية</a>
     <a href="#products">المنتجات</a>
     <a href="#footer">تواصل معنا</a>
+    <a href="#" onclick="openMyOrdersModal(); return false;">الطلبات</a>
     <a href="#admin" class="admin-nav-link" id="adminNavLinkMobile">لوحة التحكم</a>
   </nav>
 </div>
@@ -654,6 +656,21 @@ h1,h2,h3,h4{font-weight:inherit;}
       <p>لو صفحة واتساب ماتفتحتش لوحدها، دوس على الزرار وكمّل الإرسال عشان نأكّد طلبك.</p>
       <a href="#" id="waFallback" target="_blank" rel="noopener" class="btn btn-primary btn-block">إرسال الطلب على واتساب</a>
     </div>
+  </div>
+</div>
+
+<!-- ============ MY ORDERS MODAL (طلبات العميل) ============ -->
+<div class="overlay" id="myOrdersOverlay" onclick="closeMyOrdersModal()"></div>
+<div class="modal" id="myOrdersModal">
+  <div class="modal-head">
+    <h3>الطلبات</h3>
+    <button class="icon-btn" onclick="closeMyOrdersModal()" aria-label="إغلاق">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
+    </button>
+  </div>
+  <div class="modal-body">
+    <p style="font-size:.82rem; color:var(--ink-soft); margin-bottom:18px;">دي الطلبات اللي عملتها من المتصفح ده. تقدر تتابع حالة كل طلب أول بأول.</p>
+    <div id="myOrdersList"></div>
   </div>
 </div>
 
@@ -1617,6 +1634,45 @@ document.getElementById('ordersList').addEventListener('click', e=>{
   else if(btn.dataset.action === 'delete'){ if(!confirm('متأكد إنك عايز تحذف الطلب ده؟')) return; orders = orders.filter(o => String(o.id) !== id); }
   saveOrders(orders); renderOrders();
 });
+
+/* ============ MY ORDERS (طلبات العميل) ============ */
+function myOrderCardHTML(o){
+  const itemsHTML = o.items.map(i=>`<div><span>${i.name} × ${i.qty}</span><span>${money(i.price*i.qty)}</span></div>`).join('');
+  const isDelivered = o.status === 'delivered';
+  return `
+  <div class="order-card">
+    <div class="order-card-head">
+      <div><span class="order-num">#${String(o.id).slice(-5)}</span><span class="order-date">${o.date}</span></div>
+      <span class="order-status ${isDelivered ? 'delivered' : 'pending'}">${isDelivered ? 'تم التوصيل' : 'قيد التوصيل'}</span>
+    </div>
+    <div class="order-cust">
+      <div><span>الاسم</span>${o.name}</div>
+      <div><span>الهاتف</span>${o.phone}</div>
+      <div><span>المحافظة</span>${o.city}</div>
+      <div><span>العنوان</span>${o.address}</div>
+    </div>
+    <div class="order-items">${itemsHTML}</div>
+    <div class="order-total-row"><span>الإجمالي</span><span>${money(o.total)}</span></div>
+  </div>`;
+}
+
+function renderMyOrders(){
+  const orders = getOrders();
+  const list = document.getElementById('myOrdersList');
+  list.innerHTML = orders.length === 0
+    ? `<div class="admin-empty"><strong>لسه مفيش طلبات</strong>الطلبات اللي هتعملها من المتجر هتظهر هنا وهتقدر تتابع حالتها.</div>`
+    : orders.map(myOrderCardHTML).join('');
+}
+
+function openMyOrdersModal(){
+  renderMyOrders();
+  document.getElementById('myOrdersModal').classList.add('open');
+  document.getElementById('myOrdersOverlay').classList.add('open');
+}
+function closeMyOrdersModal(){
+  document.getElementById('myOrdersModal').classList.remove('open');
+  document.getElementById('myOrdersOverlay').classList.remove('open');
+}
 
 /* ============ ADMIN COUPONS & REVIEWS ============ */
 function renderAdminCoupons() {
