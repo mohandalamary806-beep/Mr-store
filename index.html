@@ -1954,54 +1954,100 @@ const observer = new IntersectionObserver(entries => {
   });
 }, { threshold: 0.1 });
 
-function handleCredentialResponse(response) {
+function emailToKey(email) {
+  return email.replace(/\./g, '_').replace(/@/g, '__at__');
+}
+
+async function loadUserProfile(email) {
+  const key = emailToKey(email);
+  if (useFirebase) {
+    try {
+      const snap = await firebase.database().ref('userProfiles/' + key).once('value');
+      if (snap.exists()) return snap.val();
+    } catch(e) {}
+  }
+  // fallback: localStorage
+  try {
+    const s = localStorage.getItem('mrstore_profile_' + key);
+    if (s) return JSON.parse(s);
+  } catch(e) {}
+  return null;
+}
+
+async function saveUserProfile(email, profileData) {
+  const key = emailToKey(email);
+  if (useFirebase) {
+    try { await firebase.database().ref('userProfiles/' + key).set(profileData); } catch(e) {}
+  }
+  localStorage.setItem('mrstore_profile_' + key, JSON.stringify(profileData));
+}
+
+async function loadTakenNames() {
+  if (useFirebase) {
+    try {
+      const snap = await firebase.database().ref('takenNames').once('value');
+      if (snap.exists()) return snap.val();
+    } catch(e) {}
+  }
+  try {
+    const s = localStorage.getItem(TAKEN_NAMES_KEY);
+    if (s) return JSON.parse(s);
+  } catch(e) {}
+  return {};
+}
+
+async function saveTakenNames(takenNames) {
+  if (useFirebase) {
+    try { await firebase.database().ref('takenNames').set(takenNames); } catch(e) {}
+  }
+  localStorage.setItem(TAKEN_NAMES_KEY, JSON.stringify(takenNames));
+}
+
+async function handleCredentialResponse(response) {
   try {
     const payload = JSON.parse(atob(response.credential.split('.')[1]));
     const email = payload.email;
     const isAdminEmail = ADMIN_ALLOWED_EMAILS.includes(email);
 
+    // جلب بروفايل المستخدم من Firebase/localStorage
+    const savedProfile = await loadUserProfile(email);
+    const localData = getUserData();
+    // الاسم المحفوظ: Firebase > localStorage > اسم جوجل
+    const savedName = (savedProfile && savedProfile.name) || (localData && localData.nameLastChanged && localData.name) || payload.name;
+    const savedNameLastChanged = (savedProfile && savedProfile.nameLastChanged) || (localData && localData.nameLastChanged) || null;
+    const savedFavorites = (localData && localData.favorites) || [];
+    const isFirstLogin = !savedNameLastChanged;
+
     if (isAdminEmail) {
-      // دائماً احفظ الإيميل كأدمن بصرف النظر عن الصفحة الحالية
       localStorage.setItem(ADMIN_EMAIL_KEY, email);
-      // احفظ بيانات المستخدم مع الحفاظ على الاسم المخصص
-      const existing = getUserData();
-      const keepName = existing && existing.nameLastChanged ? existing.name : payload.name;
       setUserData({
-        name: keepName,
-        email: payload.email,
-        favorites: existing && existing.favorites ? existing.favorites : [],
-        nameLastChanged: existing && existing.nameLastChanged ? existing.nameLastChanged : null
+        name: savedName,
+        email: email,
+        favorites: savedFavorites,
+        nameLastChanged: savedNameLastChanged
       });
 
       if (location.hash === '#admin') {
-        // كان في صفحة الأدمن → افتح لوحة التحكم مباشرة
         document.getElementById('googleLoginError').classList.remove('show');
         openAdminDashboard();
       } else {
-        // كان في الصفحة الرئيسية → حدّث الـ UI وأظهر خصائص الأدمن
         closeUserAuthModal();
         updateAdminNavVisibility();
         renderProducts();
         showToast('تم تسجيل الدخول كمدير ✓');
-        const existingAdmin = getUserData();
-        if (!existingAdmin || !existingAdmin.nameLastChanged) {
+        if (isFirstLogin) {
           setTimeout(() => openEditUsernameModal(true), 400);
         }
       }
     } else {
       if (location.hash === '#admin') {
-        // إيميل غير مصرح له بالأدمن
         document.getElementById('googleLoginError').classList.add('show');
       } else {
-        // مستخدم عادي
-        const existing = getUserData();
-        const isFirstLogin = !existing || !existing.nameLastChanged;
-        const keepName = existing && existing.nameLastChanged ? existing.name : payload.name;
         setUserData({
-          name: keepName,
-          email: payload.email,
-          favorites: existing && existing.favorites ? existing.favorites : [],
-          nameLastChanged: existing && existing.nameLastChanged ? existing.nameLastChanged : null
+          name: savedName,
+          email: email,
+          favorites: savedFavorites,
+          nameLastChanged: savedNameLastChanged
         });
         closeUserAuthModal();
         showToast('تم تسجيل الدخول بنجاح ✓');
@@ -2081,32 +2127,41 @@ document.getElementById('editUsernameForm').addEventListener('submit', async e =
     return;
   }
 
-  // التحقق من تفرد الاسم
-  const takenRaw = localStorage.getItem(TAKEN_NAMES_KEY);
-  const takenNames = takenRaw ? JSON.parse(takenRaw) : {};
-  const normalizedNew = newName.trim().toLowerCase();
-  const normalizedOld = user.name ? user.name.trim().toLowerCase() : '';
+  const normalizedNew = newName.toLowerCase();
+  const normalizedOld = user.name ? user.name.toLowerCase() : '';
 
-  // لو الاسم الجديد مختلف عن الاسم الحالي وهو محجوز بشخص تاني
+  // جلب الأسماء المحجوزة من Firebase
+  const submitBtn = document.getElementById('editUsernameSubmitBtn');
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'جاري التحقق...';
+
+  const takenNames = await loadTakenNames();
+
+  // التحقق من تفرد الاسم
   if (normalizedNew !== normalizedOld && takenNames[normalizedNew] && takenNames[normalizedNew] !== user.email) {
     showToast('الاسم ده محجوز، جرّب اسم تاني ✗');
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'حفظ الاسم';
     return;
   }
 
-  // تحرير الاسم القديم (لو كان محجوزاً بنفس الإيميل)
+  // تحرير الاسم القديم وحجز الجديد
   if (normalizedOld && takenNames[normalizedOld] === user.email) {
     delete takenNames[normalizedOld];
   }
-  // حجز الاسم الجديد
   takenNames[normalizedNew] = user.email;
-  localStorage.setItem(TAKEN_NAMES_KEY, JSON.stringify(takenNames));
+  await saveTakenNames(takenNames);
+
+  // حفظ البروفايل في Firebase
+  const nameLastChanged = new Date().toISOString();
+  await saveUserProfile(user.email, { name: newName, nameLastChanged });
 
   if (isFirstTime) {
     showToast(`تم حفظ اسمك! تقدر تغيّره تاني بعد ${NAME_COOLDOWN_DAYS} أيام ✓`);
   } else {
     showToast('تم تغيير الاسم بنجاح ✓');
   }
-  setUserData({ ...user, name: newName, nameLastChanged: new Date().toISOString() });
+  setUserData({ ...user, name: newName, nameLastChanged });
   closeEditUsernameModal();
   renderProducts();
 });
