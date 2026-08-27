@@ -407,6 +407,7 @@ h1,h2,h3,h4{font-weight:inherit;}
 .order-status{font-family:var(--ff-mono);font-size:.66rem;font-weight:700;padding:6px 14px;border-radius:999px;letter-spacing:.05em;white-space:nowrap;height:fit-content;}
 .order-status.pending{background:#F3E6DA;color:var(--stamp);}
 .order-status.delivered{background:#DCEEE3;color:var(--ok);}
+.order-status.in_transit{background:#E8F0FB;color:#2B3B68;}
 .order-cust{display:grid;grid-template-columns:1fr 1fr;gap:10px 20px;margin-bottom:16px;font-size:.9rem;}
 .order-cust div span{display:block;font-family:var(--ff-mono);font-size:.63rem;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;}
 .order-items{border-top:1px dashed var(--line);padding-top:12px;margin-bottom:14px;}
@@ -462,6 +463,7 @@ h1,h2,h3,h4{font-weight:inherit;}
       </div>
       <div class="user-profile-wrap" id="userProfileWrap" style="display:none;">
         <span id="userNameDisplay"></span>
+        <button onclick="openEditUsernameModal(false)" style="background:none;border:none;cursor:pointer;font-size:.85rem;padding:2px 4px;color:var(--brass);" title="تعديل الاسم" aria-label="تعديل الاسم">✏️</button>
         <button class="btn btn-outline btn-sm" onclick="handleUserLogout()">خروج</button>
       </div>
 
@@ -847,6 +849,27 @@ h1,h2,h3,h4{font-weight:inherit;}
   </div>
 </div>
 
+<!-- ============ EDIT USERNAME MODAL ============ -->
+<div class="overlay" id="editUsernameOverlay" onclick="closeEditUsernameModal()"></div>
+<div class="modal" id="editUsernameModal">
+  <div class="modal-head">
+    <h3>تخصيص اسمك</h3>
+    <button class="icon-btn" onclick="closeEditUsernameModal()" aria-label="إغلاق">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
+    </button>
+  </div>
+  <div class="modal-body">
+    <p id="editUsernameNote" style="font-size:.85rem; color:var(--ink-soft); margin-bottom:16px; line-height:1.7;"></p>
+    <form id="editUsernameForm">
+      <div class="field">
+        <label for="newUsernameInput">الاسم الذي سيظهر للآخرين</label>
+        <input type="text" id="newUsernameInput" required maxlength="30" placeholder="أدخل اسمك...">
+      </div>
+      <button type="submit" class="btn btn-primary btn-block" id="editUsernameSubmitBtn">حفظ الاسم</button>
+    </form>
+  </div>
+</div>
+
 <!-- ============ TOAST ============ -->
 <div class="toast" id="toast"></div>
 
@@ -907,7 +930,8 @@ h1,h2,h3,h4{font-weight:inherit;}
         <div class="admin-toolbar">
           <div class="filter-tabs" id="adminFilterTabs">
             <button class="filter-tab active" data-status="all">الكل</button>
-            <button class="filter-tab" data-status="pending">قيد التوصيل</button>
+            <button class="filter-tab" data-status="pending">قيد الانتظار</button>
+            <button class="filter-tab" data-status="in_transit">في الطريق 🚚</button>
             <button class="filter-tab" data-status="delivered">تم التوصيل</button>
           </div>
           <div class="search-box">
@@ -1123,20 +1147,36 @@ async function openMyOrdersModal() {
     if (myOrders.length === 0) {
       list.innerHTML = `<div style="text-align:center; padding:40px 10px; color:var(--ink-soft); font-weight:500;">لسه معملتش أي طلبات حتى الآن.</div>`;
     } else {
-      list.innerHTML = myOrders.map(o => `
-        <div style="background:var(--paper); padding:16px; border-radius:var(--radius-s); margin-bottom:14px; border:2px solid var(--line); box-shadow:var(--shadow-s);">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; border-bottom:1px dashed var(--line); padding-bottom:10px;">
-            <strong style="color:var(--denim); font-family:var(--ff-mono);">طلب #${o.id || Math.floor(Math.random() * 10000)}</strong>
-            <span style="font-size:0.75rem; font-weight:700; padding:4px 10px; border-radius:999px; ${o.status === 'pending' ? 'background:#F3E6DA; color:var(--stamp);' : 'background:#DCEEE3; color:var(--ok);'}">
-              ${o.status === 'pending' ? 'قيد التوصيل ⏳' : 'تم التوصيل ✅'}
-            </span>
-          </div>
-          <div style="font-size:0.88rem; color:var(--ink-soft); line-height:1.8;">
-            <div style="display:flex; justify-content:space-between;"><span>التاريخ:</span> <span style="font-family:var(--ff-mono);">${o.date || 'اليوم'}</span></div>
-            <div style="display:flex; justify-content:space-between; margin-top:4px;"><span>الإجمالي:</span> <strong style="color:var(--brass); font-family:var(--ff-mono); font-size:1rem;">${o.total} ج.م</strong></div>
-          </div>
-        </div>
-      `).join('');
+      const renderMyOrders = () => {
+        const user2 = getUserData();
+        const myOrders2 = ORDERS.filter(o =>
+          (user2.email && o.customerAuthId === user2.email) ||
+          (!user2.email && user2.name && o.customerAuthId === user2.name)
+        );
+        if (myOrders2.length === 0) {
+          list.innerHTML = `<div style="text-align:center; padding:40px 10px; color:var(--ink-soft); font-weight:500;">لسه معملتش أي طلبات حتى الآن.</div>`;
+          return;
+        }
+        list.innerHTML = myOrders2.map(o => {
+          const statusStyle = o.status === 'pending' ? 'background:#F3E6DA; color:var(--stamp);' : o.status === 'in_transit' ? 'background:#E8F0FB; color:#2B3B68;' : 'background:#DCEEE3; color:var(--ok);';
+          const statusText = o.status === 'pending' ? 'قيد الانتظار ⏳' : o.status === 'in_transit' ? 'في الطريق 🚚' : 'تم التوصيل ✅';
+          const canDelete = o.status === 'pending';
+          return `
+          <div style="background:var(--paper); padding:16px; border-radius:var(--radius-s); margin-bottom:14px; border:2px solid var(--line); box-shadow:var(--shadow-s);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; border-bottom:1px dashed var(--line); padding-bottom:10px;">
+              <strong style="color:var(--denim); font-family:var(--ff-mono);">طلب #${o.id || ''}</strong>
+              <span style="font-size:0.75rem; font-weight:700; padding:4px 10px; border-radius:999px; ${statusStyle}">${statusText}</span>
+            </div>
+            <div style="font-size:0.88rem; color:var(--ink-soft); line-height:1.8;">
+              <div style="display:flex; justify-content:space-between;"><span>التاريخ:</span> <span style="font-family:var(--ff-mono);">${o.date || 'اليوم'}</span></div>
+              <div style="display:flex; justify-content:space-between; margin-top:4px;"><span>الإجمالي:</span> <strong style="color:var(--brass); font-family:var(--ff-mono); font-size:1rem;">${o.total} ج.م</strong></div>
+            </div>
+            ${canDelete ? `<button onclick="customerCancelOrder(${o.id})" style="margin-top:12px; width:100%; padding:8px; border:1.5px dashed var(--stamp); border-radius:var(--radius-s); color:var(--stamp); font-weight:700; font-size:.82rem; background:transparent; cursor:pointer;">إلغاء الطلب ✕</button>` : ''}
+          </div>`;
+        }).join('');
+      };
+      renderMyOrders();
+      window._renderMyOrders = renderMyOrders;
     }
   }
   modal.classList.add('open');
@@ -1147,6 +1187,17 @@ async function openMyOrdersModal() {
 function closeMyOrdersModal() {
   document.getElementById('myOrdersModal').classList.remove('open');
   document.getElementById('myOrdersOverlay').classList.remove('open');
+}
+
+// 5. إلغاء الطلب من طرف العميل (pending فقط)
+async function customerCancelOrder(orderId) {
+  const order = ORDERS.find(o => o.id === orderId);
+  if (!order || order.status !== 'pending') { showToast('مش ممكن تلغي الطلب ده دلوقتي'); return; }
+  if (!confirm('متأكد إنك عايز تلغي الطلب ده؟')) return;
+  ORDERS = ORDERS.filter(o => o.id !== orderId);
+  await saveDataStore('orders', ORDERS_STORAGE_KEY, ORDERS);
+  showToast('تم إلغاء الطلب بنجاح ✓');
+  if (typeof window._renderMyOrders === 'function') window._renderMyOrders();
 }
 
 /* ============ BANNER MANAGEMENT ============ */
@@ -1321,14 +1372,18 @@ async function deleteProduct(id) {
 function viewProductReviews(prodId) {
   const list = document.getElementById('productReviewsList');
   document.getElementById('revProdId').value = prodId;
+  const isAdmin = isAdminAuthed();
   const prodRevs = REVIEWS.filter(r => r.prodId === prodId);
   if (prodRevs.length === 0) {
     list.innerHTML = `<div style="text-align:center; color:var(--ink-soft); padding:20px;">لا توجد تقييمات لهذا المنتج بعد.</div>`;
   } else {
     list.innerHTML = prodRevs.map(r => `
       <div style="border-bottom:1px dashed var(--line); padding:10px 0;">
-        <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
-          <strong>${r.userName}</strong>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <strong>${r.userName}</strong>
+            ${isAdmin ? `<button onclick="deleteReviewFromModal(${r.id}, ${prodId})" style="color:var(--stamp); font-size:.75rem; font-weight:700; border:1px solid var(--stamp); border-radius:3px; padding:2px 6px; background:transparent; cursor:pointer;">حذف</button>` : ''}
+          </div>
           <span style="color:var(--brass);">${'⭐'.repeat(r.rating)}</span>
         </div>
         <p style="color:var(--ink-soft);">${r.text}</p>
@@ -1341,6 +1396,15 @@ function viewProductReviews(prodId) {
 function closeReviewsModal() {
   document.getElementById('reviewsModal').classList.remove('open');
   document.getElementById('reviewsOverlay').classList.remove('open');
+}
+
+async function deleteReviewFromModal(reviewId, prodId) {
+  if(!confirm('حذف هذا التقييم؟')) return;
+  REVIEWS = REVIEWS.filter(r => r.id !== reviewId);
+  await saveDataStore('reviews', REVIEWS_STORAGE_KEY, REVIEWS);
+  showToast('تم حذف التقييم ✓');
+  viewProductReviews(prodId);
+  renderAdminReviews();
 }
 document.getElementById('addReviewForm').addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -1468,6 +1532,7 @@ document.getElementById('adminSearchInput').addEventListener('input', e => {
 function findProduct(id){ return PRODUCTS.find(p=>p.id===id); }
 
 function addToCart(id){
+  if(!getUserData()) { showToast('سجّل دخولك الأول عشان تضيف للعربة 🛍️'); openUserAuthModal(); return; }
   const p = findProduct(id);
   if(!p) return;
   const stockQty = p.stock !== undefined ? p.stock : 100;
@@ -1631,7 +1696,10 @@ function openCheckout(){
   checkoutOverlay.classList.add('open');
 }
 function closeCheckout(){ checkoutModal.classList.remove('open'); checkoutOverlay.classList.remove('open'); }
-document.getElementById('checkoutBtn').addEventListener('click', ()=>{ closeCart(); openCheckout(); });
+document.getElementById('checkoutBtn').addEventListener('click', ()=>{
+  if(!getUserData()) { showToast('سجّل دخولك الأول عشان تكمّل الطلب 🛍️'); closeCart(); openUserAuthModal(); return; }
+  closeCart(); openCheckout();
+});
 document.getElementById('checkoutCloseBtn').addEventListener('click', closeCheckout);
 checkoutOverlay.addEventListener('click', closeCheckout);
 
@@ -1749,11 +1817,26 @@ function updateAdminStats() {
 function renderAdminOrders() {
   const list = document.getElementById('ordersList');
   if(ORDERS.length === 0) { list.innerHTML = `<div class="admin-empty"><strong>لا توجد طلبات</strong></div>`; return; }
-  list.innerHTML = ORDERS.map(o => `
+  list.innerHTML = ORDERS.map(o => {
+    const statusLabel = o.status === 'pending' ? 'قيد الانتظار ⏳' : o.status === 'in_transit' ? 'في الطريق 🚚' : 'تم التوصيل ✅';
+    let actionsHTML = '';
+    if (o.status === 'pending') {
+      actionsHTML = `
+        <button class="btn-mark" style="background:#5B7FBE;" onclick="changeOrderStatus(${o.id}, 'in_transit')">في الطريق 🚚</button>
+        <button class="btn-mark" onclick="changeOrderStatus(${o.id}, 'delivered')">تم التوصيل ✅</button>
+        <button class="btn-delete" onclick="deleteOrder(${o.id})">حذف 🗑️</button>`;
+    } else if (o.status === 'in_transit') {
+      actionsHTML = `
+        <button class="btn-mark" onclick="changeOrderStatus(${o.id}, 'delivered')">تم التوصيل ✅</button>
+        <button class="btn-undo" onclick="changeOrderStatus(${o.id}, 'pending')">رجوع للانتظار</button>`;
+    } else {
+      actionsHTML = `<button class="btn-undo" onclick="changeOrderStatus(${o.id}, 'pending')">رجوع للانتظار</button>`;
+    }
+    return `
     <div class="order-card">
       <div class="order-card-head">
         <div><span class="order-num">#${o.id}</span><span class="order-date">${o.date}</span></div>
-        <div class="order-status ${o.status}">${o.status === 'pending' ? 'قيد التوصيل ⏳' : 'تم التوصيل ✅'}</div>
+        <div class="order-status ${o.status}">${statusLabel}</div>
       </div>
       <div class="order-cust">
         <div><span>الاسم</span>${o.name}</div>
@@ -1762,12 +1845,9 @@ function renderAdminOrders() {
         <div><span>العنوان</span>${o.address}</div>
       </div>
       <div class="order-total-row"><span>الإجمالي</span><span>${money(o.total)}</span></div>
-      <div class="order-actions">
-        ${o.status === 'pending' ? `<button class="btn-mark" onclick="changeOrderStatus(${o.id}, 'delivered')">تحديد كـ "تم التوصيل"</button>` : `<button class="btn-undo" onclick="changeOrderStatus(${o.id}, 'pending')">تراجع إلى "قيد التوصيل"</button>`}
-        <button class="btn-delete" onclick="deleteOrder(${o.id})">حذف الطلب 🗑️</button>
-      </div>
-    </div>
-  `).join('');
+      <div class="order-actions">${actionsHTML}</div>
+    </div>`;
+  }).join('');
 }
 
 async function changeOrderStatus(id, status) {
@@ -1896,6 +1976,10 @@ function handleCredentialResponse(response) {
         updateAdminNavVisibility();
         renderProducts();
         showToast('تم تسجيل الدخول كمدير ✓');
+        const existingAdmin = getUserData();
+        if (!existingAdmin || !existingAdmin.nameLastChanged) {
+          setTimeout(() => openEditUsernameModal(true), 400);
+        }
       }
     } else {
       if (location.hash === '#admin') {
@@ -1904,14 +1988,88 @@ function handleCredentialResponse(response) {
       } else {
         // مستخدم عادي
         const existing = getUserData();
-        setUserData({ name: payload.name, email: payload.email, favorites: existing && existing.favorites ? existing.favorites : [] });
+        const isFirstLogin = !existing || !existing.nameLastChanged;
+        setUserData({ name: payload.name, email: payload.email, favorites: existing && existing.favorites ? existing.favorites : [], nameLastChanged: existing && existing.nameLastChanged ? existing.nameLastChanged : null });
         closeUserAuthModal();
         showToast('تم تسجيل الدخول بنجاح ✓');
         renderProducts();
+        if (isFirstLogin) {
+          setTimeout(() => openEditUsernameModal(true), 400);
+        }
       }
     }
   } catch (e) { console.error("Error decoding Google response", e); }
 }
+
+/* ============ USERNAME CUSTOMIZATION ============ */
+const NAME_COOLDOWN_DAYS = 7;
+
+function canChangeName(user) {
+  if (!user.nameLastChanged) return true;
+  const last = new Date(user.nameLastChanged);
+  const now = new Date();
+  const diffDays = (now - last) / (1000 * 60 * 60 * 24);
+  return diffDays >= NAME_COOLDOWN_DAYS;
+}
+
+function daysUntilNextChange(user) {
+  if (!user.nameLastChanged) return 0;
+  const last = new Date(user.nameLastChanged);
+  const now = new Date();
+  const diffDays = (now - last) / (1000 * 60 * 60 * 24);
+  return Math.ceil(NAME_COOLDOWN_DAYS - diffDays);
+}
+
+function openEditUsernameModal(isFirstTime = false) {
+  const user = getUserData();
+  if (!user) return;
+  const note = document.getElementById('editUsernameNote');
+  const input = document.getElementById('newUsernameInput');
+  const submitBtn = document.getElementById('editUsernameSubmitBtn');
+  input.value = user.name || '';
+  if (isFirstTime) {
+    note.innerHTML = `مرحباً بيك! 🎉<br>دلوقتي تقدر تختار الاسم اللي هيظهر للناس. <strong>تنبيه:</strong> بعد ما تحفظ الاسم، مش هتقدر تغيّره إلا بعد <strong>${NAME_COOLDOWN_DAYS} أيام</strong>.`;
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'حفظ الاسم';
+  } else {
+    const canChange = canChangeName(user);
+    if (canChange) {
+      note.textContent = 'تقدر تغير اسمك. بعد التغيير، هتقدر تغيّره تاني بعد 7 أيام.';
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'حفظ الاسم';
+    } else {
+      const days = daysUntilNextChange(user);
+      note.innerHTML = `مش قادر تغير اسمك دلوقتي. فاضل <strong>${days} يوم</strong> عشان تقدر تغيّره تاني.`;
+      submitBtn.disabled = true;
+      submitBtn.textContent = `متاح بعد ${days} يوم`;
+    }
+  }
+  document.getElementById('editUsernameModal').classList.add('open');
+  document.getElementById('editUsernameOverlay').classList.add('open');
+}
+
+function closeEditUsernameModal() {
+  document.getElementById('editUsernameModal').classList.remove('open');
+  document.getElementById('editUsernameOverlay').classList.remove('open');
+}
+
+document.getElementById('editUsernameForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const user = getUserData();
+  if (!user) return;
+  const isFirstTime = !user.nameLastChanged;
+  if (!isFirstTime && !canChangeName(user)) { showToast(`فاضل ${daysUntilNextChange(user)} يوم عشان تغير اسمك`); return; }
+  const newName = document.getElementById('newUsernameInput').value.trim();
+  if (!newName) return;
+  if (isFirstTime) {
+    showToast(`تم حفظ اسمك! تقدر تغيّره تاني بعد ${NAME_COOLDOWN_DAYS} أيام ✓`);
+  } else {
+    showToast('تم تغيير الاسم بنجاح ✓');
+  }
+  setUserData({ ...user, name: newName, nameLastChanged: new Date().toISOString() });
+  closeEditUsernameModal();
+  renderProducts();
+});
 
 window.onload = async () => {
   PRODUCTS = await fetchDataStore('products', PRODUCTS_STORAGE_KEY, DEFAULT_PRODUCTS);
