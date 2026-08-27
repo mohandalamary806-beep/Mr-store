@@ -2308,7 +2308,16 @@ window.onload = async () => {
   BANNER_DATA = await fetchDataStore('banner', BANNER_STORAGE_KEY, BANNER_DATA);
   COUPONS = await fetchDataStore('coupons', COUPONS_STORAGE_KEY, []);
   REVIEWS = await fetchDataStore('reviews', REVIEWS_STORAGE_KEY, []);
-  
+
+  // استعادة الكارت من Firebase لو اليوزر مسجل دخول
+  const currentUser = getUserData();
+  if (currentUser && currentUser.email) {
+    const savedCart = await loadCartFromFirebase(currentUser.email);
+    if (savedCart && savedCart.length > 0) {
+      state.cart = savedCart;
+    }
+  }
+
   // تنظيف الكارت من المنتجات المحذوفة عند الفتح
   sanitizeCart();
   
