@@ -1970,8 +1970,13 @@ function productCardHTML(p){
   const stockBadge = stockQty > 0 ? `<div style="font-size:0.75rem; color:var(--ok);">متوفر: ${stockQty}</div>` : `<div style="font-size:0.75rem; color:var(--stamp);">نفذت الكمية</div>`;
 
   let buyBtnHTML = '';
-  if (isActive && stockQty > 0) { buyBtnHTML = `<button class="btn-add" data-action="add" data-id="${p.id}">أضف للعربة</button>`; } 
-  else { buyBtnHTML = `<div class="out-of-stock-badge">المنتج غير متوفر حالياً</div>`; }
+  if (isActive && stockQty > 0) {
+    buyBtnHTML = `<button class="btn-add" data-action="add" data-id="${p.id}">أضف للعربة</button>`;
+  } else if (!isActive) {
+    buyBtnHTML = `<div class="out-of-stock-badge">المنتج غير متاح حالياً ⏸️</div>`;
+  } else {
+    buyBtnHTML = `<div class="out-of-stock-badge">نفذت الكمية 😔</div>`;
+  }
 
   let adminControlsHTML = '';
   if (isAdmin) {
@@ -2033,9 +2038,7 @@ function renderProducts(){
   const user = getUserData();
   
   const filtered = PRODUCTS.filter(p => {
-    // إخفاء المنتجات المتوقفة عن الزبائن (الأدمن يرى الكل)
-    if (p.active === false && !isAdminAuthed()) return false;
-    if (state.filter === 'favorites') { if (!user || !user.favorites || !user.favorites.includes(p.id)) return false; } 
+    if (state.filter === 'favorites') { if (!user || !user.favorites || !user.favorites.includes(p.id)) return false; }
     else if (state.filter !== 'all' && p.badge !== state.filter) { return false; }
     if (term !== '' && !p.name.includes(term)) return false;
     return true;
@@ -2441,6 +2444,21 @@ checkoutForm.addEventListener('submit', async e=>{
   };
 
   await addOrder(orderData);
+
+  // خصم الكميات من المخزون
+  let stockChanged = false;
+  state.cart.forEach(item => {
+    const prod = findProduct(item.id);
+    if (prod && prod.stock !== undefined) {
+      prod.stock = Math.max(0, prod.stock - item.qty);
+      stockChanged = true;
+    }
+  });
+  if (stockChanged) {
+    // حفظ التحديث في Firebase بدون انتظار
+    saveDataStore('products', PRODUCTS_STORAGE_KEY, PRODUCTS)
+      .catch(e => console.warn('stock update failed:', e));
+  }
 
   // إعداد رابط واتساب
   const waUrl = `https://wa.me/2${STORE_WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
