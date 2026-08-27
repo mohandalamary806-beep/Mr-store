@@ -382,11 +382,16 @@ h1,h2,h3,h4{font-weight:inherit;}
 
 .size-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
 .size-tag { font-family: var(--ff-mono); font-size: 0.75rem; font-weight: 700; border: 1px solid var(--line); border-radius: 4px; padding: 2px 6px; color: var(--ink-soft); background: var(--canvas); }
-.like-btn { display: flex; align-items: center; gap: 5px; color: var(--ink-soft); font-family: var(--ff-mono); font-weight: 700; font-size: 0.95rem; transition: color 0.2s, transform 0.2s; }
-.like-btn svg { width: 22px; height: 22px; transition: fill 0.2s, color 0.2s; }
-.like-btn:hover { color: var(--stamp); transform: scale(1.05); }
+.like-btn { display: flex; align-items: center; gap: 5px; color: var(--ink-soft); font-family: var(--ff-mono); font-weight: 700; font-size: 0.95rem; transition: color 0.2s, transform 0.25s cubic-bezier(.34,1.56,.64,1); cursor: pointer; }
+.like-btn svg { width: 22px; height: 22px; transition: fill 0.25s ease, transform 0.25s cubic-bezier(.34,1.56,.64,1); }
+.like-btn:hover { color: var(--stamp); transform: scale(1.08); }
+.like-btn:hover svg { transform: scale(1.1); }
 .like-btn.liked { color: var(--stamp); }
-.like-btn.liked svg { fill: var(--stamp); }
+.like-btn.liked svg { fill: var(--stamp); stroke: var(--stamp); }
+[data-theme="dark"] .like-btn.liked { color: #E05C4A; }
+[data-theme="dark"] .like-btn.liked svg { fill: #E05C4A; stroke: #E05C4A; }
+@keyframes heartPop { 0%{transform:scale(1)} 40%{transform:scale(1.45)} 70%{transform:scale(.9)} 100%{transform:scale(1)} }
+.like-btn.liked svg { animation: heartPop .35s cubic-bezier(.34,1.56,.64,1); }
 
 .product-name{font-size:1rem;font-weight:700;margin:0 0 12px;line-height:1.4;}
 .product-price-row{display:flex;align-items:center;justify-content:space-between; margin-bottom:14px;}
@@ -1426,6 +1431,50 @@ function detachAllListeners() {
   });
 }
 
+/* listener على بروفايل اليوزر — بيزامن المفضلة في الوقت الحقيقي */
+function attachUserProfileListener() {
+  if (!useFirebase) return;
+  const user = getUserData();
+  if (!user || !user.email) return;
+
+  const profilePath = 'userProfiles/' + emailToKey(user.email);
+
+  /* وقف الـ listener القديم */
+  if (_listeners[profilePath]) {
+    firebase.database().ref(profilePath).off('value', _listeners[profilePath]);
+  }
+
+  const handler = snap => {
+    if (!snap.exists()) return;
+    const profile = snap.val();
+    if (!profile.favorites) return;
+
+    const currentUser = getUserData();
+    if (!currentUser) return;
+
+    /* لو المفضلة اتغيرت من جهاز تاني */
+    const oldFavs = JSON.stringify(currentUser.favorites || []);
+    const newFavs = JSON.stringify(profile.favorites);
+    if (oldFavs === newFavs) return;
+
+    /* تحديث localStorage */
+    const updatedUser = { ...currentUser, favorites: profile.favorites };
+    setUserData(updatedUser);
+
+    /* تحديث أزرار القلوب في الـ DOM مباشرة */
+    PRODUCTS.forEach(p => {
+      const liked = profile.favorites.includes(p.id);
+      _updateHeartBtn(p.id, liked, p.likes || 0);
+    });
+
+    /* لو كان فلتر المفضلة مفتوح، نحدثه */
+    if (state.filter === 'favorites') renderProducts();
+  };
+
+  firebase.database().ref(profilePath).on('value', handler);
+  _listeners[profilePath] = handler;
+}
+
 function startRealtimeSync() {
   if (!useFirebase) return;
 
@@ -1465,6 +1514,37 @@ function startRealtimeSync() {
     }
     refreshFlashSaleAdminUI();
   });
+
+  /* Realtime listener على productLikes — بيحدّث عدد القلوب فوراً */
+  if (!_listeners['productLikes']) {
+    const likesHandler = snap => {
+      if (!snap.exists()) return;
+      const likesMap = snap.val(); /* { productId: count } */
+      let changed = false;
+      PRODUCTS = PRODUCTS.map(p => {
+        if (likesMap[p.id] !== undefined && p.likes !== likesMap[p.id]) {
+          changed = true;
+          return { ...p, likes: likesMap[p.id] };
+        }
+        return p;
+      });
+      if (changed) {
+        /* تحديث الـ DOM مباشرة بدون re-render كامل */
+        PRODUCTS.forEach(p => {
+          if (likesMap[p.id] !== undefined) {
+            const btns = document.querySelectorAll(`button[data-action="like"][data-id="${p.id}"] span`);
+            btns.forEach(span => { span.textContent = likesMap[p.id]; });
+          }
+        });
+        _lsSet(PRODUCTS_STORAGE_KEY, PRODUCTS);
+      }
+    };
+    firebase.database().ref('productLikes').on('value', likesHandler);
+    _listeners['productLikes'] = likesHandler;
+  }
+
+  /* Realtime listener على userProfile لو في يوزر مسجل */
+  attachUserProfileListener();
 
   /* إظهار نقطة الاتصال الحي في الهيدر */
   document.querySelector('.site-header')?.classList.add('live-connected');
@@ -2041,23 +2121,69 @@ async function addToCart(id, triggerEl){
 }
 
 async function handleLikeAction(id) {
-  let user = getUserData();
-  if (!user || !user.name) { showToast('سجل دخولك عشان تقدر تحفظ المنتجات اللي بتعجبك ❤️'); openUserAuthModal(); return; }
-  user.favorites = user.favorites || [];
-  const product = findProduct(id);
-  if(!product) return;
-  product.likes = product.likes || 0;
-  if (user.favorites.includes(id)) { user.favorites = user.favorites.filter(favId => favId !== id); product.likes = Math.max(0, product.likes - 1); } 
-  else { user.favorites.push(id); product.likes++; }
-  setUserData(user);
-  // حفظ المفضلة في Firebase
-  if (user.email) {
-    const profileKey = emailToKey(user.email);
-    const existingProfile = await loadUserProfile(user.email);
-    await saveUserProfile(user.email, { ...(existingProfile || {}), favorites: user.favorites });
+  const user = getUserData();
+  if (!user || !user.name) {
+    showToast('سجل دخولك عشان تقدر تحفظ المنتجات اللي بتعجبك ❤️');
+    openUserAuthModal();
+    return;
   }
-  await saveDataStore('products', PRODUCTS_STORAGE_KEY, PRODUCTS);
-  renderProducts();
+
+  const product = findProduct(id);
+  if (!product) return;
+
+  user.favorites = user.favorites || [];
+  const isLiked = user.favorites.includes(id);
+
+  /* 1. تحديث فوري للـ UI بدون انتظار Firebase */
+  if (isLiked) {
+    user.favorites = user.favorites.filter(fid => fid !== id);
+    product.likes = Math.max(0, (product.likes || 0) - 1);
+  } else {
+    user.favorites.push(id);
+    product.likes = (product.likes || 0) + 1;
+  }
+
+  /* 2. تحديث الـ localStorage فوراً */
+  setUserData(user);
+
+  /* 3. تحديث زرار القلب في الـ DOM مباشرة بدون re-render كامل */
+  _updateHeartBtn(id, !isLiked, product.likes);
+
+  /* 4. حفظ في Firebase في الخلفية (بدون await عشان مش بنستنى) */
+  if (user.email) {
+    saveUserProfile(user.email, {
+      name: user.name,
+      nameLastChanged: user.nameLastChanged || null,
+      favorites: user.favorites,
+    }).catch(e => console.warn('saveUserProfile failed:', e));
+
+    /* حفظ الـ likes في Firebase مسار منفصل أسرع */
+    if (useFirebase) {
+      firebase.database().ref(`productLikes/${id}`).set(product.likes)
+        .catch(e => console.warn('likes write failed:', e));
+    }
+  }
+
+  /* 5. حفظ كامل المنتجات في Firebase (مش بنستناه) */
+  saveDataStore('products', PRODUCTS_STORAGE_KEY, PRODUCTS)
+    .catch(e => console.warn('products save failed:', e));
+}
+
+/* تحديث زرار القلب في الـ DOM مباشرة بدون re-render */
+function _updateHeartBtn(productId, liked, likeCount) {
+  const btns = document.querySelectorAll(`button[data-action="like"][data-id="${productId}"]`);
+  btns.forEach(btn => {
+    if (liked) {
+      btn.classList.add('liked');
+    } else {
+      btn.classList.remove('liked');
+    }
+    const countEl = btn.querySelector('span');
+    if (countEl) countEl.textContent = likeCount;
+    /* animation صغيرة */
+    btn.style.transform = 'scale(1.3)';
+    setTimeout(() => { btn.style.transform = ''; }, 200);
+  });
 }
 
 async function removeFromCart(id){ state.cart = state.cart.filter(i=>i.id!==id); renderCart(); await saveCartToFirebase(); }
@@ -2728,6 +2854,7 @@ async function handleCredentialResponse(response) {
         closeUserAuthModal();
         updateAdminNavVisibility();
         renderProducts();
+        attachUserProfileListener();
         showToast('تم تسجيل الدخول كمدير ✓');
         if (isFirstLogin) {
           setTimeout(() => openEditUsernameModal(true), 400);
@@ -2752,6 +2879,7 @@ async function handleCredentialResponse(response) {
         closeUserAuthModal();
         showToast('تم تسجيل الدخول بنجاح ✓');
         renderProducts();
+        attachUserProfileListener();
         if (isFirstLogin) {
           setTimeout(() => openEditUsernameModal(true), 400);
         }
