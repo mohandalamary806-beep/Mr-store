@@ -794,6 +794,10 @@ h1,h2,h3,h4{font-weight:inherit;}
          <div class="field"><label>نص الختم (Stamp)</label><input type="text" id="banStampText" required></div>
          <div class="field"><label>النص السفلي للختم</label><input type="text" id="banStampSub" required></div>
       </div>
+      <div class="field-row">
+         <div class="field"><label>نص زر الشراء</label><input type="text" id="banBtnText" required></div>
+         <div class="field"><label>النص التوضيحي الصغير (Fineprint)</label><input type="text" id="banFineprint" required></div>
+      </div>
       <button type="submit" class="btn btn-primary btn-block">حفظ وتحديث البانر</button>
     </form>
   </div>
@@ -893,9 +897,9 @@ h1,h2,h3,h4{font-weight:inherit;}
 
       <!-- Tabs Navigation -->
       <div class="admin-main-tabs" id="adminMainTabs">
-        <button class="active" onclick="switchAdminTab('orders')">إدارة الطلبات</button>
-        <button onclick="switchAdminTab('coupons')">الكوبونات</button>
-        <button onclick="switchAdminTab('reviews')">التقييمات</button>
+        <button class="active" onclick="switchAdminTab(event, 'orders')">إدارة الطلبات</button>
+        <button onclick="switchAdminTab(event, 'coupons')">الكوبونات</button>
+        <button onclick="switchAdminTab(event, 'reviews')">التقييمات</button>
       </div>
 
       <!-- Tab: Orders -->
@@ -1045,6 +1049,10 @@ function handleUserLogout() {
   updateAdminNavVisibility();
   if (location.hash === '#admin') location.hash = '';
   if(state.filter === 'favorites') applyFilter('all'); else renderProducts();
+  // إعادة تهيئة Google sign-in بأمان
+  if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
+    google.accounts.id.disableAutoSelect();
+  }
   showToast('تم تسجيل الخروج');
 }
 
@@ -1148,6 +1156,8 @@ function updateBannerUI() {
   document.getElementById('heroSub').textContent = BANNER_DATA.sub || '';
   document.getElementById('heroStampText').textContent = BANNER_DATA.stampText || '';
   document.getElementById('heroStampSub').textContent = BANNER_DATA.stampSub || '';
+  if (BANNER_DATA.btnText) document.getElementById('heroBtnText').textContent = BANNER_DATA.btnText;
+  if (BANNER_DATA.fineprint) document.getElementById('heroFineprint').textContent = BANNER_DATA.fineprint;
 }
 
 function openEditBannerModal() {
@@ -1156,6 +1166,8 @@ function openEditBannerModal() {
   document.getElementById('banSub').value = BANNER_DATA.sub || '';
   document.getElementById('banStampText').value = BANNER_DATA.stampText || '';
   document.getElementById('banStampSub').value = BANNER_DATA.stampSub || '';
+  document.getElementById('banBtnText').value = BANNER_DATA.btnText || '';
+  document.getElementById('banFineprint').value = BANNER_DATA.fineprint || '';
   document.getElementById('editBannerModal').classList.add('open');
   document.getElementById('editBannerOverlay').classList.add('open');
 }
@@ -1173,6 +1185,8 @@ document.getElementById('editBannerForm').addEventListener('submit', async (e) =
     sub: document.getElementById('banSub').value.trim(),
     stampText: document.getElementById('banStampText').value.trim(),
     stampSub: document.getElementById('banStampSub').value.trim(),
+    btnText: document.getElementById('banBtnText').value.trim(),
+    fineprint: document.getElementById('banFineprint').value.trim(),
   };
   await saveDataStore('banner', BANNER_STORAGE_KEY, BANNER_DATA);
   updateBannerUI();
@@ -1298,6 +1312,8 @@ async function deleteProduct(id) {
   if (!confirm('متأكد إنك عايز تحذف المنتج ده نهائياً؟')) return;
   PRODUCTS = PRODUCTS.filter(p => p.id !== id);
   await saveDataStore('products', PRODUCTS_STORAGE_KEY, PRODUCTS);
+  sanitizeCart();
+  renderCart();
   renderProducts(); showToast('تم حذف المنتج ✓');
 }
 
@@ -1413,6 +1429,8 @@ function renderProducts(){
   const user = getUserData();
   
   const filtered = PRODUCTS.filter(p => {
+    // إخفاء المنتجات المتوقفة عن الزبائن (الأدمن يرى الكل)
+    if (p.active === false && !isAdminAuthed()) return false;
     if (state.filter === 'favorites') { if (!user || !user.favorites || !user.favorites.includes(p.id)) return false; } 
     else if (state.filter !== 'all' && p.badge !== state.filter) { return false; }
     if (term !== '' && !p.name.includes(term)) return false;
@@ -1435,6 +1453,16 @@ function applyFilter(badge){
 }
 document.getElementById('filterTabs').addEventListener('click', e=>{ const btn = e.target.closest('.filter-tab'); if(btn) applyFilter(btn.dataset.badge); });
 document.getElementById('searchInput').addEventListener('input', e=>{ state.search = e.target.value; renderProducts(); });
+
+/* ============ ADMIN SEARCH ============ */
+document.getElementById('adminSearchInput').addEventListener('input', e => {
+  const term = e.target.value.trim().toLowerCase();
+  const cards = document.querySelectorAll('#ordersList .order-card');
+  cards.forEach(card => {
+    const text = card.textContent.toLowerCase();
+    card.style.display = text.includes(term) ? '' : 'none';
+  });
+});
 
 /* ============ CART & LIKE LOGIC ============ */
 function findProduct(id){ return PRODUCTS.find(p=>p.id===id); }
@@ -1517,6 +1545,16 @@ function cartItemHTML(i){
     </div>
     <button class="cart-item-remove" data-action="remove" data-id="${p.id}" aria-label="حذف">×</button>
   </div>`;
+}
+
+/* ============ CART SANITIZE ============ */
+function sanitizeCart() {
+  const before = state.cart.length;
+  state.cart = state.cart.filter(i => findProduct(i.id) !== undefined);
+  const removed = before - state.cart.length;
+  if (removed > 0) {
+    showToast(`تم حذف ${removed} منتج غير متوفر من عربتك تلقائياً`);
+  }
 }
 
 function renderCart(){
@@ -1685,9 +1723,9 @@ function openAdminDashboard() {
   loadAdminData();
 }
 
-function switchAdminTab(tab) {
+function switchAdminTab(e, tab) {
   document.querySelectorAll('.admin-main-tabs button').forEach(b => b.classList.remove('active'));
-  event.target.classList.add('active');
+  e.target.classList.add('active');
   document.getElementById('adminTabOrders').style.display = tab === 'orders' ? 'block' : 'none';
   document.getElementById('adminTabCoupons').style.display = tab === 'coupons' ? 'block' : 'none';
   document.getElementById('adminTabReviews').style.display = tab === 'reviews' ? 'block' : 'none';
@@ -1849,7 +1887,9 @@ function handleCredentialResponse(response) {
         document.getElementById('googleLoginError').classList.add('show');
       }
     } else {
-      setUserData({ name: payload.name, email: payload.email, favorites: [] });
+      // الاحتفاظ بالمفضلة الموجودة عند إعادة تسجيل الدخول
+      const existing = getUserData();
+      setUserData({ name: payload.name, email: payload.email, favorites: existing && existing.favorites ? existing.favorites : [] });
       closeUserAuthModal();
       showToast('تم تسجيل الدخول بنجاح ✓');
       renderProducts();
@@ -1863,6 +1903,13 @@ window.onload = async () => {
   COUPONS = await fetchDataStore('coupons', COUPONS_STORAGE_KEY, []);
   REVIEWS = await fetchDataStore('reviews', REVIEWS_STORAGE_KEY, []);
   
+  // تنظيف الكارت من المنتجات المحذوفة عند الفتح
+  sanitizeCart();
+  
+  // ربط زر واتساب العائم برقم المتجر
+  const waFloatEl = document.getElementById('waFloat');
+  if (waFloatEl) waFloatEl.href = `https://wa.me/2${STORE_WHATSAPP_NUMBER}`;
+
   updateBannerUI();
   updateAdminNavVisibility();
   updateUserUI();
