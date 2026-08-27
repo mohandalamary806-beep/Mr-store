@@ -937,8 +937,85 @@ h1,h2,h3,h4{font-weight:inherit;}
   </div>
 </div>
 
-<!-- ============ ADD PRODUCT MODAL ============ -->
-<div class="overlay" id="addProductOverlay" onclick="closeAddProductModal()"></div>
+/* ============ QUICK VIEW MODAL ============ */
+
+/* ============ COLOR PICKER ============ */
+.color-picker-wrap{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px;}
+.color-swatch-label{position:relative;cursor:pointer;}
+.color-swatch-label input[type="checkbox"]{
+  position:absolute;opacity:0;width:0;height:0;pointer-events:none;
+}
+.color-swatch{
+  width:32px;height:32px;border-radius:50%;
+  border:3px solid transparent;
+  box-shadow:0 2px 6px rgba(0,0,0,.18);
+  transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease;
+  display:flex;align-items:center;justify-content:center;
+  position:relative;
+}
+.color-swatch::after{
+  content:'✓';
+  color:#fff;font-size:.75rem;font-weight:900;
+  opacity:0;transition:opacity .15s ease;
+  text-shadow:0 1px 3px rgba(0,0,0,.5);
+}
+.color-swatch-label input:checked + .color-swatch{
+  border-color:var(--denim);
+  transform:scale(1.18);
+  box-shadow:0 4px 12px rgba(0,0,0,.28);
+}
+[data-theme="dark"] .color-swatch-label input:checked + .color-swatch{
+  border-color:#D4A843;
+}
+.color-swatch-label input:checked + .color-swatch::after{opacity:1;}
+.color-swatch-label:hover .color-swatch{transform:scale(1.1);}
+.color-swatch-label input:checked + .color-swatch:hover{transform:scale(1.18);}
+.color-swatch-name{
+  display:block;font-size:.58rem;font-family:var(--ff-mono);
+  text-align:center;margin-top:3px;color:var(--ink-soft);
+  max-width:36px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+
+/* Color dots in product card */
+.product-colors{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px;align-items:center;}
+.product-color-dot{
+  width:18px;height:18px;border-radius:50%;
+  border:2px solid rgba(255,255,255,.6);
+  box-shadow:0 1px 4px rgba(0,0,0,.2);
+  transition:transform .15s ease;cursor:pointer;
+  position:relative;
+}
+.product-color-dot:hover{transform:scale(1.2);}
+.product-color-dot[title]:hover::after{
+  content:attr(title);
+  position:absolute;bottom:calc(100% + 4px);left:50%;transform:translateX(-50%);
+  background:var(--ink);color:var(--paper);
+  font-size:.6rem;font-family:var(--ff-mono);
+  padding:2px 6px;border-radius:4px;white-space:nowrap;
+  pointer-events:none;z-index:10;
+}
+.product-colors-more{
+  font-size:.65rem;font-family:var(--ff-mono);
+  color:var(--ink-soft);margin-right:2px;
+}
+
+/* Color dots in quick view */
+.qv-colors{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px;}
+.qv-color-btn{
+  width:28px;height:28px;border-radius:50%;
+  border:3px solid transparent;
+  box-shadow:0 2px 6px rgba(0,0,0,.2);
+  cursor:pointer;transition:transform .18s ease,border-color .18s ease;
+  position:relative;
+}
+.qv-color-btn:hover{transform:scale(1.15);}
+.qv-color-btn.active{
+  border-color:var(--denim);transform:scale(1.2);
+  box-shadow:0 4px 12px rgba(0,0,0,.28);
+}
+[data-theme="dark"] .qv-color-btn.active{border-color:#D4A843;}
+</style>
+<body>lass="overlay" id="addProductOverlay" onclick="closeAddProductModal()"></div>
 <div class="modal" id="addProductModal">
   <div class="modal-head">
     <h3>إضافة منتج جديد</h3>
@@ -968,6 +1045,29 @@ h1,h2,h3,h4{font-weight:inherit;}
           <label><input type="checkbox" name="prodSizes" value="L"> L</label>
           <label><input type="checkbox" name="prodSizes" value="XL"> XL</label>
           <label><input type="checkbox" name="prodSizes" value="XXL"> XXL</label>
+        </div>
+      </div>
+
+      <!-- تحديد الألوان -->
+      <div class="field">
+        <label>الألوان المتاحة</label>
+        <div class="color-picker-wrap" id="prodColorsWrap">
+          <label class="color-swatch-label" title="أبيض"><input type="checkbox" name="prodColors" value="أبيض|#FFFFFF"><span class="color-swatch" style="background:#FFFFFF;"></span><span class="color-swatch-name">أبيض</span></label>
+          <label class="color-swatch-label" title="أسود"><input type="checkbox" name="prodColors" value="أسود|#1A1A1A"><span class="color-swatch" style="background:#1A1A1A;"></span><span class="color-swatch-name">أسود</span></label>
+          <label class="color-swatch-label" title="رمادي"><input type="checkbox" name="prodColors" value="رمادي|#9E9E9E"><span class="color-swatch" style="background:#9E9E9E;"></span><span class="color-swatch-name">رمادي</span></label>
+          <label class="color-swatch-label" title="كحلي"><input type="checkbox" name="prodColors" value="كحلي|#2B3B68"><span class="color-swatch" style="background:#2B3B68;"></span><span class="color-swatch-name">كحلي</span></label>
+          <label class="color-swatch-label" title="أزرق"><input type="checkbox" name="prodColors" value="أزرق|#1976D2"><span class="color-swatch" style="background:#1976D2;"></span><span class="color-swatch-name">أزرق</span></label>
+          <label class="color-swatch-label" title="سماوي"><input type="checkbox" name="prodColors" value="سماوي|#03A9F4"><span class="color-swatch" style="background:#03A9F4;"></span><span class="color-swatch-name">سماوي</span></label>
+          <label class="color-swatch-label" title="أخضر"><input type="checkbox" name="prodColors" value="أخضر|#388E3C"><span class="color-swatch" style="background:#388E3C;"></span><span class="color-swatch-name">أخضر</span></label>
+          <label class="color-swatch-label" title="زيتي"><input type="checkbox" name="prodColors" value="زيتي|#558B2F"><span class="color-swatch" style="background:#558B2F;"></span><span class="color-swatch-name">زيتي</span></label>
+          <label class="color-swatch-label" title="أحمر"><input type="checkbox" name="prodColors" value="أحمر|#D32F2F"><span class="color-swatch" style="background:#D32F2F;"></span><span class="color-swatch-name">أحمر</span></label>
+          <label class="color-swatch-label" title="برتقالي"><input type="checkbox" name="prodColors" value="برتقالي|#F57C00"><span class="color-swatch" style="background:#F57C00;"></span><span class="color-swatch-name">برتقالي</span></label>
+          <label class="color-swatch-label" title="أصفر"><input type="checkbox" name="prodColors" value="أصفر|#FBC02D"><span class="color-swatch" style="background:#FBC02D;"></span><span class="color-swatch-name">أصفر</span></label>
+          <label class="color-swatch-label" title="بيج"><input type="checkbox" name="prodColors" value="بيج|#D7CCC8"><span class="color-swatch" style="background:#D7CCC8;"></span><span class="color-swatch-name">بيج</span></label>
+          <label class="color-swatch-label" title="بني"><input type="checkbox" name="prodColors" value="بني|#5D4037"><span class="color-swatch" style="background:#5D4037;"></span><span class="color-swatch-name">بني</span></label>
+          <label class="color-swatch-label" title="بنفسجي"><input type="checkbox" name="prodColors" value="بنفسجي|#7B1FA2"><span class="color-swatch" style="background:#7B1FA2;"></span><span class="color-swatch-name">بنفسجي</span></label>
+          <label class="color-swatch-label" title="وردي"><input type="checkbox" name="prodColors" value="وردي|#E91E63"><span class="color-swatch" style="background:#E91E63;"></span><span class="color-swatch-name">وردي</span></label>
+          <label class="color-swatch-label" title="ذهبي"><input type="checkbox" name="prodColors" value="ذهبي|#D4A843"><span class="color-swatch" style="background:#D4A843;"></span><span class="color-swatch-name">ذهبي</span></label>
         </div>
       </div>
 
@@ -1019,6 +1119,29 @@ h1,h2,h3,h4{font-weight:inherit;}
           <label><input type="checkbox" name="editProdSizes" value="L"> L</label>
           <label><input type="checkbox" name="editProdSizes" value="XL"> XL</label>
           <label><input type="checkbox" name="editProdSizes" value="XXL"> XXL</label>
+        </div>
+      </div>
+
+      <!-- تعديل الألوان -->
+      <div class="field">
+        <label>الألوان المتاحة</label>
+        <div class="color-picker-wrap" id="editProdColorsWrap">
+          <label class="color-swatch-label" title="أبيض"><input type="checkbox" name="editProdColors" value="أبيض|#FFFFFF"><span class="color-swatch" style="background:#FFFFFF;"></span><span class="color-swatch-name">أبيض</span></label>
+          <label class="color-swatch-label" title="أسود"><input type="checkbox" name="editProdColors" value="أسود|#1A1A1A"><span class="color-swatch" style="background:#1A1A1A;"></span><span class="color-swatch-name">أسود</span></label>
+          <label class="color-swatch-label" title="رمادي"><input type="checkbox" name="editProdColors" value="رمادي|#9E9E9E"><span class="color-swatch" style="background:#9E9E9E;"></span><span class="color-swatch-name">رمادي</span></label>
+          <label class="color-swatch-label" title="كحلي"><input type="checkbox" name="editProdColors" value="كحلي|#2B3B68"><span class="color-swatch" style="background:#2B3B68;"></span><span class="color-swatch-name">كحلي</span></label>
+          <label class="color-swatch-label" title="أزرق"><input type="checkbox" name="editProdColors" value="أزرق|#1976D2"><span class="color-swatch" style="background:#1976D2;"></span><span class="color-swatch-name">أزرق</span></label>
+          <label class="color-swatch-label" title="سماوي"><input type="checkbox" name="editProdColors" value="سماوي|#03A9F4"><span class="color-swatch" style="background:#03A9F4;"></span><span class="color-swatch-name">سماوي</span></label>
+          <label class="color-swatch-label" title="أخضر"><input type="checkbox" name="editProdColors" value="أخضر|#388E3C"><span class="color-swatch" style="background:#388E3C;"></span><span class="color-swatch-name">أخضر</span></label>
+          <label class="color-swatch-label" title="زيتي"><input type="checkbox" name="editProdColors" value="زيتي|#558B2F"><span class="color-swatch" style="background:#558B2F;"></span><span class="color-swatch-name">زيتي</span></label>
+          <label class="color-swatch-label" title="أحمر"><input type="checkbox" name="editProdColors" value="أحمر|#D32F2F"><span class="color-swatch" style="background:#D32F2F;"></span><span class="color-swatch-name">أحمر</span></label>
+          <label class="color-swatch-label" title="برتقالي"><input type="checkbox" name="editProdColors" value="برتقالي|#F57C00"><span class="color-swatch" style="background:#F57C00;"></span><span class="color-swatch-name">برتقالي</span></label>
+          <label class="color-swatch-label" title="أصفر"><input type="checkbox" name="editProdColors" value="أصفر|#FBC02D"><span class="color-swatch" style="background:#FBC02D;"></span><span class="color-swatch-name">أصفر</span></label>
+          <label class="color-swatch-label" title="بيج"><input type="checkbox" name="editProdColors" value="بيج|#D7CCC8"><span class="color-swatch" style="background:#D7CCC8;"></span><span class="color-swatch-name">بيج</span></label>
+          <label class="color-swatch-label" title="بني"><input type="checkbox" name="editProdColors" value="بني|#5D4037"><span class="color-swatch" style="background:#5D4037;"></span><span class="color-swatch-name">بني</span></label>
+          <label class="color-swatch-label" title="بنفسجي"><input type="checkbox" name="editProdColors" value="بنفسجي|#7B1FA2"><span class="color-swatch" style="background:#7B1FA2;"></span><span class="color-swatch-name">بنفسجي</span></label>
+          <label class="color-swatch-label" title="وردي"><input type="checkbox" name="editProdColors" value="وردي|#E91E63"><span class="color-swatch" style="background:#E91E63;"></span><span class="color-swatch-name">وردي</span></label>
+          <label class="color-swatch-label" title="ذهبي"><input type="checkbox" name="editProdColors" value="ذهبي|#D4A843"><span class="color-swatch" style="background:#D4A843;"></span><span class="color-swatch-name">ذهبي</span></label>
         </div>
       </div>
       <div class="field">
@@ -1128,6 +1251,42 @@ h1,h2,h3,h4{font-weight:inherit;}
       </div>
       <button type="submit" class="btn btn-primary btn-block" id="editUsernameSubmitBtn">حفظ الاسم</button>
     </form>
+  </div>
+</div>
+
+<!-- ============ QUICK VIEW MODAL ============ -->
+<div class="overlay" id="quickViewOverlay" onclick="closeQuickView()"></div>
+<div class="modal" id="quickViewModal" style="width:520px;">
+  <div class="quickview-inner">
+    <div class="modal-head">
+      <h3 id="qvTitle">عرض سريع</h3>
+      <button class="icon-btn" onclick="closeQuickView()" aria-label="إغلاق">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div style="display:flex;gap:20px;flex-wrap:wrap;">
+        <img id="qvImg" src="" alt="" style="width:160px;height:200px;object-fit:cover;border-radius:var(--radius-s);flex-shrink:0;background:var(--canvas-deep);">
+        <div style="flex:1;min-width:160px;">
+          <div class="product-price-row" style="margin-bottom:10px;">
+            <div class="price-wrap">
+              <span class="product-price" id="qvPrice"></span>
+              <span class="product-old" id="qvOld"></span>
+            </div>
+          </div>
+          <div id="qvColorsWrap">
+            <p style="font-size:.8rem;color:var(--ink-soft);margin-bottom:6px;">اختار اللون:</p>
+            <div class="qv-colors" id="qvColors"></div>
+          </div>
+          <div id="qvSizesWrap" style="margin-top:12px;">
+            <p style="font-size:.8rem;color:var(--ink-soft);margin-bottom:6px;">اختار المقاس:</p>
+            <div class="qv-sizes" id="qvSizes"></div>
+          </div>
+          <div id="qvReviewsMini" style="margin-top:12px;font-size:.82rem;color:var(--ink-soft);"></div>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-block" style="margin-top:18px;" onclick="qvAddToCart()">أضف للعربة</button>
+    </div>
   </div>
 </div>
 
@@ -1553,14 +1712,20 @@ document.getElementById('addProductForm').addEventListener('submit', async e => 
   const badge = document.getElementById('prodBadge').value || null;
   const sizeCheckboxes = document.querySelectorAll('input[name="prodSizes"]:checked');
   const sizes = Array.from(sizeCheckboxes).map(cb => cb.value);
+  const colorCheckboxes = document.querySelectorAll('input[name="prodColors"]:checked');
+  const colors = Array.from(colorCheckboxes).map(cb => {
+    const [name, hex] = cb.value.split('|');
+    return { name, hex };
+  });
 
   if (!img) { showToast('يرجى اختيار صورة للمنتج'); return; }
 
-  const newProduct = { id: Date.now(), name, price, old, stock, badge, active: true, img, sizes, likes: 0 };
+  const newProduct = { id: Date.now(), name, price, old, stock, badge, active: true, img, sizes, colors, likes: 0 };
   PRODUCTS.unshift(newProduct);
   await saveDataStore('products', PRODUCTS_STORAGE_KEY, PRODUCTS);
   renderProducts(); closeAddProductModal();
   document.getElementById('addProductForm').reset(); uploadedImageBase64 = "";
+  document.querySelectorAll('input[name="prodColors"]').forEach(cb => cb.checked = false);
   showToast('تمت إضافة المنتج بنجاح ✓');
 });
 
@@ -1584,6 +1749,10 @@ function openEditProductModal(id) {
   document.querySelectorAll('input[name="editProdSizes"]').forEach(cb => {
     cb.checked = p.sizes && p.sizes.includes(cb.value);
   });
+  document.querySelectorAll('input[name="editProdColors"]').forEach(cb => {
+    const [colorName] = cb.value.split('|');
+    cb.checked = p.colors && p.colors.some(c => c.name === colorName);
+  });
   
   editUploadedImageBase64 = p.img;
   document.getElementById('editProductModal').classList.add('open');
@@ -1606,10 +1775,15 @@ document.getElementById('editProductForm').addEventListener('submit', async e =>
   const badge = document.getElementById('editProdBadge').value || null;
   const sizeCheckboxes = document.querySelectorAll('input[name="editProdSizes"]:checked');
   const sizes = Array.from(sizeCheckboxes).map(cb => cb.value);
+  const colorCheckboxes = document.querySelectorAll('input[name="editProdColors"]:checked');
+  const colors = Array.from(colorCheckboxes).map(cb => {
+    const [name, hex] = cb.value.split('|');
+    return { name, hex };
+  });
 
   PRODUCTS = PRODUCTS.map(p => {
     if(p.id === id) {
-      return { ...p, name, price, old, stock, badge, sizes, img: editUploadedImageBase64 };
+      return { ...p, name, price, old, stock, badge, sizes, colors, img: editUploadedImageBase64 };
     }
     return p;
   });
@@ -1721,6 +1895,16 @@ function productCardHTML(p){
   
   let sizesHTML = '';
   if (p.sizes && p.sizes.length > 0) { sizesHTML = `<div class="size-tags">${p.sizes.map(s => `<span class="size-tag">${s}</span>`).join('')}</div>`; }
+
+  let colorsHTML = '';
+  if (p.colors && p.colors.length > 0) {
+    const maxShow = 6;
+    const shown = p.colors.slice(0, maxShow);
+    const extra = p.colors.length - maxShow;
+    colorsHTML = `<div class="product-colors">${shown.map(c =>
+      `<span class="product-color-dot" style="background:${c.hex};" title="${c.name}"></span>`
+    ).join('')}${extra > 0 ? `<span class="product-colors-more">+${extra}</span>` : ''}</div>`;
+  }
   
   const user = getUserData();
   const isLiked = user && user.favorites && user.favorites.includes(p.id);
@@ -1754,6 +1938,7 @@ function productCardHTML(p){
       <div class="product-img" onclick="openImgZoom(this.querySelector('img'))">${badge}<img src="${p.img}" alt="${p.name}" loading="lazy" decoding="async"></div>
       <div class="product-perf"></div>
       <div class="product-info">
+        ${colorsHTML}
         <div style="display:flex; justify-content:space-between; align-items:start;">
           ${sizesHTML}
           ${stockBadge}
@@ -2686,6 +2871,88 @@ document.getElementById('editUsernameForm').addEventListener('submit', async e =
   closeEditUsernameModal();
   renderProducts();
 });
+
+/* ============ QUICK VIEW ============ */
+let _qvProductId = null;
+let _qvSelectedSize = null;
+
+function openQuickView(id) {
+  const p = findProduct(id);
+  if (!p) return;
+  _qvProductId = id;
+  _qvSelectedSize = null;
+
+  document.getElementById('qvTitle').textContent = p.name;
+  document.getElementById('qvImg').src = p.img;
+  document.getElementById('qvImg').alt = p.name;
+  document.getElementById('qvPrice').textContent = money(p.price);
+  const oldEl = document.getElementById('qvOld');
+  oldEl.textContent = p.old ? money(p.old) : '';
+
+  // colors
+  const colorsWrap = document.getElementById('qvColorsWrap');
+  if (p.colors && p.colors.length > 0) {
+    colorsWrap.style.display = '';
+    const colorBtns = p.colors.map((c, i) =>
+      `<button class="qv-color-btn${i === 0 ? ' active' : ''}" style="background:${c.hex};" title="${c.name}" onclick="selectQvColor(this)" data-color="${c.name}"></button>`
+    ).join('');
+    document.getElementById('qvColors').innerHTML = colorBtns;
+    window._qvSelectedColor = p.colors[0].name;
+  } else {
+    colorsWrap.style.display = 'none';
+    window._qvSelectedColor = null;
+  }
+
+  // sizes
+  const sizesWrap = document.getElementById('qvSizesWrap');
+  if (p.sizes && p.sizes.length > 0) {
+    sizesWrap.style.display = '';
+    const sizeBtns = p.sizes.map((s, i) =>
+      `<button class="qv-size-btn${i === 0 ? ' active' : ''}" onclick="selectQvSize('${s}', this)">${s}</button>`
+    ).join('');
+    document.getElementById('qvSizes').innerHTML = sizeBtns;
+    _qvSelectedSize = p.sizes[0];
+  } else {
+    sizesWrap.style.display = 'none';
+  }
+
+  // reviews mini
+  const prodRevs = REVIEWS.filter(r => r.prodId === id);
+  const reviewsMini = document.getElementById('qvReviewsMini');
+  if (prodRevs.length > 0) {
+    const avg = (prodRevs.reduce((s, r) => s + r.rating, 0) / prodRevs.length).toFixed(1);
+    reviewsMini.textContent = `⭐ ${avg} (${prodRevs.length} تقييم)`;
+  } else {
+    reviewsMini.textContent = 'لا توجد تقييمات بعد';
+  }
+
+  document.getElementById('quickViewModal').classList.add('open');
+  document.getElementById('quickViewOverlay').classList.add('open');
+}
+
+function closeQuickView() {
+  document.getElementById('quickViewModal').classList.remove('open');
+  document.getElementById('quickViewOverlay').classList.remove('open');
+}
+
+function selectQvSize(size, btn) {
+  _qvSelectedSize = size;
+  document.querySelectorAll('#qvSizes .qv-size-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function selectQvColor(btn) {
+  window._qvSelectedColor = btn.dataset.color;
+  document.querySelectorAll('#qvColors .qv-color-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function qvAddToCart() {
+  if (_qvProductId) {
+    const btn = document.querySelector('#quickViewModal .btn-primary');
+    addToCart(_qvProductId, btn);
+  }
+}
 
 /* ============ DARK MODE ============ */
 function applyDarkMode(isDark) {
