@@ -55,29 +55,139 @@
   --container:1220px;
 }
 
-/* ============ DARK MODE TOKENS ============ */
+/* ============ DARK MODE — PREMIUM BLACK × GOLD ============ */
 [data-theme="dark"]{
-  --canvas:#1A1814;
-  --canvas-deep:#111009;
-  --paper:#252218;
-  --ink:#F0EAD6;
-  --ink-soft:#A89F8C;
-  --denim:#5B7FBE;
-  --denim-deep:#4A6DAD;
-  --brass:#C49040;
-  --stamp:#D15A46;
-  --line:#3A3528;
-  --ok:#4FA876;
-  --shadow-s:0 2px 10px rgba(0,0,0,.35);
-  --shadow-m:0 10px 28px rgba(0,0,0,.5);
-  --shadow-l:0 24px 60px rgba(0,0,0,.7);
+  /* خلفيات */
+  --canvas:#0D0F14;
+  --canvas-deep:#080A0E;
+  --paper:#141720;
+  /* نصوص */
+  --ink:#F5F5F0;
+  --ink-soft:#9A9BAA;
+  /* Gold accent يبقى الـ hero color */
+  --brass:#D4A843;
+  --denim:#D4A843;
+  --denim-deep:#B8902E;
+  /* تفاصيل */
+  --stamp:#E05C4A;
+  --line:#1E2130;
+  --ok:#4EC98A;
+  /* ظلال قوية على الخلفية الداكنة */
+  --shadow-s:0 2px 12px rgba(0,0,0,.55);
+  --shadow-m:0 8px 32px rgba(0,0,0,.7);
+  --shadow-l:0 20px 60px rgba(0,0,0,.85);
+}
+
+/* Premium dark overrides — card borders + backgrounds */
+[data-theme="dark"] .product-card-inner{
+  background:#141720;
+  border:1px solid #1E2130;
+  box-shadow:0 2px 16px rgba(0,0,0,.6);
+}
+[data-theme="dark"] .product-card:hover .product-card-inner{
+  border-color:#D4A843;
+  box-shadow:0 8px 32px rgba(212,168,67,.18);
+}
+[data-theme="dark"] .site-header{
+  background:#0D0F14;
+  border-bottom-color:#1E2130;
+}
+[data-theme="dark"] .modal{
+  background:#141720;
+  border:1px solid #1E2130;
+}
+[data-theme="dark"] .drawer{
+  background:#141720;
+  border-right:1px solid #1E2130;
+}
+[data-theme="dark"] .mobile-menu{
+  background:#0D0F14;
+}
+[data-theme="dark"] .admin-login-card{
+  background:#141720;
+  border:1px solid #1E2130;
+}
+[data-theme="dark"] .order-card,
+[data-theme="dark"] .admin-stat-card,
+[data-theme="dark"] .admin-table-wrapper{
+  background:#141720;
+  border:1px solid #1E2130;
+}
+[data-theme="dark"] .admin-topbar{
+  background:#0D0F14;
+  border-bottom-color:#1E2130;
+}
+[data-theme="dark"] .trust-strip{
+  background:#080A0E;
+}
+[data-theme="dark"] .search-box,
+[data-theme="dark"] .coupon-box input,
+[data-theme="dark"] .field input,
+[data-theme="dark"] .field textarea,
+[data-theme="dark"] .field select{
+  background:#0D0F14;
+  border-color:#1E2130;
+  color:#F5F5F0;
+}
+[data-theme="dark"] .filter-tab{
+  border-color:#1E2130;
+}
+[data-theme="dark"] .filter-tab.active,
+[data-theme="dark"] .filter-tab:hover{
+  background:#D4A843;
+  color:#0D0F14;
+  border-color:#D4A843;
+}
+[data-theme="dark"] .hero-stamp{
+  background:#141720;
+  border-color:#D4A843;
+}
+[data-theme="dark"] .site-footer{
+  background:#080A0E;
+  color:#9A9BAA;
+}
+[data-theme="dark"] .btn-outline{
+  border-color:#D4A843;
+  color:#D4A843;
+}
+[data-theme="dark"] .btn-outline:hover{
+  background:#D4A843;
+  color:#0D0F14;
+}
+[data-theme="dark"] .admin-main-tabs button{
+  background:#0D0F14;
+  border:1px solid #1E2130;
+  color:#9A9BAA;
+}
+[data-theme="dark"] .admin-main-tabs button.active{
+  background:#D4A843;
+  color:#0D0F14;
+  border-color:#D4A843;
+}
+[data-theme="dark"] #loadingScreen{
+  background:#0D0F14;
+}
+[data-theme="dark"] .loading-bar{
+  background:#1E2130;
+}
+[data-theme="dark"] .skeleton{
+  background:linear-gradient(90deg,#141720 25%,#1E2130 50%,#141720 75%);
+  background-size:200% 100%;
+}
+[data-theme="dark"] .skeleton-img{
+  background:#141720;
+}
+[data-theme="dark"] .cart-badge{
+  border-color:#0D0F14;
 }
 
 /* Smooth color transitions for dark mode */
-body, .site-header, .modal, .drawer, .mobile-menu, .admin-login-card,
-.product-card-inner, .order-card, .admin-stat-card, .admin-table-wrapper,
-.admin-topbar, #loadingScreen {
-  transition: background-color .35s ease, color .35s ease, border-color .35s ease;
+*, *::before, *::after {
+  transition: background-color .3s ease, color .3s ease, border-color .3s ease, box-shadow .3s ease;
+}
+/* Don't transition transforms/animations */
+.reveal, .product-card, .btn, .icon-btn, .fly-dot, .confetti-piece {
+  transition-property: opacity, transform, background-color, color, border-color, box-shadow !important;
 }
 
 /* ============ RESET ============ */
