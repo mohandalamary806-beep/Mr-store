@@ -28,7 +28,7 @@
 <!-- إضافة مكتبات Firebase للاتصال بقاعدة البيانات -->
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://accounts.google.com/gsi/client" async></script>
 <style>
 /* ============ TOKENS ============ */
 :root{
@@ -3027,18 +3027,68 @@ document.addEventListener('DOMContentLoaded', async () => {
   /* 7. تشغيل الـ Realtime Listeners — بيحدّث كل حاجة أوتوماتيك */
   startRealtimeSync();
 
-  /* 8. تهيئة Google Sign-In */
-  if (typeof google !== 'undefined') {
+  /* 8. تهيئة Google Sign-In — بنفصلها عن DOMContentLoaded عشان async */
+  initGoogleSignIn();
+});
+
+/* Google GSI — بنستخدم onGoogleLibraryLoad callback الرسمي
+   + retry loop كـ fallback لو الـ callback ما اشتغلش */
+function initGoogleSignIn() {
+  if (typeof google !== 'undefined' && google.accounts) {
+    _setupGoogleButtons();
+    return;
+  }
+  /* Google لسه بيتحمل — نستنى الـ onGoogleLibraryLoad callback */
+  window.onGoogleLibraryLoad = () => {
+    _setupGoogleButtons();
+  };
+  /* Fallback: retry كل 200ms لمدة 10 ثواني */
+  let tries = 0;
+  const retry = setInterval(() => {
+    tries++;
+    if (typeof google !== 'undefined' && google.accounts) {
+      clearInterval(retry);
+      _setupGoogleButtons();
+    } else if (tries > 50) {
+      clearInterval(retry);
+      /* إظهار رسالة بديلة لو Google مش موجود (حجب إعلانات مثلاً) */
+      document.querySelectorAll('.google-signin-wrap').forEach(el => {
+        el.innerHTML = '<p style="font-size:.8rem;color:var(--ink-soft);padding:8px;">تسجيل الدخول بجوجل غير متاح حالياً.<br>تأكد من الاتصال وعدم حجب الإعلانات.</p>';
+      });
+    }
+  }, 200);
+}
+
+function _setupGoogleButtons() {
+  try {
     google.accounts.id.initialize({
       client_id: GOOGLE_CLIENT_ID,
-      callback: handleCredentialResponse
+      callback: handleCredentialResponse,
+      auto_select: false,
+      cancel_on_tap_outside: true,
     });
     const userBtn = document.getElementById('userGoogleSignInBtn');
-    if (userBtn) google.accounts.id.renderButton(userBtn, { theme: 'outline', size: 'large' });
+    if (userBtn && !userBtn.querySelector('iframe')) {
+      google.accounts.id.renderButton(userBtn, {
+        theme: 'outline',
+        size: 'large',
+        locale: 'ar',
+        text: 'signin_with',
+        shape: 'rectangular',
+      });
+    }
     const adminBtn = document.getElementById('googleSignInBtn');
-    if (adminBtn) google.accounts.id.renderButton(adminBtn, { theme: 'outline', size: 'large' });
+    if (adminBtn && !adminBtn.querySelector('iframe')) {
+      google.accounts.id.renderButton(adminBtn, {
+        theme: 'outline',
+        size: 'large',
+        locale: 'ar',
+      });
+    }
+  } catch(e) {
+    console.warn('Google Sign-In setup failed:', e);
   }
-});
+}
 </script>
 </body>
 </html>
