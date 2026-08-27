@@ -1877,22 +1877,38 @@ function handleCredentialResponse(response) {
   try {
     const payload = JSON.parse(atob(response.credential.split('.')[1]));
     const email = payload.email;
-    
-    if (location.hash === '#admin') {
-      if (ADMIN_ALLOWED_EMAILS.includes(email)) {
-        localStorage.setItem(ADMIN_EMAIL_KEY, email);
+    const isAdminEmail = ADMIN_ALLOWED_EMAILS.includes(email);
+
+    if (isAdminEmail) {
+      // دائماً احفظ الإيميل كأدمن بصرف النظر عن الصفحة الحالية
+      localStorage.setItem(ADMIN_EMAIL_KEY, email);
+      // احفظ بيانات المستخدم أيضاً
+      const existing = getUserData();
+      setUserData({ name: payload.name, email: payload.email, favorites: existing && existing.favorites ? existing.favorites : [] });
+
+      if (location.hash === '#admin') {
+        // كان في صفحة الأدمن → افتح لوحة التحكم مباشرة
         document.getElementById('googleLoginError').classList.remove('show');
         openAdminDashboard();
       } else {
-        document.getElementById('googleLoginError').classList.add('show');
+        // كان في الصفحة الرئيسية → حدّث الـ UI وأظهر خصائص الأدمن
+        closeUserAuthModal();
+        updateAdminNavVisibility();
+        renderProducts();
+        showToast('تم تسجيل الدخول كمدير ✓');
       }
     } else {
-      // الاحتفاظ بالمفضلة الموجودة عند إعادة تسجيل الدخول
-      const existing = getUserData();
-      setUserData({ name: payload.name, email: payload.email, favorites: existing && existing.favorites ? existing.favorites : [] });
-      closeUserAuthModal();
-      showToast('تم تسجيل الدخول بنجاح ✓');
-      renderProducts();
+      if (location.hash === '#admin') {
+        // إيميل غير مصرح له بالأدمن
+        document.getElementById('googleLoginError').classList.add('show');
+      } else {
+        // مستخدم عادي
+        const existing = getUserData();
+        setUserData({ name: payload.name, email: payload.email, favorites: existing && existing.favorites ? existing.favorites : [] });
+        closeUserAuthModal();
+        showToast('تم تسجيل الدخول بنجاح ✓');
+        renderProducts();
+      }
     }
   } catch (e) { console.error("Error decoding Google response", e); }
 }
