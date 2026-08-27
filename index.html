@@ -1071,6 +1071,11 @@ function openUserAuthModal() {
 }
 function closeUserAuthModal() { document.getElementById('userAuthModal').classList.remove('open'); document.getElementById('userAuthOverlay').classList.remove('open'); }
 function handleUserLogout() {
+  // مسح الكارت من الشاشة بس (مش من Firebase)
+  state.cart = [];
+  state.appliedCoupon = null;
+  renderCart();
+
   setUserData(null);
   localStorage.removeItem(ADMIN_EMAIL_KEY); sessionStorage.removeItem('mrstore_admin_auth');
   updateAdminNavVisibility();
@@ -1534,7 +1539,7 @@ document.getElementById('adminSearchInput').addEventListener('input', e => {
 /* ============ CART & LIKE LOGIC ============ */
 function findProduct(id){ return PRODUCTS.find(p=>p.id===id); }
 
-function addToCart(id){
+async function addToCart(id){
   if(!getUserData()) { showToast('سجّل دخولك الأول عشان تضيف للعربة 🛍️'); openUserAuthModal(); return; }
   const p = findProduct(id);
   if(!p) return;
@@ -1547,6 +1552,7 @@ function addToCart(id){
   else state.cart.push({id, qty:1});
   renderCart();
   showToast('تمت الإضافة للعربة ✓');
+  await saveCartToFirebase();
 }
 
 async function handleLikeAction(id) {
@@ -1558,11 +1564,19 @@ async function handleLikeAction(id) {
   product.likes = product.likes || 0;
   if (user.favorites.includes(id)) { user.favorites = user.favorites.filter(favId => favId !== id); product.likes = Math.max(0, product.likes - 1); } 
   else { user.favorites.push(id); product.likes++; }
-  setUserData(user); await saveDataStore('products', PRODUCTS_STORAGE_KEY, PRODUCTS); renderProducts();
+  setUserData(user);
+  // حفظ المفضلة في Firebase
+  if (user.email) {
+    const profileKey = emailToKey(user.email);
+    const existingProfile = await loadUserProfile(user.email);
+    await saveUserProfile(user.email, { ...(existingProfile || {}), favorites: user.favorites });
+  }
+  await saveDataStore('products', PRODUCTS_STORAGE_KEY, PRODUCTS);
+  renderProducts();
 }
 
-function removeFromCart(id){ state.cart = state.cart.filter(i=>i.id!==id); renderCart(); }
-function changeQty(id, delta){
+async function removeFromCart(id){ state.cart = state.cart.filter(i=>i.id!==id); renderCart(); await saveCartToFirebase(); }
+async function changeQty(id, delta){
   const item = state.cart.find(i=>i.id===id);
   if(!item) return;
   const p = findProduct(id);
@@ -1570,8 +1584,9 @@ function changeQty(id, delta){
   if(delta > 0 && item.qty + delta > stockQty) { showToast('المخزون المتوفر لا يكفي!'); return; }
   
   item.qty += delta;
-  if(item.qty<=0){ removeFromCart(id); return; }
+  if(item.qty<=0){ await removeFromCart(id); return; }
   renderCart();
+  await saveCartToFirebase();
 }
 function cartCount(){ return state.cart.reduce((s,i)=>s+i.qty,0); }
 function cartTotal(){ 
@@ -1672,6 +1687,34 @@ function sanitizeCart() {
   if (removed > 0) {
     showToast(`تم حذف ${removed} منتج غير متوفر من عربتك تلقائياً`);
   }
+}
+
+async function saveCartToFirebase() {
+  const user = getUserData();
+  if (!user || !user.email) return;
+  const key = emailToKey(user.email);
+  if (useFirebase) {
+    try { await firebase.database().ref('userCarts/' + key).set(state.cart); } catch(e) {}
+  }
+  localStorage.setItem('mrstore_cart_' + key, JSON.stringify(state.cart));
+}
+
+async function loadCartFromFirebase(email) {
+  const key = emailToKey(email);
+  if (useFirebase) {
+    try {
+      const snap = await firebase.database().ref('userCarts/' + key).once('value');
+      if (snap.exists()) {
+        const val = snap.val();
+        return Array.isArray(val) ? val : [];
+      }
+    } catch(e) {}
+  }
+  try {
+    const s = localStorage.getItem('mrstore_cart_' + key);
+    if (s) return JSON.parse(s);
+  } catch(e) {}
+  return [];
 }
 
 function renderCart(){
@@ -2093,8 +2136,12 @@ async function handleCredentialResponse(response) {
     // الاسم المحفوظ: Firebase > localStorage > اسم جوجل
     const savedName = (savedProfile && savedProfile.name) || (localData && localData.nameLastChanged && localData.name) || payload.name;
     const savedNameLastChanged = (savedProfile && savedProfile.nameLastChanged) || (localData && localData.nameLastChanged) || null;
-    const savedFavorites = (localData && localData.favorites) || [];
+    // المفضلة: Firebase أولاً ثم localStorage
+    const savedFavorites = (savedProfile && savedProfile.favorites) || (localData && localData.favorites) || [];
     const isFirstLogin = !savedNameLastChanged;
+
+    // جلب الكارت المحفوظ من Firebase
+    const savedCart = await loadCartFromFirebase(email);
 
     if (isAdminEmail) {
       localStorage.setItem(ADMIN_EMAIL_KEY, email);
@@ -2104,6 +2151,12 @@ async function handleCredentialResponse(response) {
         favorites: savedFavorites,
         nameLastChanged: savedNameLastChanged
       });
+      // استعادة الكارت
+      if (savedCart && savedCart.length > 0) {
+        state.cart = savedCart;
+        sanitizeCart();
+        renderCart();
+      }
 
       if (location.hash === '#admin') {
         document.getElementById('googleLoginError').classList.remove('show');
@@ -2127,6 +2180,12 @@ async function handleCredentialResponse(response) {
           favorites: savedFavorites,
           nameLastChanged: savedNameLastChanged
         });
+        // استعادة الكارت
+        if (savedCart && savedCart.length > 0) {
+          state.cart = savedCart;
+          sanitizeCart();
+          renderCart();
+        }
         closeUserAuthModal();
         showToast('تم تسجيل الدخول بنجاح ✓');
         renderProducts();
