@@ -948,13 +948,15 @@ h1,h2,h3,h4{font-weight:inherit;}
           <h4 style="margin-bottom:14px; font-weight:700;">إضافة كوبون جديد</h4>
           <form id="addCouponForm" style="display:flex; gap:10px; flex-wrap:wrap; align-items:end;">
             <div class="field" style="margin-bottom:0; flex:1; min-width:150px;"><label>كود الخصم</label><input type="text" id="newCouponCode" required placeholder="مثال: SALE20"></div>
-            <div class="field" style="margin-bottom:0; flex:1; min-width:150px;"><label>نسبة الخصم (%)</label><input type="number" id="newCouponDisc" required min="1" max="100" placeholder="20"></div>
+            <div class="field" style="margin-bottom:0; flex:1; min-width:100px;"><label>نسبة الخصم (%)</label><input type="number" id="newCouponDisc" required min="1" max="100" placeholder="20"></div>
+            <div class="field" style="margin-bottom:0; flex:1; min-width:120px;"><label>الحد الأقصى للاستخدام/شخص</label><input type="number" id="newCouponMaxUses" min="1" placeholder="مثال: 1 (فارغ = بلا حد)"></div>
+            <div class="field" style="margin-bottom:0; flex:1; min-width:150px;"><label>تاريخ الانتهاء (اختياري)</label><input type="date" id="newCouponExpiry"></div>
             <button type="submit" class="btn btn-primary">إضافة الكوبون</button>
           </form>
         </div>
         <div class="admin-table-wrapper">
           <table class="admin-table">
-            <thead><tr><th>الكود</th><th>نسبة الخصم</th><th>الحالة</th><th>حذف</th></tr></thead>
+            <thead><tr><th>الكود</th><th>نسبة الخصم</th><th>حد الاستخدام/شخص</th><th>تاريخ الانتهاء</th><th>الحالة</th><th>حذف</th></tr></thead>
             <tbody id="couponsListTable"></tbody>
           </table>
         </div>
@@ -1580,18 +1582,67 @@ function cartTotal(){
   return total;
 }
 
-function applyCouponCode() {
+async function getCouponUsageCount(couponCode, userEmail) {
+  if (!userEmail) return 0;
+  const key = emailToKey(userEmail);
+  if (useFirebase) {
+    try {
+      const snap = await firebase.database().ref(`couponUsage/${couponCode}/${key}`).once('value');
+      return snap.exists() ? snap.val() : 0;
+    } catch(e) {}
+  }
+  try {
+    const s = localStorage.getItem(`mrstore_coupon_usage_${couponCode}_${key}`);
+    return s ? Number(s) : 0;
+  } catch(e) {}
+  return 0;
+}
+
+async function incrementCouponUsage(couponCode, userEmail) {
+  if (!userEmail) return;
+  const key = emailToKey(userEmail);
+  const current = await getCouponUsageCount(couponCode, userEmail);
+  const next = current + 1;
+  if (useFirebase) {
+    try { await firebase.database().ref(`couponUsage/${couponCode}/${key}`).set(next); } catch(e) {}
+  }
+  localStorage.setItem(`mrstore_coupon_usage_${couponCode}_${key}`, String(next));
+}
+
+async function applyCouponCode() {
   const code = document.getElementById('couponInput').value.trim().toUpperCase();
   const coupon = COUPONS.find(c => c.code === code);
-  if (coupon) {
-      state.appliedCoupon = coupon;
-      showToast('تم تطبيق الكوبون بنجاح!');
+  if (!coupon) {
+    showToast('كوبون غير صالح ✕');
+    state.appliedCoupon = null;
+    renderCart();
+    return;
+  }
+  if (isCouponExpired(coupon)) {
+    showToast('الكوبون ده انتهت صلاحيته ✕');
+    state.appliedCoupon = null;
+    renderCart();
+    return;
+  }
+  // التحقق من حد الاستخدام لو محدد
+  if (coupon.maxUsesPerUser) {
+    const user = getUserData();
+    if (!user || !user.email) {
+      showToast('سجّل دخولك الأول عشان تستخدم الكوبون ✕');
       renderCart();
-  } else {
-      showToast('كوبون غير صالح');
+      return;
+    }
+    const usedCount = await getCouponUsageCount(code, user.email);
+    if (usedCount >= coupon.maxUsesPerUser) {
+      showToast(`وصلت للحد الأقصى (${coupon.maxUsesPerUser} مرة) لهذا الكوبون ✕`);
       state.appliedCoupon = null;
       renderCart();
+      return;
+    }
   }
+  state.appliedCoupon = coupon;
+  showToast('تم تطبيق الكوبون بنجاح! ✓');
+  renderCart();
 }
 
 function cartItemHTML(i){
@@ -1745,6 +1796,14 @@ checkoutForm.addEventListener('submit', async e=>{
   checkoutForm.style.display = 'none';
   successView.classList.add('show');
   
+  // تسجيل استخدام الكوبون في Firebase لو كان مفعّلاً
+  if (state.appliedCoupon && state.appliedCoupon.maxUsesPerUser) {
+    const user = getUserData();
+    if (user && user.email) {
+      await incrementCouponUsage(state.appliedCoupon.code, user.email);
+    }
+  }
+
   // إفراغ سلة التسوق
   state.cart = [];
   state.appliedCoupon = null;
@@ -1870,24 +1929,43 @@ document.getElementById('addCouponForm').addEventListener('submit', async e => {
   e.preventDefault();
   const code = document.getElementById('newCouponCode').value.trim().toUpperCase();
   const discount = Number(document.getElementById('newCouponDisc').value);
-  COUPONS.push({id: Date.now(), code, discount});
+  const maxUsesRaw = document.getElementById('newCouponMaxUses').value;
+  const maxUsesPerUser = maxUsesRaw ? Number(maxUsesRaw) : null; // null = unlimited
+  const expiry = document.getElementById('newCouponExpiry').value || null;
+  COUPONS.push({id: Date.now(), code, discount, maxUsesPerUser, expiry});
   await saveDataStore('coupons', COUPONS_STORAGE_KEY, COUPONS);
   document.getElementById('addCouponForm').reset();
   renderAdminCoupons();
   showToast('تمت إضافة الكوبون بنجاح ✓');
 });
 
+function isCouponExpired(coupon) {
+  if (!coupon.expiry) return false;
+  const expDate = new Date(coupon.expiry);
+  expDate.setHours(23, 59, 59, 999); // نهاية اليوم
+  return new Date() > expDate;
+}
+
 function renderAdminCoupons() {
   const tbody = document.getElementById('couponsListTable');
-  if(COUPONS.length === 0){ tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:20px;">لا توجد كوبونات</td></tr>`; return;}
-  tbody.innerHTML = COUPONS.map(c => `
-    <tr>
+  if(COUPONS.length === 0){ tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:20px;">لا توجد كوبونات</td></tr>`; return;}
+  tbody.innerHTML = COUPONS.map(c => {
+    const expired = isCouponExpired(c);
+    const expiryText = c.expiry ? new Date(c.expiry).toLocaleDateString('ar-EG') : '—';
+    const maxUsesText = c.maxUsesPerUser ? `${c.maxUsesPerUser} مرة` : 'بلا حد';
+    const statusCell = expired
+      ? `<span style="color:var(--stamp); font-weight:bold;">منتهي ✕</span>`
+      : `<span style="color:var(--ok); font-weight:bold;">نشط ✓</span>`;
+    return `
+    <tr style="${expired ? 'opacity:0.55;' : ''}">
       <td style="font-family:var(--ff-mono); font-weight:bold;">${c.code}</td>
       <td>${c.discount}%</td>
-      <td><span style="color:var(--ok); font-weight:bold;">نشط</span></td>
+      <td style="font-family:var(--ff-mono); font-size:.8rem;">${maxUsesText}</td>
+      <td style="font-family:var(--ff-mono); font-size:.8rem;">${expiryText}</td>
+      <td>${statusCell}</td>
       <td><button style="color:var(--stamp); font-weight:bold;" onclick="deleteCoupon(${c.id})">حذف</button></td>
-    </tr>
-  `).join('');
+    </tr>`;
+  }).join('');
 }
 
 async function deleteCoupon(id) {
