@@ -7,11 +7,20 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MR Store | متجرك لأحدث موضة رجالي</title>
-<meta name="description" content="MR Store — تسوق أحدث صيحات الموضة الرجالي. توصيل لكل مصر ودفع عند الاستلام.">
-<meta property="og:title" content="MR Store">
-<meta property="og:description" content="تسوق أحدث صيحات الموضة الرجالي — توصيل لكل مصر.">
+<title>MR Store | متجرك لأحدث موضة رجالي — توصيل لكل مصر</title>
+<meta name="description" content="MR Store — تسوق أحدث صيحات الموضة الرجالي. جودة عالية، أسعار مناسبة، دفع عند الاستلام وتوصيل سريع لكل محافظات مصر.">
+<meta name="keywords" content="ملابس رجالي, موضة رجالي, تسوق اون لاين, مصر, MR Store, قمصان, جاكيت, بنطلون">
+<meta name="robots" content="index, follow">
+<meta name="author" content="MR Store">
+<meta name="theme-color" content="#2B3B68">
+<meta property="og:title" content="MR Store | متجرك لأحدث موضة رجالي">
+<meta property="og:description" content="تسوق أحدث صيحات الموضة الرجالي — جودة عالية، أسعار مناسبة، دفع عند الاستلام، توصيل لكل مصر.">
 <meta property="og:type" content="website">
+<meta property="og:image" content="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1200' height='630' viewBox='0 0 1200 630'%3E%3Crect fill='%232B3B68' width='1200' height='630'/%3E%3Ctext fill='%23ECE5D3' font-family='sans-serif' font-size='80' font-weight='bold' x='600' y='280' text-anchor='middle'%3EMR STORE%3C/text%3E%3Ctext fill='%23A9762E' font-family='sans-serif' font-size='36' x='600' y='360' text-anchor='middle'%3Eمتجرك لأحدث موضة رجالي%3C/text%3E%3C/svg%3E">
+<meta property="og:locale" content="ar_EG">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="MR Store | متجرك لأحدث موضة رجالي">
+<meta name="twitter:description" content="تسوق أحدث صيحات الموضة الرجالي — دفع عند الاستلام، توصيل لكل مصر.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%232B3B68' d='M3 12l9-9h8v8l-9 9a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8z'/%3E%3Ccircle cx='15.5' cy='8.5' r='1.5' fill='%23ECE5D3'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -436,9 +445,122 @@ h1,h2,h3,h4{font-weight:inherit;}
 .admin-table { width: 100%; border-collapse: collapse; font-size: .85rem; text-align: right; }
 .admin-table th, .admin-table td { padding: 12px; border-bottom: 1px dashed var(--line); }
 .admin-table th { color: var(--ink-soft); font-family: var(--ff-mono); text-transform: uppercase; letter-spacing: .05em; font-weight: 700; }
+
+/* ============ LOADING SCREEN ============ */
+#loadingScreen{
+  position:fixed;inset:0;background:var(--canvas);z-index:9999;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;
+  transition:opacity .5s ease, visibility .5s ease;
+}
+#loadingScreen.hidden{opacity:0;visibility:hidden;pointer-events:none;}
+.loading-logo{font-family:var(--ff-mono);font-size:1.8rem;font-weight:700;color:var(--denim);letter-spacing:.1em;}
+.loading-bar{width:160px;height:3px;background:var(--line);border-radius:99px;overflow:hidden;}
+.loading-bar-fill{height:100%;width:0%;background:var(--denim);border-radius:99px;animation:loadBar 1.4s ease forwards;}
+@keyframes loadBar{0%{width:0%}60%{width:85%}100%{width:100%}}
+
+/* ============ SKELETON LOADING ============ */
+.skeleton{background:linear-gradient(90deg,var(--canvas-deep) 25%,var(--canvas) 50%,var(--canvas-deep) 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.skeleton-card{border-radius:var(--radius-m);overflow:hidden;box-shadow:var(--shadow-s);}
+.skeleton-img{aspect-ratio:4/5;background:var(--canvas-deep);}
+.skeleton-img.skeleton{height:100%;}
+.skeleton-body{padding:18px;}
+.skeleton-line{height:14px;border-radius:6px;margin-bottom:10px;}
+.skeleton-line.skeleton{width:80%;}
+.skeleton-line.skeleton.short{width:50%;}
+.skeleton-line.skeleton.btn{height:38px;width:100%;margin-top:14px;border-radius:var(--radius-s);}
+
+/* ============ BACK TO TOP ============ */
+#backToTop{
+  position:fixed;bottom:96px;left:24px;z-index:70;width:44px;height:44px;border-radius:50%;
+  background:var(--denim);color:var(--paper);display:flex;align-items:center;justify-content:center;
+  box-shadow:var(--shadow-m);cursor:pointer;border:none;
+  opacity:0;transform:translateY(16px);transition:opacity .3s ease,transform .3s ease;pointer-events:none;
+}
+#backToTop.visible{opacity:1;transform:translateY(0);pointer-events:auto;}
+#backToTop:hover{background:var(--denim-deep);}
+#backToTop svg{width:18px;height:18px;}
+
+/* ============ CART BADGE BOUNCE ============ */
+@keyframes badgeBounce{
+  0%{transform:scale(1)}
+  30%{transform:scale(1.6)}
+  60%{transform:scale(.85)}
+  80%{transform:scale(1.15)}
+  100%{transform:scale(1)}
+}
+.cart-badge.bounce{animation:badgeBounce .45s ease;}
+
+/* ============ ADD TO CART ANIMATION (fly to cart) ============ */
+.fly-dot{
+  position:fixed;width:14px;height:14px;border-radius:50%;
+  background:var(--stamp);z-index:9998;pointer-events:none;
+  transition:all .6s cubic-bezier(.4,0,.2,1);
+}
+
+/* ============ TOAST ENHANCED ============ */
+.toast{
+  position:fixed;bottom:26px;right:26px;left:auto;z-index:9990;
+  background:var(--ink);color:var(--paper);
+  padding:14px 20px 14px 16px;border-radius:var(--radius-m);font-size:.88rem;font-weight:500;
+  box-shadow:var(--shadow-l);
+  transform:translateY(120%);transition:transform .35s cubic-bezier(.34,1.56,.64,1);
+  display:flex;align-items:center;gap:10px;min-width:220px;max-width:340px;
+  border-right:4px solid var(--brass);
+}
+.toast.show{transform:translateY(0);}
+.toast.toast-ok{border-right-color:var(--ok);}
+.toast.toast-err{border-right-color:var(--stamp);}
+.toast.toast-info{border-right-color:var(--denim);}
+.toast-icon{font-size:1.1rem;flex-shrink:0;}
+.toast-msg{flex:1;}
+@media (max-width:480px){.toast{right:16px;left:16px;max-width:none;}}
+
+/* ============ CONFETTI ============ */
+.confetti-wrap{position:fixed;inset:0;pointer-events:none;z-index:9997;overflow:hidden;}
+.confetti-piece{
+  position:absolute;top:-20px;width:10px;height:10px;border-radius:2px;
+  animation:confettiFall linear forwards;
+}
+@keyframes confettiFall{
+  0%{transform:translateY(-20px) rotate(0deg);opacity:1;}
+  100%{transform:translateY(100vh) rotate(720deg);opacity:0;}
+}
+
+/* ============ IMAGE ZOOM MODAL ============ */
+#imgZoomModal{
+  position:fixed;inset:0;z-index:9995;background:rgba(34,31,26,.88);
+  display:none;align-items:center;justify-content:center;cursor:zoom-out;
+}
+#imgZoomModal.open{display:flex;}
+#imgZoomModal img{max-width:92vw;max-height:88vh;border-radius:var(--radius-m);box-shadow:var(--shadow-l);object-fit:contain;}
+#imgZoomClose{position:absolute;top:20px;right:20px;color:#fff;font-size:2rem;cursor:pointer;background:rgba(0,0,0,.3);border:none;width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;}
+
+/* ============ PRODUCT IMG HOVER ZOOM CUE ============ */
+.product-img{cursor:zoom-in;}
 </style>
 </head>
 <body>
+
+<!-- ============ LOADING SCREEN ============ -->
+<div id="loadingScreen" aria-hidden="true">
+  <div class="loading-logo">MR STORE</div>
+  <div class="loading-bar"><div class="loading-bar-fill"></div></div>
+</div>
+
+<!-- ============ IMAGE ZOOM MODAL ============ -->
+<div id="imgZoomModal" role="dialog" aria-label="عرض الصورة" onclick="closeImgZoom()">
+  <button id="imgZoomClose" onclick="closeImgZoom()" aria-label="إغلاق">×</button>
+  <img id="imgZoomSrc" src="" alt="">
+</div>
+
+<!-- ============ CONFETTI CONTAINER ============ -->
+<div class="confetti-wrap" id="confettiWrap"></div>
+
+<!-- ============ BACK TO TOP ============ -->
+<button id="backToTop" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="الرجوع للأعلى">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+</button>
 
 <!-- ============ HEADER ============ -->
 <header class="site-header">
@@ -871,7 +993,10 @@ h1,h2,h3,h4{font-weight:inherit;}
 </div>
 
 <!-- ============ TOAST ============ -->
-<div class="toast" id="toast"></div>
+<div class="toast" id="toast">
+  <span class="toast-icon" id="toastIcon">✓</span>
+  <span class="toast-msg" id="toastMsg"></span>
+</div>
 
 <!-- ============ ADMIN VIEW ============ -->
 <div class="admin-view" id="adminView">
@@ -1088,12 +1213,27 @@ function handleUserLogout() {
   showToast('تم تسجيل الخروج');
 }
 
-/* ============ TOAST (تمت إضافتها) ============ */
-function showToast(msg) {
+/* ============ TOAST ENHANCED ============ */
+let _toastTimer = null;
+function showToast(msg, type = 'default') {
   const toast = document.getElementById('toast');
-  toast.textContent = msg;
+  const icon = document.getElementById('toastIcon');
+  const msgEl = document.getElementById('toastMsg');
+  if (_toastTimer) clearTimeout(_toastTimer);
+  // تحديد الأيقونة والنوع
+  const icons = { ok: '✓', err: '✕', info: 'ℹ', default: '·' };
+  const typeMap = { ok: 'toast-ok', err: 'toast-err', info: 'toast-info', default: '' };
+  // لو الرسالة تحتوي ✓ يعتبرها ok، ✕ يعتبرها err
+  if (type === 'default') {
+    if (msg.includes('✓') || msg.includes('نجاح') || msg.includes('تم')) type = 'ok';
+    else if (msg.includes('✕') || msg.includes('خطأ') || msg.includes('غير') || msg.includes('محجوز') || msg.includes('لازم') || msg.includes('وصلت')) type = 'err';
+    else type = 'info';
+  }
+  icon.textContent = icons[type] || '·';
+  msgEl.textContent = msg;
+  toast.className = 'toast ' + (typeMap[type] || '');
   toast.classList.add('show');
-  setTimeout(() => toast.classList.remove('show'), 3000);
+  _toastTimer = setTimeout(() => toast.classList.remove('show'), 3200);
 }
 
 /* ============ ORDERS MANAGEMENT (Cross-Device) ============ */
@@ -1472,7 +1612,7 @@ function productCardHTML(p){
   <article class="product-card reveal is-visible">
     <div class="product-card-inner">
       <div class="tag-hole"></div>
-      <div class="product-img">${badge}<img src="${p.img}" alt="${p.name}" loading="lazy"></div>
+      <div class="product-img" onclick="openImgZoom(this.querySelector('img'))">${badge}<img src="${p.img}" alt="${p.name}" loading="lazy" decoding="async"></div>
       <div class="product-perf"></div>
       <div class="product-info">
         <div style="display:flex; justify-content:space-between; align-items:start;">
@@ -1493,6 +1633,19 @@ function productCardHTML(p){
       </div>
     </div>
   </article>`;
+}
+
+function showSkeletons(count = 8) {
+  const grid = document.getElementById('productGrid');
+  grid.innerHTML = Array.from({length: count}, () => `
+    <div class="skeleton-card">
+      <div class="skeleton-img skeleton"></div>
+      <div class="skeleton-body">
+        <div class="skeleton-line skeleton"></div>
+        <div class="skeleton-line skeleton short"></div>
+        <div class="skeleton-line skeleton btn"></div>
+      </div>
+    </div>`).join('');
 }
 
 function renderProducts(){
@@ -1539,7 +1692,7 @@ document.getElementById('adminSearchInput').addEventListener('input', e => {
 /* ============ CART & LIKE LOGIC ============ */
 function findProduct(id){ return PRODUCTS.find(p=>p.id===id); }
 
-async function addToCart(id){
+async function addToCart(id, triggerEl){
   if(!getUserData()) { showToast('سجّل دخولك الأول عشان تضيف للعربة 🛍️'); openUserAuthModal(); return; }
   const p = findProduct(id);
   if(!p) return;
@@ -1552,6 +1705,33 @@ async function addToCart(id){
   else state.cart.push({id, qty:1});
   renderCart();
   showToast('تمت الإضافة للعربة ✓');
+
+  // fly-dot animation
+  const cartBtn = document.getElementById('cartToggle');
+  if (triggerEl && cartBtn) {
+    const fromRect = triggerEl.getBoundingClientRect();
+    const toRect = cartBtn.getBoundingClientRect();
+    const dot = document.createElement('div');
+    dot.className = 'fly-dot';
+    dot.style.cssText = `left:${fromRect.left + fromRect.width/2 - 7}px;top:${fromRect.top + fromRect.height/2 - 7}px;`;
+    document.body.appendChild(dot);
+    requestAnimationFrame(() => {
+      dot.style.left = (toRect.left + toRect.width/2 - 7) + 'px';
+      dot.style.top  = (toRect.top  + toRect.height/2 - 7) + 'px';
+      dot.style.opacity = '0';
+      dot.style.transform = 'scale(.3)';
+    });
+    setTimeout(() => {
+      dot.remove();
+      // badge bounce
+      const badge = document.getElementById('cartBadge');
+      badge.classList.remove('bounce');
+      void badge.offsetWidth;
+      badge.classList.add('bounce');
+      badge.addEventListener('animationend', () => badge.classList.remove('bounce'), {once:true});
+    }, 620);
+  }
+
   await saveCartToFirebase();
 }
 
@@ -1745,7 +1925,7 @@ document.getElementById('productGrid').addEventListener('click', e=>{
   if(!btn) return;
   const action = btn.dataset.action;
   const id = Number(btn.dataset.id);
-  if (action === 'add') addToCart(id);
+  if (action === 'add') addToCart(id, btn);
   if (action === 'like') handleLikeAction(id);
   if (action === 'toggle-active') toggleProductActive(id);
   if (action === 'delete-prod') deleteProduct(id);
@@ -1846,6 +2026,9 @@ checkoutForm.addEventListener('submit', async e=>{
       await incrementCouponUsage(state.appliedCoupon.code, user.email);
     }
   }
+
+  // إطلاق كونفيتي 🎉
+  launchConfetti();
 
   // إفراغ سلة التسوق
   state.cart = [];
@@ -2064,6 +2247,68 @@ function handleRoute() {
     renderProducts();
   }
 }
+
+/* ============ IMAGE ZOOM ============ */
+function openImgZoom(img) {
+  if (!img) return;
+  const modal = document.getElementById('imgZoomModal');
+  document.getElementById('imgZoomSrc').src = img.src;
+  document.getElementById('imgZoomSrc').alt = img.alt;
+  modal.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeImgZoom() {
+  document.getElementById('imgZoomModal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeImgZoom(); });
+
+/* ============ CONFETTI ============ */
+function launchConfetti() {
+  const wrap = document.getElementById('confettiWrap');
+  if (!wrap) return;
+  const colors = ['#2B3B68','#A9762E','#A63B2A','#3F7D5C','#ECE5D3','#FBF8F0'];
+  wrap.innerHTML = '';
+  for (let i = 0; i < 60; i++) {
+    const piece = document.createElement('div');
+    piece.className = 'confetti-piece';
+    piece.style.cssText = `
+      left:${Math.random() * 100}%;
+      width:${6 + Math.random() * 8}px;
+      height:${6 + Math.random() * 8}px;
+      background:${colors[Math.floor(Math.random() * colors.length)]};
+      animation-duration:${1.2 + Math.random() * 1.8}s;
+      animation-delay:${Math.random() * .6}s;
+      border-radius:${Math.random() > .5 ? '50%' : '2px'};
+    `;
+    wrap.appendChild(piece);
+  }
+  setTimeout(() => { wrap.innerHTML = ''; }, 4000);
+}
+
+/* ============ BACK TO TOP ============ */
+window.addEventListener('scroll', () => {
+  const btn = document.getElementById('backToTop');
+  if (btn) btn.classList.toggle('visible', window.scrollY > 400);
+}, { passive: true });
+
+/* ============ SWIPE TO BROWSE (mobile) ============ */
+(function() {
+  let touchStartX = 0, touchStartY = 0;
+  document.addEventListener('touchstart', e => {
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+  }, { passive: true });
+  document.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    const dy = Math.abs(e.changedTouches[0].clientY - touchStartY);
+    // بس لو السحب أفقي أكثر من 80px وعمودي أقل من 50px
+    if (Math.abs(dx) > 80 && dy < 50) {
+      // السحب لليسار → المنتجات / السحب لليمين → رجوع للأعلى
+      if (dx < 0) document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, { passive: true });
+})();
 
 /* ============ INITIALIZATION & GOOGLE AUTH ============ */
 const observer = new IntersectionObserver(entries => {
@@ -2304,6 +2549,8 @@ document.getElementById('editUsernameForm').addEventListener('submit', async e =
 });
 
 window.onload = async () => {
+  // إظهار skeleton أثناء التحميل
+  showSkeletons(8);
   PRODUCTS = await fetchDataStore('products', PRODUCTS_STORAGE_KEY, DEFAULT_PRODUCTS);
   BANNER_DATA = await fetchDataStore('banner', BANNER_STORAGE_KEY, BANNER_DATA);
   COUPONS = await fetchDataStore('coupons', COUPONS_STORAGE_KEY, []);
@@ -2332,6 +2579,12 @@ window.onload = async () => {
   handleRoute();
   
   document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+  // إخفاء شاشة التحميل
+  setTimeout(() => {
+    const ls = document.getElementById('loadingScreen');
+    if (ls) ls.classList.add('hidden');
+  }, 1200);
   
   if(typeof google !== 'undefined') {
     google.accounts.id.initialize({
