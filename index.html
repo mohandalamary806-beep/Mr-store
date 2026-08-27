@@ -55,6 +55,31 @@
   --container:1220px;
 }
 
+/* ============ DARK MODE TOKENS ============ */
+[data-theme="dark"]{
+  --canvas:#1A1814;
+  --canvas-deep:#111009;
+  --paper:#252218;
+  --ink:#F0EAD6;
+  --ink-soft:#A89F8C;
+  --denim:#5B7FBE;
+  --denim-deep:#4A6DAD;
+  --brass:#C49040;
+  --stamp:#D15A46;
+  --line:#3A3528;
+  --ok:#4FA876;
+  --shadow-s:0 2px 10px rgba(0,0,0,.35);
+  --shadow-m:0 10px 28px rgba(0,0,0,.5);
+  --shadow-l:0 24px 60px rgba(0,0,0,.7);
+}
+
+/* Smooth color transitions for dark mode */
+body, .site-header, .modal, .drawer, .mobile-menu, .admin-login-card,
+.product-card-inner, .order-card, .admin-stat-card, .admin-table-wrapper,
+.admin-topbar, #loadingScreen {
+  transition: background-color .35s ease, color .35s ease, border-color .35s ease;
+}
+
 /* ============ RESET ============ */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 html{scroll-behavior:smooth;}
@@ -591,6 +616,10 @@ h1,h2,h3,h4{font-weight:inherit;}
 
       <button class="icon-btn" id="searchToggle" aria-label="بحث" onclick="document.getElementById('searchInput').focus();document.getElementById('products').scrollIntoView({behavior:'smooth'});">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/></svg>
+      </button>
+      <button class="icon-btn" id="darkModeToggle" aria-label="تبديل الوضع الليلي" onclick="toggleDarkMode()" title="وضع ليلي / نهاري">
+        <svg id="darkIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg id="lightIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="display:none;"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
       </button>
       <button class="icon-btn" id="cartToggle" aria-label="عربة التسوق">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8h12l-1 12H7L6 8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>
@@ -2548,7 +2577,41 @@ document.getElementById('editUsernameForm').addEventListener('submit', async e =
   renderProducts();
 });
 
+/* ============ DARK MODE ============ */
+function applyDarkMode(isDark) {
+  const html = document.documentElement;
+  const darkIcon = document.getElementById('darkIcon');
+  const lightIcon = document.getElementById('lightIcon');
+  if (isDark) {
+    html.setAttribute('data-theme', 'dark');
+    if (darkIcon) darkIcon.style.display = 'none';
+    if (lightIcon) lightIcon.style.display = '';
+  } else {
+    html.removeAttribute('data-theme');
+    if (darkIcon) darkIcon.style.display = '';
+    if (lightIcon) lightIcon.style.display = 'none';
+  }
+}
+
+function toggleDarkMode() {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const next = !isDark;
+  applyDarkMode(next);
+  localStorage.setItem('mrstore_dark_mode', next ? '1' : '0');
+}
+
+// تطبيق الثيم المحفوظ فوراً قبل أي شيء تاني (منع الوميض)
+(function() {
+  const saved = localStorage.getItem('mrstore_dark_mode');
+  const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const isDark = saved !== null ? saved === '1' : prefersDark;
+  if (isDark) document.documentElement.setAttribute('data-theme', 'dark');
+})();
+
 window.onload = async () => {
+  // تطبيق الأيقونة الصحيحة بعد تحميل الـ DOM
+  applyDarkMode(document.documentElement.getAttribute('data-theme') === 'dark');
+
   // إظهار skeleton أثناء التحميل
   showSkeletons(8);
   PRODUCTS = await fetchDataStore('products', PRODUCTS_STORAGE_KEY, DEFAULT_PRODUCTS);
