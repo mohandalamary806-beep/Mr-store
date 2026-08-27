@@ -673,9 +673,53 @@ h1,h2,h3,h4{font-weight:inherit;}
 
 /* ============ PRODUCT IMG HOVER ZOOM CUE ============ */
 .product-img{cursor:zoom-in;}
+/* ============ FLASH SALE BANNER ============ */
+#flashSaleBanner{display:none;background:linear-gradient(135deg,#A63B2A 0%,#C94F3A 50%,#A9762E 100%);color:#fff;padding:10px 20px;text-align:center;position:relative;z-index:65;}
+[data-theme="dark"] #flashSaleBanner{background:linear-gradient(135deg,#8B2A1C 0%,#B8902E 100%);}
+#flashSaleBanner.active{display:block;}
+.flash-inner{display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;max-width:var(--container);margin-inline:auto;}
+.flash-label{font-family:var(--ff-mono);font-size:.7rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;}
+.flash-label::before{content:'⚡ ';}
+.flash-disc{font-family:var(--ff-mono);font-size:1.05rem;font-weight:700;background:rgba(255,255,255,.18);padding:2px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.3);}
+.flash-cd{display:flex;align-items:center;gap:6px;font-family:var(--ff-mono);font-size:.88rem;font-weight:700;}
+.flash-seg{display:flex;flex-direction:column;align-items:center;background:rgba(0,0,0,.2);padding:3px 8px;border-radius:5px;min-width:38px;}
+.flash-seg-val{font-size:1.1rem;line-height:1.1;}
+.flash-seg-lbl{font-size:.45rem;letter-spacing:.08em;opacity:.8;text-transform:uppercase;}
+.flash-sep{font-size:1rem;opacity:.6;margin-bottom:10px;}
+.flash-close{position:absolute;left:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:rgba(255,255,255,.7);font-size:1.1rem;cursor:pointer;padding:4px 8px;}
+.flash-close:hover{color:#fff;}
+.flash-time-inputs{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.flash-time-inputs input[type="number"]{width:68px;border:2px solid var(--line);border-radius:var(--radius-s);padding:8px 10px;background:var(--canvas);text-align:center;font-family:var(--ff-mono);}
+.flash-status{display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:var(--radius-s);font-size:.85rem;font-weight:700;margin-top:14px;}
+.flash-status.running{background:#DCEEE3;color:#3F7D5C;}
+.flash-status.stopped{background:#F3E6DA;color:#A63B2A;}
+[data-theme="dark"] .flash-status.running{background:rgba(79,200,138,.15);color:#4EC98A;}
+[data-theme="dark"] .flash-status.stopped{background:rgba(224,92,74,.15);color:#E05C4A;}
+/* Realtime sync indicator */
+.sync-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#3F7D5C;margin-left:6px;animation:syncPulse 2s ease-in-out infinite;}
+@keyframes syncPulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.4;transform:scale(.7);}}
+.site-header .logo::after{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--ok);margin-right:6px;opacity:0;transition:opacity .4s;vertical-align:middle;}
+.site-header.live-connected .logo::after{opacity:1;}
 </style>
 </head>
 <body>
+
+<!-- ============ FLASH SALE BANNER ============ -->
+<div id="flashSaleBanner" role="alert" aria-live="polite">
+  <div class="flash-inner">
+    <span class="flash-label">FLASH SALE</span>
+    <span class="flash-disc" id="flashDiscLabel">خصم 20%</span>
+    <div class="flash-cd" id="flashCd" aria-label="الوقت المتبقي">
+      <div class="flash-seg"><span class="flash-seg-val" id="fsHH">00</span><span class="flash-seg-lbl">ساعة</span></div>
+      <span class="flash-sep">:</span>
+      <div class="flash-seg"><span class="flash-seg-val" id="fsMM">00</span><span class="flash-seg-lbl">دقيقة</span></div>
+      <span class="flash-sep">:</span>
+      <div class="flash-seg"><span class="flash-seg-val" id="fsSS">00</span><span class="flash-seg-lbl">ثانية</span></div>
+    </div>
+    <span style="font-size:.8rem;opacity:.9;">اشتري دلوقتي قبل ما ينتهي!</span>
+  </div>
+  <button class="flash-close" onclick="dismissFlashBanner()" aria-label="إغلاق">×</button>
+</div>
 
 <!-- ============ LOADING SCREEN ============ -->
 <div id="loadingScreen" aria-hidden="true">
@@ -1226,6 +1270,34 @@ h1,h2,h3,h4{font-weight:inherit;}
         </div>
       </div>
 
+      <!-- Tab: Flash Sale -->
+      <div id="adminTabFlashSale" style="display:none;">
+        <div class="admin-table-wrapper">
+          <h4 style="margin-bottom:18px;font-weight:700;">⚡ إعداد الفلاش سيل</h4>
+          <div class="field">
+            <label for="fsDiscountInput">نسبة الخصم (%)</label>
+            <input type="number" id="fsDiscountInput" min="1" max="90" value="20" style="max-width:120px;border:2px solid var(--line);border-radius:var(--radius-s);padding:8px 12px;background:var(--canvas);">
+          </div>
+          <div class="field">
+            <label>مدة العرض (ساعة : دقيقة : ثانية)</label>
+            <div class="flash-time-inputs">
+              <input type="number" id="fsHours" min="0" max="72" value="0" placeholder="ساعة">
+              <span style="font-weight:700;font-size:1.2rem;">:</span>
+              <input type="number" id="fsMinutes" min="0" max="59" value="30" placeholder="دقيقة">
+              <span style="font-weight:700;font-size:1.2rem;">:</span>
+              <input type="number" id="fsSeconds" min="0" max="59" value="0" placeholder="ثانية">
+            </div>
+          </div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;">
+            <button class="btn btn-primary" onclick="startFlashSale()">▶ تشغيل العرض</button>
+            <button class="btn btn-outline" onclick="stopFlashSale()">■ إيقاف العرض</button>
+          </div>
+          <div class="flash-status stopped" id="fsStatusBox">
+            <span id="fsStatusText">العرض متوقف حالياً</span>
+          </div>
+        </div>
+      </div>
+
       <!-- Tab: Reviews -->
       <div id="adminTabReviews" style="display:none;">
         <div class="admin-table-wrapper">
@@ -1284,29 +1356,118 @@ const DEFAULT_PRODUCTS = [
   {id:4, name:"جاكيت شتوي", price:900, old:null, stock:20, badge:"new", active:true, likes: 25, sizes: ["M", "L", "XL", "XXL"], img:"https://placehold.co/600x750/ece5d3/2b3b68?text=Winter+Jacket"},
 ];
 
+/* ---- cache layer ---- */
+const _lsGet = (k, def) => { try { const s = localStorage.getItem(k); return s ? JSON.parse(s) : def; } catch(e) { return def; } };
+const _lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch(e) {} };
+
+/* ---- one-time fetch (used only on startup for speed) ---- */
 async function fetchDataStore(path, storageKey, defaultData) {
+  /* 1. serve cache instantly */
+  const cached = _lsGet(storageKey, null);
   if (useFirebase) {
     try {
-      const snap = await firebase.database().ref(path).once('value');
-      if (snap.exists()) {
+      const snap = await Promise.race([
+        firebase.database().ref(path).once('value'),
+        new Promise(r => setTimeout(() => r(null), 3000))
+      ]);
+      if (snap && snap.exists()) {
         const val = snap.val();
-        return Array.isArray(val) ? val : (typeof val === 'object' && path !== 'banner' ? Object.values(val) : val);
+        const data = (path === 'banner') ? val :
+                     (Array.isArray(val) ? val :
+                     (val && typeof val === 'object' ? Object.values(val) : val));
+        _lsSet(storageKey, data);
+        return data;
       }
-      return defaultData;
-    } catch(e) { return defaultData; }
-  } else {
-    try {
-      const s = localStorage.getItem(storageKey);
-      return s ? JSON.parse(s) : defaultData;
-    } catch(e) { return defaultData; }
+    } catch(e) {}
+  }
+  return cached !== null ? cached : defaultData;
+}
+
+/* ---- write to Firebase + localStorage ---- */
+async function saveDataStore(path, storageKey, data) {
+  _lsSet(storageKey, data);
+  if (useFirebase) {
+    try { await firebase.database().ref(path).set(data); }
+    catch(e) { console.warn('Firebase write failed:', path, e); }
   }
 }
 
-async function saveDataStore(path, storageKey, data) {
-  try {
-    if (useFirebase) await firebase.database().ref(path).set(data);
-    else localStorage.setItem(storageKey, JSON.stringify(data));
-  } catch(e) { localStorage.setItem(storageKey, JSON.stringify(data)); }
+/* ============ REALTIME LISTENERS ============ */
+/*
+  بدل ما نـ fetch في كل مرة، بنستخدم .on('value') —
+  Firebase بيبعت أي تغيير تلقائي والصفحة بتتحدث فوراً.
+  كل listener بنحفظه عشان نقدر نوقفه لو محتاجين.
+*/
+const _listeners = {};
+
+function attachListener(path, storageKey, onUpdate) {
+  if (!useFirebase) return;
+  /* وقف الـ listener القديم لو موجود */
+  if (_listeners[path]) {
+    firebase.database().ref(path).off('value', _listeners[path]);
+  }
+  const handler = snap => {
+    if (!snap.exists()) return;
+    const val = snap.val();
+    const data = (path === 'banner') ? val :
+                 (Array.isArray(val) ? val :
+                 (val && typeof val === 'object' ? Object.values(val) : val));
+    _lsSet(storageKey, data);
+    onUpdate(data);
+  };
+  firebase.database().ref(path).on('value', handler);
+  _listeners[path] = handler;
+}
+
+function detachAllListeners() {
+  Object.keys(_listeners).forEach(path => {
+    firebase.database().ref(path).off('value', _listeners[path]);
+    delete _listeners[path];
+  });
+}
+
+function startRealtimeSync() {
+  if (!useFirebase) return;
+
+  attachListener('products', PRODUCTS_STORAGE_KEY, data => {
+    PRODUCTS = data;
+    renderProducts();
+    renderCart(); /* تحديث الأسعار في الكارت */
+  });
+
+  attachListener('banner', BANNER_STORAGE_KEY, data => {
+    BANNER_DATA = data;
+    updateBannerUI();
+  });
+
+  attachListener('coupons', COUPONS_STORAGE_KEY, data => {
+    COUPONS = data;
+    if (isAdminAuthed()) renderAdminCoupons();
+  });
+
+  attachListener('reviews', REVIEWS_STORAGE_KEY, data => {
+    REVIEWS = data;
+    if (isAdminAuthed()) renderAdminReviews();
+  });
+
+  attachListener('orders', ORDERS_STORAGE_KEY, data => {
+    ORDERS = data;
+    if (isAdminAuthed()) { renderAdminOrders(); updateAdminStats(); }
+    /* تحديث modal الطلبات لو مفتوح */
+    if (typeof window._renderMyOrders === 'function') window._renderMyOrders();
+  });
+
+  attachListener('flashSale', 'mrstore_flash_sale', data => {
+    if (data && data.active && data.endsAt > Date.now()) {
+      mountFlashBanner(data);
+    } else {
+      unmountFlashBanner();
+    }
+    refreshFlashSaleAdminUI();
+  });
+
+  /* إظهار نقطة الاتصال الحي في الهيدر */
+  document.querySelector('.site-header')?.classList.add('live-connected');
 }
 
 /* ============ STATE ============ */
@@ -1379,11 +1540,10 @@ function showToast(msg, type = 'default') {
 let ORDERS = [];
 const ORDERS_STORAGE_KEY = 'mrstore_orders_data';
 
-// 1. تحميل الطلبات من قاعدة البيانات
 async function loadOrders() {
   ORDERS = await fetchDataStore('orders', ORDERS_STORAGE_KEY, []);
+  return ORDERS;
 }
-loadOrders();
 
 // 2. دالة حفظ الطلب وربطه بحساب الجيميل
 async function addOrder(orderData) {
@@ -2225,9 +2385,12 @@ function openAdminDashboard() {
 function switchAdminTab(e, tab) {
   document.querySelectorAll('.admin-main-tabs button').forEach(b => b.classList.remove('active'));
   e.target.classList.add('active');
-  document.getElementById('adminTabOrders').style.display = tab === 'orders' ? 'block' : 'none';
-  document.getElementById('adminTabCoupons').style.display = tab === 'coupons' ? 'block' : 'none';
-  document.getElementById('adminTabReviews').style.display = tab === 'reviews' ? 'block' : 'none';
+  document.getElementById('adminTabOrders').style.display    = tab === 'orders'    ? 'block' : 'none';
+  document.getElementById('adminTabCoupons').style.display   = tab === 'coupons'   ? 'block' : 'none';
+  document.getElementById('adminTabReviews').style.display   = tab === 'reviews'   ? 'block' : 'none';
+  const fsTab = document.getElementById('adminTabFlashSale');
+  if (fsTab) fsTab.style.display = tab === 'flashsale' ? 'block' : 'none';
+  if (tab === 'flashsale') refreshFlashSaleAdminUI();
 }
 
 async function loadAdminData() {
@@ -2703,6 +2866,91 @@ document.getElementById('editUsernameForm').addEventListener('submit', async e =
   renderProducts();
 });
 
+/* ============ FLASH SALE ============ */
+const FLASH_SALE_KEY = 'mrstore_flash_sale';
+let _flashTimer = null;
+
+async function saveFlashSale(data) {
+  _lsSet(FLASH_SALE_KEY, data);
+  if (useFirebase) {
+    try { await firebase.database().ref('flashSale').set(data); } catch(e) {}
+  }
+}
+
+function mountFlashBanner(data) {
+  if (_flashTimer) clearInterval(_flashTimer);
+  const banner = document.getElementById('flashSaleBanner');
+  if (!banner) return;
+  if (sessionStorage.getItem('mrstore_flash_dismissed') === '1') return;
+  banner.classList.add('active');
+  const discEl = document.getElementById('flashDiscLabel');
+  if (discEl) discEl.textContent = `خصم ${data.discount}%`;
+  const tick = () => {
+    const rem = Math.max(0, data.endsAt - Date.now());
+    const pad = n => String(n).padStart(2,'0');
+    const hEl = document.getElementById('fsHH');
+    const mEl = document.getElementById('fsMM');
+    const sEl = document.getElementById('fsSS');
+    if (hEl) hEl.textContent = pad(Math.floor(rem / 3600000));
+    if (mEl) mEl.textContent = pad(Math.floor((rem % 3600000) / 60000));
+    if (sEl) sEl.textContent = pad(Math.floor((rem % 60000) / 1000));
+    if (rem <= 0) {
+      unmountFlashBanner();
+      saveFlashSale({ active: false, endsAt: 0, discount: 0 });
+      refreshFlashSaleAdminUI();
+    }
+  };
+  tick();
+  _flashTimer = setInterval(tick, 1000);
+}
+
+function unmountFlashBanner() {
+  if (_flashTimer) { clearInterval(_flashTimer); _flashTimer = null; }
+  const banner = document.getElementById('flashSaleBanner');
+  if (banner) banner.classList.remove('active');
+}
+
+function dismissFlashBanner() {
+  sessionStorage.setItem('mrstore_flash_dismissed', '1');
+  unmountFlashBanner();
+}
+
+async function startFlashSale() {
+  const discount = Number(document.getElementById('fsDiscountInput')?.value) || 20;
+  const h = Number(document.getElementById('fsHours')?.value) || 0;
+  const m = Number(document.getElementById('fsMinutes')?.value) || 30;
+  const s = Number(document.getElementById('fsSeconds')?.value) || 0;
+  const durationMs = (h * 3600 + m * 60 + s) * 1000;
+  if (durationMs <= 0) { showToast('حدد مدة للعرض ✕'); return; }
+  const data = { active: true, endsAt: Date.now() + durationMs, discount };
+  await saveFlashSale(data);
+  mountFlashBanner(data);
+  refreshFlashSaleAdminUI();
+  showToast('تم تشغيل الفلاش سيل ✓');
+}
+
+async function stopFlashSale() {
+  unmountFlashBanner();
+  await saveFlashSale({ active: false, endsAt: 0, discount: 0 });
+  refreshFlashSaleAdminUI();
+  showToast('تم إيقاف الفلاش سيل ✓');
+}
+
+function refreshFlashSaleAdminUI() {
+  const data = _lsGet(FLASH_SALE_KEY, null);
+  const isRunning = data && data.active && data.endsAt > Date.now();
+  const statusEl = document.getElementById('fsStatusBox');
+  const statusText = document.getElementById('fsStatusText');
+  if (statusEl) statusEl.className = 'flash-status ' + (isRunning ? 'running' : 'stopped');
+  if (statusText) statusText.textContent = isRunning
+    ? `العرض شغال ✓ — خصم ${data.discount}% — ينتهي ${new Date(data.endsAt).toLocaleTimeString('ar-EG')}`
+    : 'العرض متوقف حالياً';
+  if (isRunning && data) {
+    const inp = document.getElementById('fsDiscountInput');
+    if (inp) inp.value = data.discount;
+  }
+}
+
 /* ============ DARK MODE ============ */
 function applyDarkMode(isDark) {
   const html = document.documentElement;
@@ -2734,60 +2982,63 @@ function toggleDarkMode() {
   if (isDark) document.documentElement.setAttribute('data-theme', 'dark');
 })();
 
-window.onload = async () => {
-  // تطبيق الأيقونة الصحيحة بعد تحميل الـ DOM
+document.addEventListener('DOMContentLoaded', async () => {
+  /* 1. تطبيق الثيم فوراً */
   applyDarkMode(document.documentElement.getAttribute('data-theme') === 'dark');
 
-  // إظهار skeleton أثناء التحميل
+  /* 2. عرض skeleton فوراً من الكاش */
   showSkeletons(8);
-  PRODUCTS = await fetchDataStore('products', PRODUCTS_STORAGE_KEY, DEFAULT_PRODUCTS);
-  BANNER_DATA = await fetchDataStore('banner', BANNER_STORAGE_KEY, BANNER_DATA);
-  COUPONS = await fetchDataStore('coupons', COUPONS_STORAGE_KEY, []);
-  REVIEWS = await fetchDataStore('reviews', REVIEWS_STORAGE_KEY, []);
 
-  // استعادة الكارت من Firebase لو اليوزر مسجل دخول
-  const currentUser = getUserData();
-  if (currentUser && currentUser.email) {
-    const savedCart = await loadCartFromFirebase(currentUser.email);
-    if (savedCart && savedCart.length > 0) {
-      state.cart = savedCart;
-    }
-  }
+  /* 3. تحميل البيانات من localStorage أولاً (سريع جداً) */
+  PRODUCTS    = _lsGet(PRODUCTS_STORAGE_KEY, DEFAULT_PRODUCTS);
+  BANNER_DATA = _lsGet(BANNER_STORAGE_KEY, BANNER_DATA);
+  COUPONS     = _lsGet(COUPONS_STORAGE_KEY, []);
+  REVIEWS     = _lsGet(REVIEWS_STORAGE_KEY, []);
+  ORDERS      = _lsGet(ORDERS_STORAGE_KEY, []);
 
-  // تنظيف الكارت من المنتجات المحذوفة عند الفتح
+  /* 4. رسم الصفحة فوراً */
+  updateBannerUI();
   sanitizeCart();
   renderCart();
-  
-  // ربط زر واتساب العائم برقم المتجر
-  const waFloatEl = document.getElementById('waFloat');
-  if (waFloatEl) waFloatEl.href = `https://wa.me/2${STORE_WHATSAPP_NUMBER}`;
-
-  updateBannerUI();
   updateAdminNavVisibility();
   updateUserUI();
   handleRoute();
-  
   document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
 
-  // إخفاء شاشة التحميل
-  setTimeout(() => {
-    const ls = document.getElementById('loadingScreen');
-    if (ls) ls.classList.add('hidden');
-  }, 1200);
-  
-  if(typeof google !== 'undefined') {
+  const waFloatEl = document.getElementById('waFloat');
+  if (waFloatEl) waFloatEl.href = `https://wa.me/2${STORE_WHATSAPP_NUMBER}`;
+
+  /* 5. إخفاء loading فوراً */
+  const ls = document.getElementById('loadingScreen');
+  if (ls) ls.classList.add('hidden');
+
+  /* 6. تحميل الكارت من Firebase لو في يوزر */
+  const currentUser = getUserData();
+  if (currentUser && currentUser.email) {
+    loadCartFromFirebase(currentUser.email).then(savedCart => {
+      if (savedCart && savedCart.length > 0) {
+        state.cart = savedCart;
+        sanitizeCart();
+        renderCart();
+      }
+    });
+  }
+
+  /* 7. تشغيل الـ Realtime Listeners — بيحدّث كل حاجة أوتوماتيك */
+  startRealtimeSync();
+
+  /* 8. تهيئة Google Sign-In */
+  if (typeof google !== 'undefined') {
     google.accounts.id.initialize({
       client_id: GOOGLE_CLIENT_ID,
       callback: handleCredentialResponse
     });
-
-    const userBtn = document.getElementById("userGoogleSignInBtn");
-    if(userBtn) google.accounts.id.renderButton(userBtn, { theme: "outline", size: "large" });
-
-    const adminBtn = document.getElementById("googleSignInBtn");
-    if(adminBtn) google.accounts.id.renderButton(adminBtn, { theme: "outline", size: "large" });
+    const userBtn = document.getElementById('userGoogleSignInBtn');
+    if (userBtn) google.accounts.id.renderButton(userBtn, { theme: 'outline', size: 'large' });
+    const adminBtn = document.getElementById('googleSignInBtn');
+    if (adminBtn) google.accounts.id.renderButton(adminBtn, { theme: 'outline', size: 'large' });
   }
-};
+});
 </script>
 </body>
 </html>
