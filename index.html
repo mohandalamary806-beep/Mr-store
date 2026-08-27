@@ -1287,10 +1287,18 @@ const DEFAULT_PRODUCTS = [
 async function fetchDataStore(path, storageKey, defaultData) {
   if (useFirebase) {
     try {
-      const snap = await firebase.database().ref(path).once('value');
+      const remoteRequest = firebase.database().ref(path).once('value');
+      const timeout = new Promise(resolve => setTimeout(() => resolve(null), 900));
+      const snap = await Promise.race([remoteRequest, timeout]);
+      if (!snap) {
+        const cached = localStorage.getItem(storageKey);
+        return cached ? JSON.parse(cached) : defaultData;
+      }
       if (snap.exists()) {
         const val = snap.val();
-        return Array.isArray(val) ? val : (typeof val === 'object' && path !== 'banner' ? Object.values(val) : val);
+        const data = Array.isArray(val) ? val : (typeof val === 'object' && path !== 'banner' ? Object.values(val) : val);
+        localStorage.setItem(storageKey, JSON.stringify(data));
+        return data;
       }
       return defaultData;
     } catch(e) { return defaultData; }
@@ -1378,10 +1386,15 @@ function showToast(msg, type = 'default') {
 /* ============ ORDERS MANAGEMENT (Cross-Device) ============ */
 let ORDERS = [];
 const ORDERS_STORAGE_KEY = 'mrstore_orders_data';
+let ordersLoadPromise = null;
 
 // 1. تحميل الطلبات من قاعدة البيانات
 async function loadOrders() {
-  ORDERS = await fetchDataStore('orders', ORDERS_STORAGE_KEY, []);
+  if (!ordersLoadPromise) {
+    ordersLoadPromise = fetchDataStore('orders', ORDERS_STORAGE_KEY, []);
+  }
+  ORDERS = await ordersLoadPromise;
+  return ORDERS;
 }
 loadOrders();
 
@@ -2734,26 +2747,25 @@ function toggleDarkMode() {
   if (isDark) document.documentElement.setAttribute('data-theme', 'dark');
 })();
 
-window.onload = async () => {
+document.addEventListener('DOMContentLoaded', async () => {
   // تطبيق الأيقونة الصحيحة بعد تحميل الـ DOM
   applyDarkMode(document.documentElement.getAttribute('data-theme') === 'dark');
 
   // إظهار skeleton أثناء التحميل
   showSkeletons(8);
-  PRODUCTS = await fetchDataStore('products', PRODUCTS_STORAGE_KEY, DEFAULT_PRODUCTS);
-  BANNER_DATA = await fetchDataStore('banner', BANNER_STORAGE_KEY, BANNER_DATA);
-  COUPONS = await fetchDataStore('coupons', COUPONS_STORAGE_KEY, []);
-  REVIEWS = await fetchDataStore('reviews', REVIEWS_STORAGE_KEY, []);
-
-  // استعادة الكارت من Firebase لو اليوزر مسجل دخول
   const currentUser = getUserData();
-  if (currentUser && currentUser.email) {
-    const savedCart = await loadCartFromFirebase(currentUser.email);
-    if (savedCart && savedCart.length > 0) {
-      state.cart = savedCart;
-    }
-  }
-
+  const dataRequests = [
+    fetchDataStore('products', PRODUCTS_STORAGE_KEY, DEFAULT_PRODUCTS),
+    fetchDataStore('banner', BANNER_STORAGE_KEY, BANNER_DATA),
+    fetchDataStore('coupons', COUPONS_STORAGE_KEY, []),
+    fetchDataStore('reviews', REVIEWS_STORAGE_KEY, []),
+    loadOrders()
+  ];
+  const [products, banner, coupons, reviews] = await Promise.all(dataRequests);
+  PRODUCTS = products;
+  BANNER_DATA = banner;
+  COUPONS = coupons;
+  REVIEWS = reviews;
   // تنظيف الكارت من المنتجات المحذوفة عند الفتح
   sanitizeCart();
   renderCart();
@@ -2769,11 +2781,19 @@ window.onload = async () => {
   
   document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
 
-  // إخفاء شاشة التحميل
-  setTimeout(() => {
-    const ls = document.getElementById('loadingScreen');
-    if (ls) ls.classList.add('hidden');
-  }, 1200);
+  // إخفاء شاشة التحميل فور اكتمال البيانات بدل انتظار وقت ثابت
+  const ls = document.getElementById('loadingScreen');
+  if (ls) ls.classList.add('hidden');
+
+  if (currentUser && currentUser.email) {
+    loadCartFromFirebase(currentUser.email).then(savedCart => {
+      if (savedCart && savedCart.length > 0) {
+        state.cart = savedCart;
+        sanitizeCart();
+        renderCart();
+      }
+    });
+  }
   
   if(typeof google !== 'undefined') {
     google.accounts.id.initialize({
@@ -2787,7 +2807,7 @@ window.onload = async () => {
     const adminBtn = document.getElementById("googleSignInBtn");
     if(adminBtn) google.accounts.id.renderButton(adminBtn, { theme: "outline", size: "large" });
   }
-};
+});
 </script>
 </body>
 </html>
