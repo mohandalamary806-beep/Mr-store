@@ -1605,65 +1605,254 @@ checkoutForm.addEventListener('submit', async e=>{
   const city = document.getElementById('custCity').value.trim();
   const address = document.getElementById('custAddress').value.trim();
 
-  let msg = `طلب جديد من MR Store\n\nالاسم: ${name}\nالهاتف: ${phone}\nالمحافظة: ${city}\nالعنوان: ${address}\n\nالمنتجات:\n`;
-  state.cart.forEach(i=>{
-    const p = findProduct(i.id);
+  const orderTotal = cartTotal();
+  let orderText = `*طلب جديد من MR Store*%0A%0A`;
+  orderText += `*الاسم:* ${name}%0A`;
+  orderText += `*الموبايل:* ${phone}%0A`;
+  orderText += `*المحافظة:* ${city}%0A`;
+  orderText += `*العنوان:* ${address}%0A%0A`;
+  orderText += `*الطلبات:*%0A`;
+
+  state.cart.forEach(item => {
+    const p = findProduct(item.id);
     if(p) {
-        msg += `- ${p.name} × ${i.qty} = ${money(p.price*i.qty)}\n`;
+      orderText += `- ${p.name} (الكمية: ${item.qty}) x ${p.price} ج.م%0A`;
     }
   });
-
-  if (state.appliedCoupon) {
-      msg += `\nكود الخصم: ${state.appliedCoupon.code} (${state.appliedCoupon.discount}%)`;
+  
+  if(state.appliedCoupon) {
+    orderText += `%0A*كوبون الخصم:* ${state.appliedCoupon.code} (${state.appliedCoupon.discount}%)%0A`;
   }
-  msg += `\n\nالإجمالي المطلوب: ${money(cartTotal())}\n(الدفع عند الاستلام)`;
 
-  // إعداد الطلب ليتم إضافته إلى قاعدة البيانات
-  const orderData = {
+  orderText += `%0A*الإجمالي المطلوب:* ${orderTotal} ج.م (دفع عند الاستلام)%0A`;
+
+  const waLink = `https://wa.me/2${STORE_WHATSAPP_NUMBER}?text=${orderText}`;
+  
+  // Save order to history
+  const newOrder = {
     id: Date.now(),
-    name, phone, city, address,
-    items: state.cart,
-    total: cartTotal(),
+    date: new Date().toLocaleDateString('ar-EG'),
     status: 'pending',
-    date: new Date().toLocaleDateString('ar-EG')
+    total: orderTotal,
+    customerName: name,
+    customerPhone: phone,
+    customerCity: city,
+    customerAddress: address,
+    items: state.cart.map(i => {
+      const p = findProduct(i.id);
+      return { name: p ? p.name : 'منتج محذوف', qty: i.qty, price: p ? p.price : 0 };
+    })
   };
 
-  await addOrder(orderData);
+  await addOrder(newOrder);
 
-  // إعداد رابط واتساب
-  const waUrl = `https://wa.me/2${STORE_WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
-  document.getElementById('waFallback').href = waUrl;
-
-  // تغيير واجهة المستخدم للنجاح
+  document.getElementById('waFallback').href = waLink;
   checkoutForm.style.display = 'none';
   successView.classList.add('show');
   
-  // إفراغ سلة التسوق
+  // Clear Cart
   state.cart = [];
   state.appliedCoupon = null;
+  document.getElementById('couponInput').value = '';
   renderCart();
-
-  // فتح صفحة واتساب
-  window.open(waUrl, '_blank');
+  
+  // Auto open WhatsApp
+  window.open(waLink, '_blank');
 });
 
-/* ============ ADMIN LOGIC (تم إضافتها وتفعيلها) ============ */
+/* ============ ADMIN TABS ============ */
+function switchAdminTab(tab) {
+  document.getElementById('adminTabOrders').style.display = tab === 'orders' ? 'block' : 'none';
+  document.getElementById('adminTabCoupons').style.display = tab === 'coupons' ? 'block' : 'none';
+  document.getElementById('adminTabReviews').style.display = tab === 'reviews' ? 'block' : 'none';
+  
+  document.querySelectorAll('#adminMainTabs button').forEach(btn => {
+    btn.classList.remove('active');
+  });
+  document.querySelector(`#adminMainTabs button[onclick="switchAdminTab('${tab}')"]`).classList.add('active');
+  
+  if (tab === 'orders') renderAdminOrders();
+  if (tab === 'coupons') renderAdminCoupons();
+  if (tab === 'reviews') renderAdminReviews();
+}
+
+/* ============ ADMIN COUPONS ============ */
+document.getElementById('addCouponForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const code = document.getElementById('newCouponCode').value.trim().toUpperCase();
+  const disc = Number(document.getElementById('newCouponDisc').value);
+  if(COUPONS.find(c => c.code === code)) { showToast('الكوبون ده موجود قبل كده!'); return; }
+  COUPONS.push({ id: Date.now(), code, discount: disc, active: true });
+  await saveDataStore('coupons', COUPONS_STORAGE_KEY, COUPONS);
+  renderAdminCoupons();
+  document.getElementById('addCouponForm').reset();
+  showToast('تمت إضافة الكوبون ✓');
+});
+
+async function deleteCoupon(id) {
+  if(!confirm('متأكد إنك عايز تحذف الكوبون ده؟')) return;
+  COUPONS = COUPONS.filter(c => c.id !== id);
+  await saveDataStore('coupons', COUPONS_STORAGE_KEY, COUPONS);
+  renderAdminCoupons();
+  showToast('تم الحذف ✓');
+}
+
+function renderAdminCoupons() {
+  const tbody = document.getElementById('couponsListTable');
+  if(COUPONS.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px; color:var(--ink-soft);">لا توجد كوبونات مسجلة.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = COUPONS.map(c => `
+    <tr>
+      <td style="font-family:var(--ff-mono); font-weight:700;">${c.code}</td>
+      <td style="color:var(--ok); font-weight:700;">${c.discount}%</td>
+      <td>${c.active ? 'مفعل' : 'معطل'}</td>
+      <td><button onclick="deleteCoupon(${c.id})" style="color:var(--stamp); font-weight:700; cursor:pointer;">حذف</button></td>
+    </tr>
+  `).join('');
+}
+
+/* ============ ADMIN REVIEWS ============ */
+async function deleteReview(id) {
+  if(!confirm('متأكد إنك عايز تحذف التقييم ده؟')) return;
+  REVIEWS = REVIEWS.filter(r => r.id !== id);
+  await saveDataStore('reviews', REVIEWS_STORAGE_KEY, REVIEWS);
+  renderAdminReviews();
+  showToast('تم حذف التقييم ✓');
+}
+
+function renderAdminReviews() {
+  const tbody = document.getElementById('adminReviewsTable');
+  if(REVIEWS.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px; color:var(--ink-soft);">لا توجد تقييمات حتى الآن.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = REVIEWS.map(r => {
+    const p = PRODUCTS.find(prod => prod.id === r.prodId);
+    const pName = p ? p.name : 'منتج محذوف';
+    return `
+    <tr>
+      <td>${pName}</td>
+      <td>${r.userName}</td>
+      <td style="color:var(--brass);">${'⭐'.repeat(r.rating)}</td>
+      <td style="max-width:200px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${r.text}">${r.text}</td>
+      <td><button onclick="deleteReview(${r.id})" style="color:var(--stamp); font-weight:700; cursor:pointer;">حذف</button></td>
+    </tr>
+    `;
+  }).join('');
+}
+
+/* ============ ADMIN ORDERS (DASHBOARD) ============ */
+let adminFilter = 'all';
+let adminSearch = '';
+
+document.getElementById('adminFilterTabs').addEventListener('click', e => {
+  const btn = e.target.closest('.filter-tab');
+  if(!btn) return;
+  adminFilter = btn.dataset.status;
+  document.querySelectorAll('#adminFilterTabs .filter-tab').forEach(b => b.classList.toggle('active', b === btn));
+  renderAdminOrders();
+});
+
+document.getElementById('adminSearchInput').addEventListener('input', e => {
+  adminSearch = e.target.value.trim().toLowerCase();
+  renderAdminOrders();
+});
+
+async function changeOrderStatus(id, status) {
+  ORDERS = ORDERS.map(o => o.id === id ? { ...o, status } : o);
+  await saveDataStore('orders', ORDERS_STORAGE_KEY, ORDERS);
+  renderAdminOrders();
+  showToast('تم تحديث حالة الطلب ✓');
+}
+
+async function deleteAdminOrder(id) {
+  if(!confirm('متأكد إنك عايز تحذف الطلب ده نهائياً؟')) return;
+  ORDERS = ORDERS.filter(o => o.id !== id);
+  await saveDataStore('orders', ORDERS_STORAGE_KEY, ORDERS);
+  renderAdminOrders();
+  showToast('تم حذف الطلب ✓');
+}
+
+function renderAdminOrders() {
+  const list = document.getElementById('ordersList');
+  
+  const filtered = ORDERS.filter(o => {
+    if(adminFilter !== 'all' && o.status !== adminFilter) return false;
+    if(adminSearch !== '') {
+      const s = adminSearch.toLowerCase();
+      return (o.customerName && o.customerName.toLowerCase().includes(s)) || 
+             (o.customerPhone && o.customerPhone.includes(s)) || 
+             (o.id && o.id.toString().includes(s));
+    }
+    return true;
+  });
+  
+  // Update Stats
+  document.getElementById('statTotal').textContent = ORDERS.length;
+  document.getElementById('statPending').textContent = ORDERS.filter(o => o.status === 'pending').length;
+  document.getElementById('statDelivered').textContent = ORDERS.filter(o => o.status === 'delivered').length;
+  const rev = ORDERS.filter(o => o.status === 'delivered').reduce((sum, o) => sum + (Number(o.total) || 0), 0);
+  document.getElementById('statRevenue').textContent = money(rev);
+
+  if (filtered.length === 0) {
+    list.innerHTML = `<div class="admin-empty"><strong>لا توجد طلبات</strong>لم يتم العثور على طلبات مطابقة للبحث.</div>`;
+    return;
+  }
+  
+  list.innerHTML = filtered.map(o => {
+    const isPending = o.status === 'pending';
+    return `
+    <div class="order-card">
+      <div class="order-card-head">
+        <div>
+          <span class="order-num">طلب #${o.id}</span>
+          <span class="order-date">${o.date || ''}</span>
+        </div>
+        <span class="order-status ${o.status}">${isPending ? 'قيد التوصيل ⏳' : 'تم التوصيل ✅'}</span>
+      </div>
+      <div class="order-cust">
+        <div><span>العميل</span>${o.customerName}</div>
+        <div><span>رقم الهاتف</span><a href="tel:${o.customerPhone}" style="color:var(--denim); font-weight:700;">${o.customerPhone}</a></div>
+        <div><span>المحافظة</span>${o.customerCity}</div>
+        <div><span>العنوان</span>${o.customerAddress}</div>
+      </div>
+      <div class="order-items">
+        ${(o.items || []).map(i => `<div><span>${i.qty}x ${i.name}</span><span>${money(i.price * i.qty)}</span></div>`).join('')}
+      </div>
+      <div class="order-total-row"><span>الإجمالي</span><span>${money(o.total)}</span></div>
+      <div class="order-actions">
+        ${isPending 
+          ? `<button class="btn-mark" onclick="changeOrderStatus(${o.id}, 'delivered')">تأكيد التوصيل ✅</button>`
+          : `<button class="btn-undo" onclick="changeOrderStatus(${o.id}, 'pending')">إرجاع لـ قيد التوصيل ⏳</button>`
+        }
+        <button class="btn-delete" onclick="deleteAdminOrder(${o.id})">حذف الطلب 🗑️</button>
+      </div>
+    </div>
+    `;
+  }).join('');
+}
+
+/* ============ ADMIN AUTH & ROUTING ============ */
 function getAdminGoogleEmail() { return localStorage.getItem(ADMIN_EMAIL_KEY); }
 
 function updateAdminNavVisibility() {
-  const isAd = isAdminAuthed();
-  document.getElementById('adminNavLink').classList.toggle('is-visible', isAd);
-  document.getElementById('adminNavLinkMobile').classList.toggle('is-visible', isAd);
-  document.getElementById('openAddProductBtn').style.display = isAd ? 'inline-flex' : 'none';
-  document.getElementById('editBannerBtn').style.display = isAd ? 'inline-flex' : 'none';
+  const isAdmin = isAdminAuthed();
+  document.getElementById('adminNavLink').classList.toggle('is-visible', isAdmin);
+  document.getElementById('adminNavLinkMobile').classList.toggle('is-visible', isAdmin);
+  document.getElementById('editBannerBtn').style.display = isAdmin ? 'inline-flex' : 'none';
+  document.getElementById('openAddProductBtn').style.display = isAdmin ? 'inline-flex' : 'none';
+  renderProducts(); // re-render to show/hide admin product controls
 }
 
 document.getElementById('adminLoginForm').addEventListener('submit', e => {
   e.preventDefault();
-  if (document.getElementById('adminPasswordInput').value === ADMIN_PASSWORD) {
-    sessionStorage.setItem('mrstore_admin_auth', '1');
+  const pw = document.getElementById('adminPasswordInput').value;
+  if (pw === ADMIN_PASSWORD) {
     document.getElementById('adminLoginError').classList.remove('show');
-    openAdminDashboard();
+    sessionStorage.setItem('mrstore_admin_auth', '1');
+    showAdminDashboard();
   } else {
     document.getElementById('adminLoginError').classList.add('show');
   }
@@ -1672,218 +1861,124 @@ document.getElementById('adminLoginForm').addEventListener('submit', e => {
 document.getElementById('adminLogoutBtn').addEventListener('click', () => {
   sessionStorage.removeItem('mrstore_admin_auth');
   localStorage.removeItem(ADMIN_EMAIL_KEY);
-  location.hash = '#top';
-  location.reload();
+  location.hash = '';
+  window.location.reload();
 });
 
-function openAdminDashboard() {
+function showAdminDashboard() {
   document.getElementById('adminLoginWrap').style.display = 'none';
   document.getElementById('adminDashboard').style.display = 'block';
   const email = getAdminGoogleEmail();
-  document.getElementById('adminAuthedAs').textContent = email ? `مسجل كـ: ${email}` : 'مسجل بكلمة المرور';
+  document.getElementById('adminAuthedAs').textContent = email ? `مسجل كـ: ${email}` : 'دخول بكلمة المرور';
   updateAdminNavVisibility();
-  loadAdminData();
+  switchAdminTab('orders'); // default tab
 }
 
-function switchAdminTab(tab) {
-  document.querySelectorAll('.admin-main-tabs button').forEach(b => b.classList.remove('active'));
-  event.target.classList.add('active');
-  document.getElementById('adminTabOrders').style.display = tab === 'orders' ? 'block' : 'none';
-  document.getElementById('adminTabCoupons').style.display = tab === 'coupons' ? 'block' : 'none';
-  document.getElementById('adminTabReviews').style.display = tab === 'reviews' ? 'block' : 'none';
-}
-
-async function loadAdminData() {
-  renderAdminOrders();
-  renderAdminCoupons();
-  renderAdminReviews();
-  updateAdminStats();
-}
-
-function updateAdminStats() {
-  document.getElementById('statTotal').textContent = ORDERS.length;
-  document.getElementById('statPending').textContent = ORDERS.filter(o=>o.status==='pending').length;
-  document.getElementById('statDelivered').textContent = ORDERS.filter(o=>o.status==='delivered').length;
-  const totalRev = ORDERS.filter(o=>o.status==='delivered').reduce((sum, o) => sum + o.total, 0);
-  document.getElementById('statRevenue').textContent = money(totalRev);
-}
-
-function renderAdminOrders() {
-  const list = document.getElementById('ordersList');
-  if(ORDERS.length === 0) { list.innerHTML = `<div class="admin-empty"><strong>لا توجد طلبات</strong></div>`; return; }
-  list.innerHTML = ORDERS.map(o => `
-    <div class="order-card">
-      <div class="order-card-head">
-        <div><span class="order-num">#${o.id}</span><span class="order-date">${o.date}</span></div>
-        <div class="order-status ${o.status}">${o.status === 'pending' ? 'قيد التوصيل ⏳' : 'تم التوصيل ✅'}</div>
-      </div>
-      <div class="order-cust">
-        <div><span>الاسم</span>${o.name}</div>
-        <div><span>الهاتف</span>${o.phone}</div>
-        <div><span>المحافظة</span>${o.city}</div>
-        <div><span>العنوان</span>${o.address}</div>
-      </div>
-      <div class="order-total-row"><span>الإجمالي</span><span>${money(o.total)}</span></div>
-      <div class="order-actions">
-        ${o.status === 'pending' ? `<button class="btn-mark" onclick="changeOrderStatus(${o.id}, 'delivered')">تحديد كـ "تم التوصيل"</button>` : `<button class="btn-undo" onclick="changeOrderStatus(${o.id}, 'pending')">تراجع إلى "قيد التوصيل"</button>`}
-        <button class="btn-delete" onclick="deleteOrder(${o.id})">حذف الطلب 🗑️</button>
-      </div>
-    </div>
-  `).join('');
-}
-
-async function changeOrderStatus(id, status) {
-  ORDERS = ORDERS.map(o => o.id === id ? {...o, status} : o);
-  await saveDataStore('orders', ORDERS_STORAGE_KEY, ORDERS);
-  renderAdminOrders(); updateAdminStats();
-  showToast('تم تحديث حالة الطلب ✓');
-}
-
-async function deleteOrder(id) {
-  if(!confirm('هل أنت متأكد من حذف هذا الطلب بشكل نهائي؟')) return;
-  ORDERS = ORDERS.filter(o => o.id !== id);
-  await saveDataStore('orders', ORDERS_STORAGE_KEY, ORDERS);
-  renderAdminOrders(); updateAdminStats();
-  showToast('تم حذف الطلب بنجاح ✓');
-}
-
-document.getElementById('addCouponForm').addEventListener('submit', async e => {
-  e.preventDefault();
-  const code = document.getElementById('newCouponCode').value.trim().toUpperCase();
-  const discount = Number(document.getElementById('newCouponDisc').value);
-  COUPONS.push({id: Date.now(), code, discount});
-  await saveDataStore('coupons', COUPONS_STORAGE_KEY, COUPONS);
-  document.getElementById('addCouponForm').reset();
-  renderAdminCoupons();
-  showToast('تمت إضافة الكوبون بنجاح ✓');
-});
-
-function renderAdminCoupons() {
-  const tbody = document.getElementById('couponsListTable');
-  if(COUPONS.length === 0){ tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:20px;">لا توجد كوبونات</td></tr>`; return;}
-  tbody.innerHTML = COUPONS.map(c => `
-    <tr>
-      <td style="font-family:var(--ff-mono); font-weight:bold;">${c.code}</td>
-      <td>${c.discount}%</td>
-      <td><span style="color:var(--ok); font-weight:bold;">نشط</span></td>
-      <td><button style="color:var(--stamp); font-weight:bold;" onclick="deleteCoupon(${c.id})">حذف</button></td>
-    </tr>
-  `).join('');
-}
-
-async function deleteCoupon(id) {
-  if(!confirm('حذف هذا الكوبون؟')) return;
-  COUPONS = COUPONS.filter(c => c.id !== id);
-  await saveDataStore('coupons', COUPONS_STORAGE_KEY, COUPONS);
-  renderAdminCoupons();
-  showToast('تم حذف الكوبون ✓');
-}
-
-function renderAdminReviews() {
-  const tbody = document.getElementById('adminReviewsTable');
-  if(REVIEWS.length === 0){ tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:20px;">لا توجد تقييمات</td></tr>`; return;}
-  tbody.innerHTML = REVIEWS.map(r => {
-    const p = findProduct(r.prodId);
-    return `
-    <tr>
-      <td>${p ? p.name : '<span style="color:var(--stamp);">منتج محذوف</span>'}</td>
-      <td>${r.userName}</td>
-      <td>${'⭐'.repeat(r.rating)}</td>
-      <td>${r.text}</td>
-      <td><button style="color:var(--stamp); font-weight:bold;" onclick="deleteReview(${r.id})">حذف</button></td>
-    </tr>
-    `;
-  }).join('');
-}
-
-async function deleteReview(id) {
-  if(!confirm('حذف هذا التقييم؟')) return;
-  REVIEWS = REVIEWS.filter(r => r.id !== id);
-  await saveDataStore('reviews', REVIEWS_STORAGE_KEY, REVIEWS);
-  renderAdminReviews();
-  showToast('تم حذف التقييم ✓');
-}
-
-/* ============ ROUTING (Navigation Handler) ============ */
-window.addEventListener('hashchange', handleRoute);
-function handleRoute() {
+/* ============ GOOGLE SIGN IN (User & Admin) ============ */
+function handleGoogleCredentialResponse(response) {
+  const responsePayload = decodeJwtResponse(response.credential);
+  const email = responsePayload.email;
+  const name = responsePayload.name;
+  
+  // Check if trying to login to admin
   if (location.hash === '#admin') {
-    document.getElementById('top').style.display = 'none';
-    document.getElementById('footer').style.display = 'none';
-    document.getElementById('adminView').classList.add('open');
-    if (isAdminAuthed()) {
-      openAdminDashboard();
+    if (ADMIN_ALLOWED_EMAILS.includes(email)) {
+      localStorage.setItem(ADMIN_EMAIL_KEY, email);
+      document.getElementById('googleLoginError').classList.remove('show');
+      
+      // Also login as normal user so they have a name
+      setUserData({ name, email, favorites: [] });
+      
+      showAdminDashboard();
     } else {
-      document.getElementById('adminLoginWrap').style.display = 'flex';
-      document.getElementById('adminDashboard').style.display = 'none';
+      document.getElementById('googleLoginError').classList.add('show');
     }
   } else {
-    document.getElementById('top').style.display = 'block';
-    document.getElementById('footer').style.display = 'block';
-    document.getElementById('adminView').classList.remove('open');
-    renderProducts();
+    // Normal user login
+    const existingUser = getUserData();
+    const favs = existingUser && existingUser.favorites ? existingUser.favorites : [];
+    setUserData({ name, email, favorites: favs });
+    closeUserAuthModal();
+    showToast(`أهلاً بيك يا ${name.split(' ')[0]} 👋`);
   }
 }
 
-/* ============ INITIALIZATION & GOOGLE AUTH ============ */
-const observer = new IntersectionObserver(entries => {
-  entries.forEach(entry => {
-    if(entry.isIntersecting) {
-      entry.target.classList.add('is-visible');
-      observer.unobserve(entry.target);
-    }
-  });
-}, { threshold: 0.1 });
-
-function handleCredentialResponse(response) {
-  try {
-    const payload = JSON.parse(atob(response.credential.split('.')[1]));
-    const email = payload.email;
-    
-    if (location.hash === '#admin') {
-      if (ADMIN_ALLOWED_EMAILS.includes(email)) {
-        localStorage.setItem(ADMIN_EMAIL_KEY, email);
-        document.getElementById('googleLoginError').classList.remove('show');
-        openAdminDashboard();
-      } else {
-        document.getElementById('googleLoginError').classList.add('show');
-      }
-    } else {
-      setUserData({ name: payload.name, email: payload.email, favorites: [] });
-      closeUserAuthModal();
-      showToast('تم تسجيل الدخول بنجاح ✓');
-      renderProducts();
-    }
-  } catch (e) { console.error("Error decoding Google response", e); }
+function decodeJwtResponse(token) {
+  let base64Url = token.split('.')[1];
+  let base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+  let jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+      return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+  }).join(''));
+  return JSON.parse(jsonPayload);
 }
 
-window.onload = async () => {
+/* ============ INITIALIZATION ============ */
+async function init() {
+  // 1. Fetch data
   PRODUCTS = await fetchDataStore('products', PRODUCTS_STORAGE_KEY, DEFAULT_PRODUCTS);
   BANNER_DATA = await fetchDataStore('banner', BANNER_STORAGE_KEY, BANNER_DATA);
   COUPONS = await fetchDataStore('coupons', COUPONS_STORAGE_KEY, []);
   REVIEWS = await fetchDataStore('reviews', REVIEWS_STORAGE_KEY, []);
   
-  updateBannerUI();
-  updateAdminNavVisibility();
+  // 2. Render initial state
   updateUserUI();
-  handleRoute();
+  updateBannerUI();
+  renderProducts();
+  renderCart();
+  updateAdminNavVisibility();
+
+  // 3. Routing based on hash
+  const checkHash = () => {
+    if (location.hash === '#admin') {
+      document.body.style.overflow = 'hidden';
+      document.getElementById('adminView').classList.add('open');
+      if (isAdminAuthed()) {
+        showAdminDashboard();
+      } else {
+        document.getElementById('adminLoginWrap').style.display = 'flex';
+        document.getElementById('adminDashboard').style.display = 'none';
+      }
+    } else {
+      document.body.style.overflow = '';
+      document.getElementById('adminView').classList.remove('open');
+    }
+  };
   
-  // تشغيل الأنيميشن للعناصر
+  window.addEventListener('hashchange', checkHash);
+  checkHash();
+
+  // 4. Reveal Animation on Scroll
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('is-visible');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1 });
   document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
   
-  if(typeof google !== 'undefined') {
-    google.accounts.id.initialize({
-      client_id: GOOGLE_CLIENT_ID,
-      callback: handleCredentialResponse
-    });
-    // زر تسجيل الدخول للمستخدم العادي
-    const userBtn = document.getElementById("userGoogleSignInBtn");
-    if(userBtn) google.accounts.id.renderButton(userBtn, { theme: "outline", size: "large" });
-    // زر تسجيل الدخول للإدارة
-    const adminBtn = document.getElementById("googleSignInBtn");
-    if(adminBtn) google.accounts.id.renderButton(adminBtn, { theme: "outline", size: "large" });
-  }
-};
+  // 5. Initialize Google Auth Buttons
+  window.onload = function () {
+    if(typeof google !== 'undefined') {
+      google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: handleGoogleCredentialResponse
+      });
+      google.accounts.id.renderButton(
+        document.getElementById("userGoogleSignInBtn"),
+        { theme: "outline", size: "large", text: "continue_with" }
+      );
+      google.accounts.id.renderButton(
+        document.getElementById("googleSignInBtn"),
+        { theme: "outline", size: "large", text: "continue_with" }
+      );
+    }
+  };
+}
+
+init();
+
 </script>
 </body>
 </html>
