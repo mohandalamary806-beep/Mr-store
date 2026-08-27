@@ -987,6 +987,7 @@ const PRODUCTS_STORAGE_KEY = 'mrstore_products_data';
 const BANNER_STORAGE_KEY = 'mrstore_banner_data';
 const COUPONS_STORAGE_KEY = 'mrstore_coupons_data';
 const REVIEWS_STORAGE_KEY = 'mrstore_reviews_data';
+const TAKEN_NAMES_KEY = 'mrstore_taken_names';
 
 /* ============ FIREBASE CONFIG ============ */
 const firebaseConfig = {
@@ -1962,9 +1963,15 @@ function handleCredentialResponse(response) {
     if (isAdminEmail) {
       // دائماً احفظ الإيميل كأدمن بصرف النظر عن الصفحة الحالية
       localStorage.setItem(ADMIN_EMAIL_KEY, email);
-      // احفظ بيانات المستخدم أيضاً
+      // احفظ بيانات المستخدم مع الحفاظ على الاسم المخصص
       const existing = getUserData();
-      setUserData({ name: payload.name, email: payload.email, favorites: existing && existing.favorites ? existing.favorites : [] });
+      const keepName = existing && existing.nameLastChanged ? existing.name : payload.name;
+      setUserData({
+        name: keepName,
+        email: payload.email,
+        favorites: existing && existing.favorites ? existing.favorites : [],
+        nameLastChanged: existing && existing.nameLastChanged ? existing.nameLastChanged : null
+      });
 
       if (location.hash === '#admin') {
         // كان في صفحة الأدمن → افتح لوحة التحكم مباشرة
@@ -1989,7 +1996,13 @@ function handleCredentialResponse(response) {
         // مستخدم عادي
         const existing = getUserData();
         const isFirstLogin = !existing || !existing.nameLastChanged;
-        setUserData({ name: payload.name, email: payload.email, favorites: existing && existing.favorites ? existing.favorites : [], nameLastChanged: existing && existing.nameLastChanged ? existing.nameLastChanged : null });
+        const keepName = existing && existing.nameLastChanged ? existing.name : payload.name;
+        setUserData({
+          name: keepName,
+          email: payload.email,
+          favorites: existing && existing.favorites ? existing.favorites : [],
+          nameLastChanged: existing && existing.nameLastChanged ? existing.nameLastChanged : null
+        });
         closeUserAuthModal();
         showToast('تم تسجيل الدخول بنجاح ✓');
         renderProducts();
@@ -2053,14 +2066,41 @@ function closeEditUsernameModal() {
   document.getElementById('editUsernameOverlay').classList.remove('open');
 }
 
-document.getElementById('editUsernameForm').addEventListener('submit', e => {
+document.getElementById('editUsernameForm').addEventListener('submit', async e => {
   e.preventDefault();
   const user = getUserData();
   if (!user) return;
   const isFirstTime = !user.nameLastChanged;
   if (!isFirstTime && !canChangeName(user)) { showToast(`فاضل ${daysUntilNextChange(user)} يوم عشان تغير اسمك`); return; }
+
   const newName = document.getElementById('newUsernameInput').value.trim();
-  if (!newName) return;
+
+  // التحقق من الحد الأدنى للأحرف
+  if (!newName || newName.length < 2) {
+    showToast('الاسم لازم يكون حرفين على الأقل ✗');
+    return;
+  }
+
+  // التحقق من تفرد الاسم
+  const takenRaw = localStorage.getItem(TAKEN_NAMES_KEY);
+  const takenNames = takenRaw ? JSON.parse(takenRaw) : {};
+  const normalizedNew = newName.trim().toLowerCase();
+  const normalizedOld = user.name ? user.name.trim().toLowerCase() : '';
+
+  // لو الاسم الجديد مختلف عن الاسم الحالي وهو محجوز بشخص تاني
+  if (normalizedNew !== normalizedOld && takenNames[normalizedNew] && takenNames[normalizedNew] !== user.email) {
+    showToast('الاسم ده محجوز، جرّب اسم تاني ✗');
+    return;
+  }
+
+  // تحرير الاسم القديم (لو كان محجوزاً بنفس الإيميل)
+  if (normalizedOld && takenNames[normalizedOld] === user.email) {
+    delete takenNames[normalizedOld];
+  }
+  // حجز الاسم الجديد
+  takenNames[normalizedNew] = user.email;
+  localStorage.setItem(TAKEN_NAMES_KEY, JSON.stringify(takenNames));
+
   if (isFirstTime) {
     showToast(`تم حفظ اسمك! تقدر تغيّره تاني بعد ${NAME_COOLDOWN_DAYS} أيام ✓`);
   } else {
