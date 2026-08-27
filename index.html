@@ -1177,7 +1177,7 @@ h1,h2,h3,h4{font-weight:inherit;}
       <!-- Stats -->
       <div class="admin-stats">
         <div class="admin-stat-card"><div class="admin-stat-label">كل الطلبات</div><div class="admin-stat-value" id="statTotal">0</div></div>
-        <div class="admin-stat-card"><div class="admin-stat-label">قيد التوصيل</div><div class="admin-stat-value" id="statPending">0</div></div>
+        <div class="admin-stat-card"><div class="admin-stat-label">قيد الانتظار</div><div class="admin-stat-value" id="statPending">0</div></div>
         <div class="admin-stat-card"><div class="admin-stat-label">تم التوصيل</div><div class="admin-stat-value" id="statDelivered">0</div></div>
         <div class="admin-stat-card"><div class="admin-stat-label">إجمالي المبيعات</div><div class="admin-stat-value" id="statRevenue">0 ج.م</div></div>
       </div>
@@ -1310,7 +1310,7 @@ async function saveDataStore(path, storageKey, data) {
 }
 
 /* ============ STATE ============ */
-const state = { cart: [], filter: "all", search: "", appliedCoupon: null };
+const state = { cart: [], filter: "all", search: "", appliedCoupon: null, adminOrderFilter: "all", adminOrderSearch: "" };
 function money(n){ return n.toLocaleString('en-US') + ' ج.م'; }
 
 /* ============ USER & ADMIN AUTH HELPERS ============ */
@@ -1820,12 +1820,18 @@ document.getElementById('searchInput').addEventListener('input', e=>{ state.sear
 
 /* ============ ADMIN SEARCH ============ */
 document.getElementById('adminSearchInput').addEventListener('input', e => {
-  const term = e.target.value.trim().toLowerCase();
-  const cards = document.querySelectorAll('#ordersList .order-card');
-  cards.forEach(card => {
-    const text = card.textContent.toLowerCase();
-    card.style.display = text.includes(term) ? '' : 'none';
+  state.adminOrderSearch = e.target.value.trim().toLowerCase();
+  renderAdminOrders();
+});
+
+document.getElementById('adminFilterTabs').addEventListener('click', e => {
+  const button = e.target.closest('.filter-tab');
+  if (!button) return;
+  state.adminOrderFilter = button.dataset.status || 'all';
+  document.querySelectorAll('#adminFilterTabs .filter-tab').forEach(tab => {
+    tab.classList.toggle('active', tab === button);
   });
+  renderAdminOrders();
 });
 
 /* ============ CART & LIKE LOGIC ============ */
@@ -2225,6 +2231,7 @@ function switchAdminTab(e, tab) {
 }
 
 async function loadAdminData() {
+  await loadOrders();
   renderAdminOrders();
   renderAdminCoupons();
   renderAdminReviews();
@@ -2241,8 +2248,17 @@ function updateAdminStats() {
 
 function renderAdminOrders() {
   const list = document.getElementById('ordersList');
+  const filteredOrders = ORDERS.filter(o => {
+    if (state.adminOrderFilter !== 'all' && o.status !== state.adminOrderFilter) return false;
+    if (state.adminOrderSearch) {
+      const searchableText = `${o.name || ''} ${o.phone || ''} ${o.id || ''}`.toLowerCase();
+      if (!searchableText.includes(state.adminOrderSearch)) return false;
+    }
+    return true;
+  });
   if(ORDERS.length === 0) { list.innerHTML = `<div class="admin-empty"><strong>لا توجد طلبات</strong></div>`; return; }
-  list.innerHTML = ORDERS.map(o => {
+  if(filteredOrders.length === 0) { list.innerHTML = `<div class="admin-empty"><strong>لا توجد طلبات مطابقة</strong></div>`; return; }
+  list.innerHTML = filteredOrders.map(o => {
     const statusLabel = o.status === 'pending' ? 'قيد الانتظار ⏳' : o.status === 'in_transit' ? 'في الطريق 🚚' : 'تم التوصيل ✅';
     let actionsHTML = '';
     if (o.status === 'pending') {
