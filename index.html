@@ -573,6 +573,15 @@ h1,h2,h3,h4{font-weight:inherit;}
 .btn-undo:hover{background:var(--ink);color:var(--paper);}
 .btn-delete{color:var(--stamp);margin-inline-start:auto;}
 .btn-delete:hover{text-decoration:underline;}
+.btn-wa{
+  background:#25D366;color:#fff;
+  display:inline-flex;align-items:center;gap:6px;
+  padding:9px 14px;border-radius:var(--radius-s);
+  font-size:.82rem;font-weight:700;
+  transition:background .2s, transform .18s cubic-bezier(.34,1.56,.64,1);
+}
+.btn-wa:hover{background:#1DA851;transform:scale(1.04);}
+.btn-wa svg{width:15px;height:15px;flex-shrink:0;}
 .admin-empty{text-align:center;padding:90px 20px;color:var(--ink-soft);}
 .admin-empty strong{display:block;font-family:var(--ff-display);font-size:2.2rem;color:var(--ink);margin-bottom:10px;font-weight:400;}
 @media (max-width:640px){.order-cust{grid-template-columns:1fr;}}
@@ -3128,6 +3137,8 @@ function renderAdminOrders() {
                       : o.status === 'cancelled'  ? 'ملغي من العميل ❌'
                       :                             'تم التوصيل ✅';
     let actionsHTML = '';
+    const waIconSVG = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.117.554 4.103 1.523 5.824L.057 23.5l5.846-1.532A11.943 11.943 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 0 1-5.006-1.373l-.358-.214-3.718.975.992-3.623-.234-.372A9.795 9.795 0 0 1 2.182 12c0-5.42 4.398-9.818 9.818-9.818s9.818 4.398 9.818 9.818-4.398 9.818-9.818 9.818z"/></svg>`;
+
     if (o.status === 'pending') {
       actionsHTML = `
         <button class="btn-mark" style="background:#5B7FBE;" onclick="changeOrderStatus(${o.id}, 'in_transit')">في الطريق 🚚</button>
@@ -3136,12 +3147,15 @@ function renderAdminOrders() {
     } else if (o.status === 'in_transit') {
       actionsHTML = `
         <button class="btn-mark" onclick="changeOrderStatus(${o.id}, 'delivered')">تم التوصيل ✅</button>
-        <button class="btn-undo" onclick="changeOrderStatus(${o.id}, 'pending')">رجوع للانتظار</button>`;
+        <button class="btn-undo" onclick="changeOrderStatus(${o.id}, 'pending')">رجوع للانتظار</button>
+        <button class="btn-wa" onclick="sendWhatsAppNotification(ORDERS.find(x=>x.id===${o.id}), 'in_transit')" title="إشعار واتساب - في الطريق">${waIconSVG} واتساب</button>`;
     } else if (o.status === 'cancelled') {
       actionsHTML = `
         <button class="btn-delete" onclick="deleteOrder(${o.id})">حذف نهائي 🗑️</button>`;
-    } else {
-      actionsHTML = `<button class="btn-undo" onclick="changeOrderStatus(${o.id}, 'pending')">رجوع للانتظار</button>`;
+    } else if (o.status === 'delivered') {
+      actionsHTML = `
+        <button class="btn-undo" onclick="changeOrderStatus(${o.id}, 'pending')">رجوع للانتظار</button>
+        <button class="btn-wa" onclick="sendWhatsAppNotification(ORDERS.find(x=>x.id===${o.id}), 'delivered')" title="إشعار واتساب - تم التوصيل">${waIconSVG} واتساب</button>`;
     }
     const cancelNote = o.status === 'cancelled'
       ? `<div style="margin-bottom:12px;padding:8px 12px;background:rgba(123,31,162,.08);border-right:3px solid #7B1FA2;border-radius:4px;font-size:.82rem;color:#7B1FA2;font-weight:700;">
@@ -3168,10 +3182,44 @@ function renderAdminOrders() {
 }
 
 async function changeOrderStatus(id, status) {
+  const order = ORDERS.find(o => o.id === id);
   ORDERS = ORDERS.map(o => o.id === id ? {...o, status} : o);
-  await saveDataStore('orders', ORDERS_STORAGE_KEY, ORDERS);
+  saveDataStore('orders', ORDERS_STORAGE_KEY, ORDERS);
   renderAdminOrders(); updateAdminStats();
   showToast('تم تحديث حالة الطلب ✓');
+
+  /* إرسال إشعار واتساب أوتوماتيك للعميل */
+  if (order && order.phone) {
+    sendWhatsAppNotification(order, status);
+  }
+}
+
+function sendWhatsAppNotification(order, status) {
+  let msg = '';
+
+  if (status === 'in_transit') {
+    msg = `أهلاً ${order.name || 'عزيزنا'} 👋\n\nطلبك رقم #${order.id} من MR Store في طريقه إليك الآن 🚚\n\nتفاصيل طلبك:\n`;
+    if (order.items && order.items.length > 0) {
+      order.items.forEach(item => {
+        const prod = findProduct(item.id);
+        if (prod) msg += `• ${prod.name} × ${item.qty}\n`;
+      });
+    }
+    msg += `\nالإجمالي: ${order.total} ج.م\nالعنوان: ${order.address}، ${order.city}\n\nمتوقع يوصلك قريباً إن شاء الله 🙏\nشكراً لتسوقك معنا ❤️ — MR Store`;
+
+  } else if (status === 'delivered') {
+    msg = `أهلاً ${order.name || 'عزيزنا'} 😊\n\nطلبك رقم #${order.id} من MR Store وصل بنجاح ✅\n\nنتمنى يعجبك المنتج!\nلو عندك أي استفسار أو ملاحظة كلمنا هنا 💬\n\nشكراً لثقتك فينا ❤️ — MR Store`;
+  }
+
+  if (!msg) return;
+
+  /* تنظيف رقم الهاتف */
+  let phone = order.phone.replace(/\D/g, '');
+  if (phone.startsWith('0')) phone = '2' + phone; /* مصر */
+  if (!phone.startsWith('20')) phone = '20' + phone;
+
+  const url = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
+  window.open(url, '_blank', 'noopener');
 }
 
 async function deleteOrder(id) {
