@@ -407,6 +407,43 @@ h1,h2,h3,h4{font-weight:inherit;}
   width:100%;padding:11px;border-radius:var(--radius-s);background:var(--canvas-deep);
   color:var(--stamp);font-weight:700;font-size:.85rem;text-align:center;border:1px dashed var(--stamp);
 }
+/* ============ SHARE BUTTON ============ */
+.share-wrap { position:relative; margin-top:8px; }
+.btn-share {
+  width:100%; padding:10px; border-radius:var(--radius-s);
+  border:1px dashed var(--line);
+  background:none; color:var(--ink-soft);
+  font-size:.82rem; font-weight:700;
+  display:flex; align-items:center; justify-content:center; gap:7px;
+  transition:color .2s ease, border-color .2s ease, background .2s ease, transform .18s cubic-bezier(.34,1.56,.64,1);
+  cursor:pointer;
+}
+.btn-share:hover { color:var(--denim); border-color:var(--denim); background:rgba(43,59,104,.06); transform:translateY(-1px); }
+[data-theme="dark"] .btn-share:hover { color:#D4A843; border-color:#D4A843; background:rgba(212,168,67,.08); }
+.btn-share svg { width:15px; height:15px; flex-shrink:0; }
+.share-menu {
+  position:absolute; bottom:calc(100% + 8px); left:0; right:0;
+  background:var(--paper); border:1.5px solid var(--line);
+  border-radius:var(--radius-m); box-shadow:var(--shadow-l);
+  overflow:hidden; z-index:50;
+  opacity:0; transform:translateY(8px) scale(.96);
+  pointer-events:none;
+  transition:opacity .22s ease, transform .25s cubic-bezier(.34,1.56,.64,1);
+}
+.share-menu.open { opacity:1; transform:translateY(0) scale(1); pointer-events:auto; }
+[data-theme="dark"] .share-menu { background:#141720; border-color:#1E2130; }
+.share-menu-item {
+  display:flex; align-items:center; gap:10px;
+  padding:11px 14px; font-size:.85rem; font-weight:600;
+  cursor:pointer; transition:background .18s ease, color .18s ease;
+  border:none; background:none; width:100%; text-align:right; color:var(--ink);
+}
+.share-menu-item:hover { background:var(--canvas-deep); color:var(--denim); }
+[data-theme="dark"] .share-menu-item:hover { background:#1E2130; color:#D4A843; }
+.share-menu-item svg { width:17px; height:17px; flex-shrink:0; }
+.share-menu-item.wa  svg { color:#25D366; }
+.share-menu-item.copy svg { color:var(--brass); }
+.share-menu-divider { height:1px; background:var(--line); margin:0 10px; }
 .empty-state{grid-column:1/-1;text-align:center;padding:60px 20px;color:var(--ink-soft);}
 .empty-state strong{display:block;font-family:var(--ff-display);font-size:2rem;color:var(--ink);margin-bottom:10px;font-weight:400;}
 
@@ -2571,7 +2608,25 @@ function productCardHTML(p){
           </button>
         </div>
         ${buyBtnHTML}
-        <button class="btn btn-sm btn-outline" style="margin-top:8px; width:100%; border:1px dashed var(--ink-soft);" onclick="viewProductReviews(${p.id})">التقييمات ⭐</button>
+        <div style="display:flex; gap:6px; margin-top:8px;">
+          <button class="btn btn-sm btn-outline" style="flex:1; border:1px dashed var(--ink-soft);" onclick="viewProductReviews(${p.id})">التقييمات ⭐</button>
+          <div class="share-wrap" style="flex:0 0 auto;">
+            <button class="btn-share" onclick="toggleShareMenu(event, ${p.id})" aria-label="مشاركة المنتج" style="padding:8px 12px; width:auto;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+            </button>
+            <div class="share-menu" id="share-menu-${p.id}">
+              <button class="share-menu-item wa" onclick="shareViaWhatsApp(${p.id})">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.117.554 4.103 1.523 5.824L.057 23.5l5.846-1.532A11.943 11.943 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 0 1-5.006-1.373l-.358-.214-3.718.975.992-3.623-.234-.372A9.795 9.795 0 0 1 2.182 12c0-5.42 4.398-9.818 9.818-9.818s9.818 4.398 9.818 9.818-4.398 9.818-9.818 9.818z"/></svg>
+                مشاركة عبر واتساب
+              </button>
+              <div class="share-menu-divider"></div>
+              <button class="share-menu-item copy" onclick="copyProductLink(${p.id})">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                نسخ الرابط
+              </button>
+            </div>
+          </div>
+        </div>
         ${adminControlsHTML}
       </div>
     </div>
@@ -3363,6 +3418,95 @@ function launchConfetti() {
     wrap.appendChild(piece);
   }
   setTimeout(() => { wrap.innerHTML = ''; }, 4000);
+}
+
+/* ============ PRODUCT SHARE ============ */
+let _openShareMenu = null;
+
+function toggleShareMenu(e, productId) {
+  e.stopPropagation();
+  const menu = document.getElementById(`share-menu-${productId}`);
+  if (!menu) return;
+
+  /* لو في موبايل يدعم Web Share API، استخدمه مباشرة */
+  const p = findProduct(productId);
+  if (navigator.share && p) {
+    navigator.share({
+      title: `${p.name} — MR Store`,
+      text: `شوف المنتج ده: ${p.name}\nالسعر: ${p.price.toLocaleString('en-US')} ج.م`,
+      url: window.location.href
+    }).catch(() => {});
+    return;
+  }
+
+  const isOpen = menu.classList.contains('open');
+
+  /* أغلق أي قائمة مفتوحة تانية */
+  if (_openShareMenu && _openShareMenu !== menu) {
+    _openShareMenu.classList.remove('open');
+  }
+
+  if (isOpen) {
+    menu.classList.remove('open');
+    _openShareMenu = null;
+  } else {
+    menu.classList.add('open');
+    _openShareMenu = menu;
+  }
+}
+
+/* إغلاق القائمة لما تضغط برّاها */
+document.addEventListener('click', () => {
+  if (_openShareMenu) {
+    _openShareMenu.classList.remove('open');
+    _openShareMenu = null;
+  }
+});
+
+function shareViaWhatsApp(productId) {
+  const p = findProduct(productId);
+  if (!p) return;
+  closeShareMenu(productId);
+
+  const msg = `👕 *${p.name}*\n💰 السعر: ${p.price.toLocaleString('en-US')} ج.م${p.old ? ` ~~${p.old.toLocaleString('en-US')} ج.م~~` : ''}\n\n🛍️ اطلبه دلوقتي من MR Store\n${window.location.href}`;
+  window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank', 'noopener');
+}
+
+function copyProductLink(productId) {
+  const p = findProduct(productId);
+  if (!p) return;
+  closeShareMenu(productId);
+
+  const text = `${p.name} — ${p.price.toLocaleString('en-US')} ج.م | MR Store\n${window.location.href}`;
+
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(() => {
+      showToast('تم نسخ رابط المنتج ✓');
+    }).catch(() => _fallbackCopy(text));
+  } else {
+    _fallbackCopy(text);
+  }
+}
+
+function _fallbackCopy(text) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.cssText = 'position:fixed;top:-9999px;opacity:0;';
+  document.body.appendChild(ta);
+  ta.select();
+  try {
+    document.execCommand('copy');
+    showToast('تم نسخ رابط المنتج ✓');
+  } catch(e) {
+    showToast('مش قادر ينسخ الرابط ✕');
+  }
+  document.body.removeChild(ta);
+}
+
+function closeShareMenu(productId) {
+  const menu = document.getElementById(`share-menu-${productId}`);
+  if (menu) menu.classList.remove('open');
+  _openShareMenu = null;
 }
 
 /* ============ BACK TO TOP + HEADER SCROLL ============ */
