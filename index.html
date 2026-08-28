@@ -557,6 +557,8 @@ h1,h2,h3,h4{font-weight:inherit;}
 .order-status.pending{background:#F3E6DA;color:var(--stamp);}
 .order-status.delivered{background:#DCEEE3;color:var(--ok);}
 .order-status.in_transit{background:#E8F0FB;color:#2B3B68;}
+.order-status.cancelled{background:#F5E6F5;color:#7B1FA2;}
+[data-theme="dark"] .order-status.cancelled{background:rgba(123,31,162,.18);color:#CE93D8;}
 .order-cust{display:grid;grid-template-columns:1fr 1fr;gap:10px 20px;margin-bottom:16px;font-size:.9rem;}
 .order-cust div span{display:block;font-family:var(--ff-mono);font-size:.63rem;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;}
 .order-items{border-top:1px dashed var(--line);padding-top:12px;margin-bottom:14px;}
@@ -1246,6 +1248,7 @@ h1,h2,h3,h4{font-weight:inherit;}
             <button class="filter-tab" data-status="pending">قيد الانتظار</button>
             <button class="filter-tab" data-status="in_transit">في الطريق 🚚</button>
             <button class="filter-tab" data-status="delivered">تم التوصيل</button>
+            <button class="filter-tab" data-status="cancelled">ملغية ❌</button>
           </div>
           <div class="search-box">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/></svg>
@@ -1685,8 +1688,14 @@ async function openMyOrdersModal() {
           return;
         }
         list.innerHTML = myOrders2.map(o => {
-          const statusStyle = o.status === 'pending' ? 'background:#F3E6DA; color:var(--stamp);' : o.status === 'in_transit' ? 'background:#E8F0FB; color:#2B3B68;' : 'background:#DCEEE3; color:var(--ok);';
-          const statusText = o.status === 'pending' ? 'قيد الانتظار ⏳' : o.status === 'in_transit' ? 'في الطريق 🚚' : 'تم التوصيل ✅';
+          const statusStyle = o.status === 'pending'   ? 'background:#F3E6DA; color:var(--stamp);'
+                            : o.status === 'in_transit' ? 'background:#E8F0FB; color:#2B3B68;'
+                            : o.status === 'cancelled'  ? 'background:#F5E6F5; color:#7B1FA2;'
+                            :                             'background:#DCEEE3; color:var(--ok);';
+          const statusText = o.status === 'pending'   ? 'قيد الانتظار ⏳'
+                           : o.status === 'in_transit' ? 'في الطريق 🚚'
+                           : o.status === 'cancelled'  ? 'تم الإلغاء ❌'
+                           :                             'تم التوصيل ✅';
           const canDelete = o.status === 'pending';
           return `
           <div style="background:var(--paper); padding:16px; border-radius:var(--radius-s); margin-bottom:14px; border:2px solid var(--line); box-shadow:var(--shadow-s);">
@@ -1721,9 +1730,13 @@ async function customerCancelOrder(orderId) {
   const order = ORDERS.find(o => o.id === orderId);
   if (!order || order.status !== 'pending') { showToast('مش ممكن تلغي الطلب ده دلوقتي'); return; }
   if (!confirm('متأكد إنك عايز تلغي الطلب ده؟')) return;
-  ORDERS = ORDERS.filter(o => o.id !== orderId);
+  /* نغير الـ status لـ cancelled بدل الحذف عشان الأدمن يشوف */
+  ORDERS = ORDERS.map(o => o.id === orderId
+    ? { ...o, status: 'cancelled', cancelledAt: new Date().toLocaleString('ar-EG') }
+    : o
+  );
   await saveDataStore('orders', ORDERS_STORAGE_KEY, ORDERS);
-  showToast('تم إلغاء الطلب بنجاح ✓');
+  showToast('تم إلغاء الطلب ✓');
   if (typeof window._renderMyOrders === 'function') window._renderMyOrders();
 }
 
@@ -2566,7 +2579,10 @@ function renderAdminOrders() {
   if(ORDERS.length === 0) { list.innerHTML = `<div class="admin-empty"><strong>لا توجد طلبات</strong></div>`; return; }
   if(filteredOrders.length === 0) { list.innerHTML = `<div class="admin-empty"><strong>لا توجد طلبات مطابقة</strong></div>`; return; }
   list.innerHTML = filteredOrders.map(o => {
-    const statusLabel = o.status === 'pending' ? 'قيد الانتظار ⏳' : o.status === 'in_transit' ? 'في الطريق 🚚' : 'تم التوصيل ✅';
+    const statusLabel = o.status === 'pending'   ? 'قيد الانتظار ⏳'
+                      : o.status === 'in_transit' ? 'في الطريق 🚚'
+                      : o.status === 'cancelled'  ? 'ملغي من العميل ❌'
+                      :                             'تم التوصيل ✅';
     let actionsHTML = '';
     if (o.status === 'pending') {
       actionsHTML = `
@@ -2577,15 +2593,24 @@ function renderAdminOrders() {
       actionsHTML = `
         <button class="btn-mark" onclick="changeOrderStatus(${o.id}, 'delivered')">تم التوصيل ✅</button>
         <button class="btn-undo" onclick="changeOrderStatus(${o.id}, 'pending')">رجوع للانتظار</button>`;
+    } else if (o.status === 'cancelled') {
+      actionsHTML = `
+        <button class="btn-delete" onclick="deleteOrder(${o.id})">حذف نهائي 🗑️</button>`;
     } else {
       actionsHTML = `<button class="btn-undo" onclick="changeOrderStatus(${o.id}, 'pending')">رجوع للانتظار</button>`;
     }
+    const cancelNote = o.status === 'cancelled'
+      ? `<div style="margin-bottom:12px;padding:8px 12px;background:rgba(123,31,162,.08);border-right:3px solid #7B1FA2;border-radius:4px;font-size:.82rem;color:#7B1FA2;font-weight:700;">
+           ⚠️ ألغى العميل هذا الطلب${o.cancelledAt ? ' في ' + o.cancelledAt : ''}
+         </div>`
+      : '';
     return `
     <div class="order-card">
       <div class="order-card-head">
         <div><span class="order-num">#${o.id}</span><span class="order-date">${o.date}</span></div>
         <div class="order-status ${o.status}">${statusLabel}</div>
       </div>
+      ${cancelNote}
       <div class="order-cust">
         <div><span>الاسم</span>${o.name}</div>
         <div><span>الهاتف</span>${o.phone}</div>
