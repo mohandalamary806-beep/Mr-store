@@ -754,6 +754,214 @@ h1,h2,h3,h4{font-weight:inherit;}
 .site-header .logo::after{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--ok);margin-right:6px;opacity:0;transition:opacity .4s;vertical-align:middle;}
 .site-header.live-connected .logo::after{opacity:1;}
 
+/* ============================================================
+   MOBILE RESPONSIVE — شامل لكل الشاشات الصغيرة
+   ============================================================ */
+
+/* ---- شاشات التابلت الكبيرة 900px ---- */
+@media (max-width:900px) {
+  /* Header */
+  .header-inner { height:64px; }
+  .logo { font-size:1.05rem; }
+  .logo svg { width:22px; height:22px; }
+
+  /* Hero */
+  .hero { padding:40px 0 36px; }
+  .hero-stamp-wrap { width:200px; height:200px; }
+  .hero-stamp { width:190px; height:190px; }
+  .hero-stamp-text { font-size:1.2rem; }
+
+  /* Sections */
+  .section { padding-block:52px; }
+  .section-head { margin-bottom:32px; }
+}
+
+/* ---- موبايل 600px ---- */
+@media (max-width:600px) {
+
+  /* Container */
+  .container { padding-inline:16px; }
+
+  /* Header - أصغر وأنيق */
+  .header-inner { height:58px; gap:8px; }
+  .logo { font-size:.95rem; gap:7px; }
+  .logo svg { width:20px; height:20px; }
+  .header-actions { gap:4px; }
+  .icon-btn { width:38px; height:38px; }
+  .icon-btn svg { width:19px; height:19px; }
+  /* تسجيل الدخول على الموبايل — نخفي زرار "إنشاء حساب" بس ونبقي تسجيل الدخول */
+  .user-auth-wrap #userSignupBtn { display:none !important; }
+  .user-auth-wrap #userLoginBtn { padding:6px 10px; font-size:.75rem; }
+  /* لما يكون مسجل دخول نخليه يظهر بشكل مضغوط */
+  .user-profile-wrap { font-size:.72rem; gap:4px; }
+  .user-profile-wrap span#userNameDisplay { max-width:60px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+  /* Hero */
+  .hero { padding:28px 0 24px; }
+  .hero-grid { gap:24px; }
+  .hero-stamp-wrap { width:160px; height:160px; }
+  .hero-stamp { width:152px; height:152px; border-width:2px; }
+  .hero-stamp-text { font-size:1rem; }
+  .hero-stamp-sub { font-size:.5rem; }
+  .hero-stamp::before { inset:8px; }
+  .hero-content .eyebrow { font-size:.62rem; margin-bottom:14px; }
+  .hero-title { font-size:clamp(2.4rem,10vw,3.8rem); margin-bottom:14px; }
+  .hero-sub { font-size:.92rem; margin-bottom:20px; }
+  .hero-actions { gap:12px; }
+  .hero-actions .btn-primary { padding:11px 20px; font-size:.88rem; }
+  .hero-fineprint { font-size:.62rem; }
+
+  /* Trust strip */
+  .trust-strip { padding-block:0; }
+  .trust-grid { grid-template-columns:repeat(2,1fr); gap:0; padding-block:0; }
+  .trust-item {
+    padding:14px 10px;
+    font-size:.75rem;
+    border-bottom:1px dashed var(--line);
+    flex-direction:column;
+    gap:6px;
+    text-align:center;
+  }
+  .trust-item:nth-child(odd) { border-left:1px dashed var(--line); }
+  .trust-item svg { width:20px; height:20px; }
+
+  /* Section */
+  .section { padding-block:36px; }
+  .section-head { margin-bottom:24px; }
+  .section-title { font-size:clamp(1.8rem,7vw,2.4rem); }
+
+  /* Products toolbar */
+  .products-toolbar { gap:12px; margin-bottom:24px; }
+  .filter-tabs { gap:6px; }
+  .filter-tab { padding:7px 13px; font-size:.78rem; }
+  .search-box { padding:8px 14px; }
+  .search-box input { font-size:.85rem; }
+
+  /* Product grid - 2 عمود على الموبايل */
+  .product-grid { grid-template-columns:repeat(2,1fr); gap:12px; }
+
+  /* Product card - مضغوطة وجميلة */
+  .product-card-inner { clip-path:polygon(0 0,calc(100% - 12px) 0,100% 12px,100% 100%,0 100%); }
+  .product-info { padding:12px 12px 14px; }
+  .product-name { font-size:.88rem; margin-bottom:8px; }
+  .product-price { font-size:1rem; }
+  .product-old { font-size:.75rem; }
+  .product-price-row { margin-bottom:10px; }
+  .like-btn { font-size:.82rem; }
+  .like-btn svg { width:18px; height:18px; }
+  .size-tags { gap:4px; margin-bottom:6px; }
+  .size-tag { font-size:.62rem; padding:1px 4px; }
+  .product-colors { gap:3px; margin-bottom:6px; }
+  .product-color-dot { width:12px; height:12px; }
+  .btn-add { padding:9px; font-size:.78rem; }
+  .out-of-stock-badge { padding:9px; font-size:.75rem; }
+  .stamp-badge { font-size:.55rem; padding:4px 9px; }
+
+  /* Share button area */
+  .share-wrap + div, div:has(.btn-share) { gap:4px; }
+
+  /* Cart drawer - full width على الموبايل */
+  .drawer { width:100%; max-width:100%; }
+  .drawer-head { padding:16px 18px; }
+  .drawer-head h3 { font-size:1.5rem; }
+  .drawer-body { padding:14px 18px; }
+  .cart-item img { width:52px; height:66px; }
+  .cart-item-info h4 { font-size:.85rem; }
+
+  /* Modals - full screen على الموبايل */
+  .modal {
+    width:100% !important;
+    max-width:100% !important;
+    max-height:92vh;
+    border-radius:var(--radius-l) var(--radius-l) 0 0;
+    top:auto !important;
+    bottom:0 !important;
+    left:0 !important;
+    right:0 !important;
+    transform:translateY(0) !important;
+  }
+  .modal:not(.open) { transform:translateY(100%) !important; opacity:0 !important; }
+  .modal.open {
+    transform:translateY(0) !important;
+    opacity:1 !important;
+  }
+  .modal-head { padding:16px 18px; }
+  .modal-head h3 { font-size:1.5rem; }
+  .modal-body { padding:16px 18px 24px; }
+  .field input, .field textarea, .field select { padding:10px 12px; font-size:.9rem; }
+
+  /* Footer */
+  .site-footer { padding-block:40px 20px; margin-top:0; }
+  .footer-grid { grid-template-columns:1fr; gap:28px; padding-bottom:28px; }
+  .footer-logo { font-size:1rem; }
+  .footer-about { font-size:.85rem; max-width:none; }
+  .footer-col h4 { margin-bottom:12px; }
+  .footer-col ul { gap:8px; }
+  .footer-bottom { flex-direction:column; align-items:center; text-align:center; gap:6px; padding-top:18px; }
+
+  /* Admin panel on mobile */
+  .admin-stats { grid-template-columns:repeat(2,1fr); gap:10px; margin-bottom:20px; }
+  .admin-stat-card { padding:14px 16px; }
+  .admin-stat-value { font-size:1.2rem; }
+  .admin-topbar-inner { height:auto; padding:12px 16px; gap:10px; }
+  .admin-title { font-size:1.4rem; }
+  .admin-actions { gap:8px; }
+  .admin-actions .btn { padding:8px 12px; font-size:.78rem; }
+  .admin-body { padding-block:20px 40px; }
+  .admin-main-tabs { gap:6px; }
+  .admin-main-tabs button { padding:8px 12px; font-size:.78rem; }
+  .order-card { padding:14px 16px; }
+  .order-actions { gap:6px; flex-wrap:wrap; }
+  .order-actions button { padding:7px 12px; font-size:.75rem; }
+
+  /* Flash sale banner */
+  .flash-inner { gap:8px; padding:0 8px; }
+  .flash-label { font-size:.62rem; }
+  .flash-disc { font-size:.9rem; padding:2px 8px; }
+  .flash-seg { min-width:30px; padding:2px 6px; }
+  .flash-seg-val { font-size:.95rem; }
+  .flash-seg-lbl { font-size:.4rem; }
+
+  /* Back to top + WA float */
+  #backToTop { bottom:80px; left:16px; width:40px; height:40px; }
+  #backToTop svg { width:16px; height:16px; }
+  .wa-float { width:50px; height:50px; bottom:18px; left:16px; }
+  .wa-float svg { width:22px; height:22px; }
+
+  /* Toast */
+  .toast { right:12px; left:12px; max-width:none; font-size:.82rem; padding:11px 14px; }
+}
+
+/* ---- شاشات صغيرة جداً 380px ---- */
+@media (max-width:380px) {
+  .product-grid { grid-template-columns:repeat(2,1fr); gap:8px; }
+  .product-info { padding:10px 10px 12px; }
+  .product-name { font-size:.8rem; }
+  .filter-tab { padding:6px 10px; font-size:.72rem; }
+  .hero-stamp-wrap { width:130px; height:130px; }
+  .hero-stamp { width:122px; height:122px; }
+  .hero-title { font-size:clamp(2rem,9vw,3rem); }
+}
+
+/* ---- تحسين اللمس touch targets ---- */
+@media (hover:none) and (pointer:coarse) {
+  /* أزرار أكبر للمس */
+  .btn-add { padding:13px; }
+  .like-btn { padding:4px; }
+  .qty-control button { width:32px; height:32px; }
+  .filter-tab { min-height:40px; }
+  /* إلغاء hover effects مش بتشتغل على الموبايل */
+  .product-card:hover { transform:none; filter:none; }
+  .product-card:hover .product-img img { transform:none; }
+  .product-card:hover .product-img::after { left:-60%; }
+  .trust-item:hover { transform:none; background:none; box-shadow:none; }
+  .filter-tab:hover { transform:none; box-shadow:none; }
+  /* Active states بدل hover */
+  .btn-add:active { background:var(--ink); color:var(--paper); }
+  .filter-tab:active { background:var(--ink); color:var(--paper); transform:scale(.96); }
+  .product-card:active .product-card-inner { box-shadow:var(--shadow-m); }
+}
+
 /* ============ COLOR PICKER (product modals) ============ */
 .color-picker-wrap { display:flex; flex-wrap:wrap; gap:10px; margin-top:8px; }
 .color-swatch-label { display:flex; flex-direction:column; align-items:center; gap:4px; cursor:pointer; }
