@@ -1906,12 +1906,17 @@ async function fetchDataStore(path, storageKey, defaultData) {
 }
 
 /* ---- write to Firebase + localStorage ---- */
-async function saveDataStore(path, storageKey, data) {
+/* localStorage يتحفظ فوراً — Firebase في الخلفية بدون انتظار */
+function saveDataStore(path, storageKey, data) {
+  /* 1. حفظ فوري في localStorage */
   _lsSet(storageKey, data);
+  /* 2. Firebase في الخلفية — مش بنستنى الرد */
   if (useFirebase) {
-    try { await firebase.database().ref(path).set(data); }
-    catch(e) { console.warn('Firebase write failed:', path, e); }
+    firebase.database().ref(path).set(data)
+      .catch(e => console.warn('Firebase write failed:', path, e));
   }
+  /* نرجع resolved promise عشان أي await قديم يشتغل بدون مشاكل */
+  return Promise.resolve();
 }
 
 /* ============ REALTIME LISTENERS ============ */
@@ -2777,10 +2782,13 @@ async function incrementCouponUsage(couponCode, userEmail) {
   const key = emailToKey(userEmail);
   const current = await getCouponUsageCount(couponCode, userEmail);
   const next = current + 1;
-  if (useFirebase) {
-    try { await firebase.database().ref(`couponUsage/${couponCode}/${key}`).set(next); } catch(e) {}
-  }
+  /* حفظ فوري في localStorage */
   localStorage.setItem(`mrstore_coupon_usage_${couponCode}_${key}`, String(next));
+  /* Firebase في الخلفية */
+  if (useFirebase) {
+    firebase.database().ref(`couponUsage/${couponCode}/${key}`).set(next)
+      .catch(e => console.warn('coupon usage save failed:', e));
+  }
 }
 
 async function applyCouponCode() {
@@ -2848,14 +2856,18 @@ function sanitizeCart() {
   }
 }
 
-async function saveCartToFirebase() {
+function saveCartToFirebase() {
   const user = getUserData();
   if (!user || !user.email) return;
   const key = emailToKey(user.email);
-  if (useFirebase) {
-    try { await firebase.database().ref('userCarts/' + key).set(state.cart); } catch(e) {}
-  }
+  /* حفظ فوري في localStorage */
   localStorage.setItem('mrstore_cart_' + key, JSON.stringify(state.cart));
+  /* Firebase في الخلفية */
+  if (useFirebase) {
+    firebase.database().ref('userCarts/' + key).set(state.cart)
+      .catch(e => console.warn('cart save failed:', e));
+  }
+  return Promise.resolve();
 }
 
 async function loadCartFromFirebase(email) {
@@ -3362,12 +3374,16 @@ async function loadUserProfile(email) {
   return null;
 }
 
-async function saveUserProfile(email, profileData) {
+function saveUserProfile(email, profileData) {
   const key = emailToKey(email);
-  if (useFirebase) {
-    try { await firebase.database().ref('userProfiles/' + key).set(profileData); } catch(e) {}
-  }
+  /* حفظ فوري */
   localStorage.setItem('mrstore_profile_' + key, JSON.stringify(profileData));
+  /* Firebase في الخلفية */
+  if (useFirebase) {
+    firebase.database().ref('userProfiles/' + key).set(profileData)
+      .catch(e => console.warn('profile save failed:', e));
+  }
+  return Promise.resolve();
 }
 
 async function loadTakenNames() {
@@ -3384,11 +3400,15 @@ async function loadTakenNames() {
   return {};
 }
 
-async function saveTakenNames(takenNames) {
-  if (useFirebase) {
-    try { await firebase.database().ref('takenNames').set(takenNames); } catch(e) {}
-  }
+function saveTakenNames(takenNames) {
+  /* حفظ فوري */
   localStorage.setItem(TAKEN_NAMES_KEY, JSON.stringify(takenNames));
+  /* Firebase في الخلفية */
+  if (useFirebase) {
+    firebase.database().ref('takenNames').set(takenNames)
+      .catch(e => console.warn('takenNames save failed:', e));
+  }
+  return Promise.resolve();
 }
 
 async function handleCredentialResponse(response) {
@@ -3576,11 +3596,15 @@ document.getElementById('editUsernameForm').addEventListener('submit', async e =
 const FLASH_SALE_KEY = 'mrstore_flash_sale';
 let _flashTimer = null;
 
-async function saveFlashSale(data) {
+function saveFlashSale(data) {
+  /* حفظ فوري */
   _lsSet(FLASH_SALE_KEY, data);
+  /* Firebase في الخلفية */
   if (useFirebase) {
-    try { await firebase.database().ref('flashSale').set(data); } catch(e) {}
+    firebase.database().ref('flashSale').set(data)
+      .catch(e => console.warn('flashSale save failed:', e));
   }
+  return Promise.resolve();
 }
 
 function mountFlashBanner(data) {
