@@ -4562,17 +4562,19 @@ function saveUserProfile(email, profileData) {
   const key = emailToKey(email);
   /* حفظ فوري في localStorage */
   localStorage.setItem('mrstore_profile_' + key, JSON.stringify(profileData));
-  /* Firebase — حفظ في userProfiles (للـ listeners) و users (للـ login) */
   if (useFirebase) {
-    firebase.database().ref('userProfiles/' + key).set(profileData)
+    /* update (مش set) عشان ما نمسحش باقي البيانات */
+    firebase.database().ref('userProfiles/' + key).update(profileData)
       .catch(e => console.warn('profile save failed:', e));
-    /* تحديث الاسم في مسار users عشان login.html يجيبه صح */
+    /* نفس الشيء في users/ عشان login.html يجيب الاسم الجديد */
     const userUpdates = {};
-    if (profileData.name)            userUpdates['name']            = profileData.name;
-    if (profileData.nameLastChanged) userUpdates['nameLastChanged'] = profileData.nameLastChanged;
-    if (profileData.favorites)       userUpdates['favorites']       = profileData.favorites;
-    firebase.database().ref('users/' + key).update(userUpdates)
-      .catch(e => console.warn('users update failed:', e));
+    if (profileData.name            != null) userUpdates['name']            = profileData.name;
+    if (profileData.nameLastChanged != null) userUpdates['nameLastChanged'] = profileData.nameLastChanged;
+    if (profileData.favorites       != null) userUpdates['favorites']       = profileData.favorites;
+    if (Object.keys(userUpdates).length > 0) {
+      firebase.database().ref('users/' + key).update(userUpdates)
+        .catch(e => console.warn('users update failed:', e));
+    }
   }
   return Promise.resolve();
 }
