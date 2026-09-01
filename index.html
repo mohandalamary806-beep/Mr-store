@@ -1539,16 +1539,7 @@ body { animation: pageFadeIn .4s ease both; }
 [data-theme="dark"] .timeline-label.active{color:#D4A843;}
 .timeline-label.done{color:var(--ok);}
 
-/* ============ FREE SHIPPING BAR ============ */
-.free-shipping-bar{background:linear-gradient(135deg,rgba(43,59,104,.06),rgba(63,125,92,.06));border:1.5px dashed var(--line);border-radius:var(--radius-m);padding:12px 16px;margin:0 24px 12px;text-align:center;}
-[data-theme="dark"] .free-shipping-bar{background:rgba(212,168,67,.05);border-color:#1E2130;}
-.fs-label{font-size:.8rem;font-weight:700;color:var(--ink-soft);margin-bottom:8px;}
-.fs-label span{color:var(--denim);}
-[data-theme="dark"] .fs-label span{color:#D4A843;}
-.fs-track{height:6px;background:var(--line);border-radius:999px;overflow:hidden;}
-.fs-fill{height:100%;background:linear-gradient(90deg,var(--denim),var(--ok));border-radius:999px;transition:width .5s cubic-bezier(.34,1.06,.64,1);}
-[data-theme="dark"] .fs-fill{background:linear-gradient(90deg,#D4A843,#4EC98A);}
-.fs-done{font-size:.82rem;font-weight:800;color:var(--ok);}
+
 
 /* ============ WA FLOAT TOOLTIP ============ */
 .wa-float{position:fixed;}
@@ -2050,10 +2041,6 @@ html { scroll-behavior: smooth; }
       <input type="text" id="couponInput" placeholder="أدخل كود الخصم (إن وجد)">
       <button onclick="applyCouponCode()">تطبيق</button>
     </div>
-  </div>
-  <div class="free-shipping-bar" id="freeShippingBar">
-    <div class="fs-label" id="fsLabel">أضف <span id="fsRemaining">200</span> ج.م للحصول على شحن مجاني 🚚</div>
-    <div class="fs-track"><div class="fs-fill" id="fsFill" style="width:0%"></div></div>
   </div>
   <div class="drawer-foot">
     <div id="discountRow" class="discount-row" style="display:none;">
@@ -4573,12 +4560,19 @@ async function loadUserProfile(email) {
 
 function saveUserProfile(email, profileData) {
   const key = emailToKey(email);
-  /* حفظ فوري */
+  /* حفظ فوري في localStorage */
   localStorage.setItem('mrstore_profile_' + key, JSON.stringify(profileData));
-  /* Firebase في الخلفية */
+  /* Firebase — حفظ في userProfiles (للـ listeners) و users (للـ login) */
   if (useFirebase) {
     firebase.database().ref('userProfiles/' + key).set(profileData)
       .catch(e => console.warn('profile save failed:', e));
+    /* تحديث الاسم في مسار users عشان login.html يجيبه صح */
+    const userUpdates = {};
+    if (profileData.name)            userUpdates['name']            = profileData.name;
+    if (profileData.nameLastChanged) userUpdates['nameLastChanged'] = profileData.nameLastChanged;
+    if (profileData.favorites)       userUpdates['favorites']       = profileData.favorites;
+    firebase.database().ref('users/' + key).update(userUpdates)
+      .catch(e => console.warn('users update failed:', e));
   }
   return Promise.resolve();
 }
@@ -5017,29 +5011,7 @@ function applyPriceFilter(val) {
 }
 
 /* ============ FREE SHIPPING BAR ============ */
-const FREE_SHIPPING_THRESHOLD = 500;
-
-function updateFreeShippingBar() {
-  const bar = document.getElementById('freeShippingBar');
-  const label = document.getElementById('fsLabel');
-  const fill = document.getElementById('fsFill');
-  const remaining = document.getElementById('fsRemaining');
-  if (!bar || !fill) return;
-  
-  const total = state.cart.reduce((s, i) => s + (findProduct(i.id) ? findProduct(i.id).price : 0) * i.qty, 0);
-  const pct = Math.min(100, (total / FREE_SHIPPING_THRESHOLD) * 100);
-  fill.style.width = pct + '%';
-  
-  if (total >= FREE_SHIPPING_THRESHOLD) {
-    label.innerHTML = '<span style="color:var(--ok);">🎉 تهانينا! حصلت على شحن مجاني</span>';
-    fill.style.background = 'var(--ok)';
-  } else {
-    const rem = FREE_SHIPPING_THRESHOLD - total;
-    if (remaining) remaining.textContent = rem.toLocaleString('ar-EG');
-    label.innerHTML = `أضف <span id="fsRemaining">${rem.toLocaleString('ar-EG')}</span> ج.م للحصول على شحن مجاني 🚚`;
-    fill.style.background = '';
-  }
-}
+function updateFreeShippingBar() { /* disabled */ }
 
 /* Google GSI — بنستخدم onGoogleLibraryLoad callback الرسمي
    + retry loop كـ fallback لو الـ callback ما اشتغلش */
