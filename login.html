@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MR Store | تسجيل الدخول</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%232B3B68' d='M3 12l9-9h8v8l-9 9a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8z'/%3E%3Ccircle cx='15.5' cy='8.5' r='1.5' fill='%23ECE5D3'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jomhuria&family=Tajawal:wght@300;400;500;700;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+<script src="https://accounts.google.com/gsi/client" async></script>
+<style>
+/* ============ TOKENS ============ */
+:root{
+  --canvas:#ECE5D3;
+  --canvas-deep:#E1D9C3;
+  --paper:#FBF8F0;
+  --ink:#221F1A;
+  --ink-soft:#6B6355;
+  --denim:#2B3B68;
+  --denim-deep:#1E2A4D;
+  --brass:#A9762E;
+  --stamp:#A63B2A;
+  --line:#D6CCB4;
+  --ok:#3F7D5C;
+  --radius-s:4px;
+  --radius-m:10px;
+  --radius-l:22px;
+  --shadow-s:0 2px 10px rgba(34,31,26,.09);
+  --shadow-m:0 10px 28px rgba(34,31,26,.14);
+  --shadow-l:0 24px 60px rgba(34,31,26,.22);
+  --ff-display:'Jomhuria', sans-serif;
+  --ff-body:'Tajawal', sans-serif;
+  --ff-mono:'Space Mono', monospace;
+}
+
+[data-theme="dark"]{
+  --canvas:#0D0F14;
+  --canvas-deep:#080A0E;
+  --paper:#141720;
+  --ink:#F5F5F0;
+  --ink-soft:#9A9BAA;
+  --brass:#D4A843;
+  --denim:#D4A843;
+  --denim-deep:#B8902E;
+  --stamp:#E05C4A;
+  --line:#1E2130;
+  --ok:#4EC98A;
+  --shadow-s:0 2px 12px rgba(0,0,0,.55);
+  --shadow-m:0 8px 32px rgba(0,0,0,.7);
+  --shadow-l:0 20px 60px rgba(0,0,0,.85);
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  font-family:var(--ff-body);
+  background:var(--canvas);
+  color:var(--ink);
+  line-height:1.7;
+  -webkit-font-smoothing:antialiased;
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+}
+input,button{font:inherit;}
+button{cursor:pointer;border:none;background:none;color:inherit;}
+a{color:inherit;text-decoration:none;}
+:focus-visible{outline:3px solid var(--denim);outline-offset:3px;border-radius:3px;}
+
+/* ============ PAGE LAYOUT ============ */
+.page-wrap{
+  flex:1;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:32px 16px;
+}
+
+/* ============ CARD ============ */
+.auth-card{
+  background:var(--paper);
+  border-radius:var(--radius-l);
+  box-shadow:var(--shadow-l);
+  width:100%;
+  max-width:440px;
+  overflow:hidden;
+}
+
+/* Card Header */
+.card-header{
+  background:var(--denim);
+  padding:32px 32px 28px;
+  text-align:center;
+  position:relative;
+}
+.card-logo{
+  font-family:var(--ff-mono);
+  font-size:1.5rem;
+  font-weight:700;
+  color:#ECE5D3;
+  letter-spacing:.08em;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  margin-bottom:8px;
+}
+[data-theme="dark"] .card-logo{ color:#0D0F14; }
+.card-logo svg{width:22px;height:22px;}
+.card-tagline{
+  font-size:.82rem;
+  color:rgba(236,229,211,.7);
+  font-family:var(--ff-mono);
+  letter-spacing:.06em;
+}
+[data-theme="dark"] .card-tagline{ color:rgba(13,15,20,.6); }
+
+/* Tabs */
+.auth-tabs{
+  display:flex;
+  border-bottom:2px solid var(--line);
+  background:var(--canvas-deep);
+}
+.auth-tab{
+  flex:1;
+  padding:14px 10px;
+  font-size:.9rem;
+  font-weight:700;
+  color:var(--ink-soft);
+  background:none;
+  border:none;
+  border-bottom:3px solid transparent;
+  margin-bottom:-2px;
+  cursor:pointer;
+  transition:color .2s, border-color .2s;
+}
+.auth-tab.active{
+  color:var(--denim);
+  border-bottom-color:var(--denim);
+  background:var(--paper);
+}
+
+/* Card Body */
+.card-body{padding:28px 32px 32px;}
+@media(max-width:480px){.card-body{padding:20px 18px 24px;}}
+
+/* Form Panels */
+.auth-panel{display:none;}
+.auth-panel.active{display:block;}
+
+/* Fields */
+.field{margin-bottom:16px;}
+.field label{
+  display:block;
+  font-size:.8rem;
+  font-weight:700;
+  color:var(--ink-soft);
+  margin-bottom:6px;
+  font-family:var(--ff-mono);
+  text-transform:uppercase;
+  letter-spacing:.04em;
+}
+.field input{
+  width:100%;
+  padding:11px 14px;
+  border:2px solid var(--line);
+  border-radius:var(--radius-s);
+  background:var(--canvas);
+  color:var(--ink);
+  font-size:.95rem;
+  transition:border-color .2s, box-shadow .2s;
+}
+.field input:focus{
+  border-color:var(--denim);
+  box-shadow:0 0 0 3px rgba(43,59,104,.12);
+  outline:none;
+}
+[data-theme="dark"] .field input{
+  background:var(--canvas-deep);
+  border-color:var(--line);
+}
+[data-theme="dark"] .field input:focus{
+  border-color:#D4A843;
+  box-shadow:0 0 0 3px rgba(212,168,67,.15);
+}
+
+/* Password wrapper */
+.pass-wrap{position:relative;}
+.pass-wrap input{padding-left:42px;}
+.pass-toggle{
+  position:absolute;
+  left:12px;
+  top:50%;
+  transform:translateY(-50%);
+  background:none;
+  border:none;
+  cursor:pointer;
+  color:var(--ink-soft);
+  padding:4px;
+  display:flex;
+  align-items:center;
+}
+.pass-toggle svg{width:18px;height:18px;}
+
+/* Buttons */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  padding:13px 24px;border-radius:var(--radius-s);
+  font-weight:700;font-size:.95rem;
+  transition:transform .18s ease, box-shadow .18s ease, background .18s ease;
+  width:100%;cursor:pointer;border:none;
+}
+.btn-primary{background:var(--denim);color:#ECE5D3;box-shadow:var(--shadow-s);}
+.btn-primary:hover{background:var(--denim-deep);transform:translateY(-2px);box-shadow:var(--shadow-m);}
+.btn-primary:disabled{background:var(--line);color:var(--ink-soft);cursor:not-allowed;transform:none;box-shadow:none;}
+[data-theme="dark"] .btn-primary{color:#0D0F14;}
+
+/* Divider */
+.or-divider{
+  display:flex;align-items:center;gap:12px;
+  margin:20px 0;
+  font-family:var(--ff-mono);font-size:.68rem;
+  letter-spacing:.1em;color:var(--ink-soft);text-transform:uppercase;
+}
+.or-divider::before,.or-divider::after{content:'';flex:1;height:1px;background:var(--line);}
+
+/* Google btn wrap */
+.google-wrap{display:flex;justify-content:center;min-height:44px;}
+
+/* Error / Success msg */
+.auth-msg{
+  font-size:.82rem;
+  font-weight:700;
+  padding:10px 14px;
+  border-radius:var(--radius-s);
+  margin-bottom:14px;
+  display:none;
+}
+.auth-msg.show{display:block;}
+.auth-msg.err{background:#FDE8E5;color:var(--stamp);border:1px solid #f3b8b2;}
+.auth-msg.ok{background:#E0F0E8;color:var(--ok);border:1px solid #a8d9bc;}
+[data-theme="dark"] .auth-msg.err{background:rgba(224,92,74,.15);border-color:rgba(224,92,74,.3);}
+[data-theme="dark"] .auth-msg.ok{background:rgba(79,200,138,.12);border-color:rgba(79,200,138,.25);}
+
+/* Footer link */
+.card-footer-link{
+  text-align:center;
+  margin-top:20px;
+  font-size:.82rem;
+  color:var(--ink-soft);
+}
+.card-footer-link a{color:var(--denim);font-weight:700;cursor:pointer;}
+[data-theme="dark"] .card-footer-link a{color:#D4A843;}
+
+/* Dark mode toggle */
+.dark-toggle{
+  position:fixed;top:16px;left:16px;
+  width:40px;height:40px;
+  border-radius:50%;
+  background:var(--paper);
+  border:2px solid var(--line);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;
+  box-shadow:var(--shadow-s);
+  transition:background .2s, border-color .2s;
+  z-index:10;
+}
+.dark-toggle:hover{background:var(--canvas-deep);}
+.dark-toggle svg{width:18px;height:18px;}
+
+/* Toast */
+.toast{
+  position:fixed;bottom:24px;right:24px;
+  background:var(--ink);color:var(--paper);
+  padding:12px 18px;border-radius:var(--radius-m);
+  font-size:.88rem;font-weight:600;
+  box-shadow:var(--shadow-l);
+  transform:translateY(100px);opacity:0;
+  transition:transform .3s cubic-bezier(.34,1.56,.64,1), opacity .3s ease;
+  z-index:999;
+  border-right:4px solid var(--brass);
+}
+.toast.show{transform:translateY(0);opacity:1;}
+
+/* Transitions */
+*,*::before,*::after{
+  transition:background-color .3s ease, color .3s ease, border-color .3s ease;
+}
+.btn,.field input{
+  transition:background .2s, color .2s, border-color .2s, box-shadow .2s, transform .18s !important;
+}
+</style>
+</head>
+<body>
+
+<!-- Dark mode toggle -->
+<button class="dark-toggle" id="darkToggle" aria-label="تبديل الوضع الليلي" onclick="toggleDark()">
+  <svg id="darkIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+  <svg id="lightIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="display:none;"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+</button>
+
+<div class="page-wrap">
+  <div class="auth-card">
+
+    <!-- Header -->
+    <div class="card-header">
+      <div class="card-logo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l9-9h8v8l-9 9a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8z"/><circle cx="15.5" cy="8.5" r="1.2" fill="currentColor" stroke="none"/></svg>
+        MR STORE
+      </div>
+      <div class="card-tagline">EST. 2026 · EGYPT</div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tabLogin" onclick="switchTab('login')">تسجيل الدخول</button>
+      <button class="auth-tab" id="tabSignup" onclick="switchTab('signup')">إنشاء حساب</button>
+    </div>
+
+    <!-- Body -->
+    <div class="card-body">
+
+      <!-- ===== LOGIN PANEL ===== -->
+      <div class="auth-panel active" id="panelLogin">
+        <div class="auth-msg err" id="loginErr"></div>
+        <form id="loginForm" onsubmit="handleLogin(event)">
+          <div class="field">
+            <label for="loginEmail">البريد الإلكتروني</label>
+            <input type="email" id="loginEmail" placeholder="example@email.com" required autocomplete="email">
+          </div>
+          <div class="field">
+            <label for="loginPassword">كلمة المرور</label>
+            <div class="pass-wrap">
+              <input type="password" id="loginPassword" placeholder="••••••••" required autocomplete="current-password">
+              <button type="button" class="pass-toggle" onclick="togglePass('loginPassword', this)" aria-label="إظهار/إخفاء كلمة المرور">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary" id="loginBtn">دخول</button>
+        </form>
+
+        <div class="or-divider"><span>أو</span></div>
+        <div class="google-wrap" id="googleLoginBtn"></div>
+      </div>
+
+      <!-- ===== SIGNUP PANEL ===== -->
+      <div class="auth-panel" id="panelSignup">
+        <div class="auth-msg err" id="signupErr"></div>
+        <div class="auth-msg ok"  id="signupOk"></div>
+        <form id="signupForm" onsubmit="handleSignup(event)">
+          <div class="field">
+            <label for="signupName">الاسم</label>
+            <input type="text" id="signupName" placeholder="اسمك هيظهر للناس" required maxlength="30" autocomplete="name">
+          </div>
+          <div class="field">
+            <label for="signupEmail">البريد الإلكتروني</label>
+            <input type="email" id="signupEmail" placeholder="example@email.com" required autocomplete="email">
+          </div>
+          <div class="field">
+            <label for="signupPassword">كلمة المرور</label>
+            <div class="pass-wrap">
+              <input type="password" id="signupPassword" placeholder="6 أحرف على الأقل" required minlength="6" autocomplete="new-password">
+              <button type="button" class="pass-toggle" onclick="togglePass('signupPassword', this)" aria-label="إظهار/إخفاء كلمة المرور">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="field">
+            <label for="signupPassword2">تأكيد كلمة المرور</label>
+            <div class="pass-wrap">
+              <input type="password" id="signupPassword2" placeholder="أعد كتابة كلمة المرور" required autocomplete="new-password">
+              <button type="button" class="pass-toggle" onclick="togglePass('signupPassword2', this)" aria-label="إظهار/إخفاء كلمة المرور">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary" id="signupBtn">إنشاء الحساب</button>
+        </form>
+
+        <div class="or-divider"><span>أو</span></div>
+        <div class="google-wrap" id="googleSignupBtn"></div>
+      </div>
+
+    </div><!-- /card-body -->
+  </div><!-- /auth-card -->
+</div><!-- /page-wrap -->
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============ CONFIG ============ */
+const USER_AUTH_KEY   = 'mrstore_user_data';
+const GOOGLE_CLIENT_ID = '443646227114-vbstcio2leo5l5ene86mtmd9cv6djdln.apps.googleusercontent.com';
+const ADMIN_ALLOWED_EMAILS = ['mrstore010011@gmail.com', 'mohandalamary806@gmail.com'];
+
+/* ============ FIREBASE ============ */
+const firebaseConfig = {
+  apiKey: "AIzaSyBgg8RFKiWdLKvrZQChR3pdeyUvUn0CVvE",
+  authDomain: "mr-store-4b0c4.firebaseapp.com",
+  databaseURL: "https://mr-store-4b0c4-default-rtdb.firebaseio.com",
+  projectId: "mr-store-4b0c4",
+  storageBucket: "mr-store-4b0c4.firebasestorage.app",
+  messagingSenderId: "464716513632",
+  appId: "1:464716513632:web:2990b0563b817d84e0de05",
+  measurementId: "G-YQRWTNPE7J"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+/* ============ HELPERS ============ */
+function emailToKey(email) {
+  return email.replace(/\./g, '_').replace(/@/g, '__at__');
+}
+
+function hashPassword(pass) {
+  /* Hash بسيط — في production استخدم bcrypt أو Firebase Auth */
+  let hash = 0;
+  for (let i = 0; i < pass.length; i++) {
+    const chr = pass.charCodeAt(i);
+    hash = ((hash << 5) - hash) + chr;
+    hash |= 0;
+  }
+  return 'h_' + Math.abs(hash).toString(36) + '_' + pass.length;
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function showMsg(id, msg, type = 'err') {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.className = 'auth-msg ' + type + ' show';
+}
+
+function hideMsg(id) {
+  const el = document.getElementById(id);
+  el.className = 'auth-msg';
+}
+
+function setLoading(btnId, loading, text = '') {
+  const btn = document.getElementById(btnId);
+  btn.disabled = loading;
+  if (text) btn.textContent = loading ? text : btn.dataset.orig || btn.textContent;
+  if (!btn.dataset.orig && !loading) return;
+  if (loading && !btn.dataset.orig) btn.dataset.orig = btn.textContent;
+}
+
+function togglePass(inputId, btn) {
+  const inp = document.getElementById(inputId);
+  const isText = inp.type === 'text';
+  inp.type = isText ? 'password' : 'text';
+  btn.innerHTML = isText
+    ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>'
+    : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+}
+
+function goToStore() {
+  window.location.href = 'index.html';
+}
+
+/* ============ DARK MODE ============ */
+function applyDark(isDark) {
+  document.documentElement.setAttribute('data-theme', isDark ? 'dark' : '');
+  if (!isDark) document.documentElement.removeAttribute('data-theme');
+  document.getElementById('darkIcon').style.display  = isDark ? 'none' : '';
+  document.getElementById('lightIcon').style.display = isDark ? '' : 'none';
+}
+function toggleDark() {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  applyDark(!isDark);
+  localStorage.setItem('mrstore_dark_mode', (!isDark) ? '1' : '0');
+}
+(function(){
+  const saved = localStorage.getItem('mrstore_dark_mode');
+  const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  applyDark(saved !== null ? saved === '1' : prefersDark);
+})();
+
+/* ============ TAB SWITCH ============ */
+function switchTab(tab) {
+  document.getElementById('tabLogin').classList.toggle('active',  tab === 'login');
+  document.getElementById('tabSignup').classList.toggle('active', tab === 'signup');
+  document.getElementById('panelLogin').classList.toggle('active',  tab === 'login');
+  document.getElementById('panelSignup').classList.toggle('active', tab === 'signup');
+  hideMsg('loginErr');
+  hideMsg('signupErr');
+  hideMsg('signupOk');
+}
+
+/* ============ MANUAL LOGIN ============ */
+async function handleLogin(e) {
+  e.preventDefault();
+  hideMsg('loginErr');
+  const email    = document.getElementById('loginEmail').value.trim().toLowerCase();
+  const password = document.getElementById('loginPassword').value;
+
+  setLoading('loginBtn', true, 'جاري التحقق...');
+
+  try {
+    const key  = emailToKey(email);
+    const snap = await db.ref('users/' + key).once('value');
+
+    if (!snap.exists()) {
+      showMsg('loginErr', 'البريد الإلكتروني غير مسجل. أنشئ حساب جديد أولاً.');
+      setLoading('loginBtn', false);
+      return;
+    }
+
+    const userData = snap.val();
+    const passHash = hashPassword(password);
+
+    if (userData.passwordHash !== passHash) {
+      showMsg('loginErr', 'كلمة المرور غلط، جرّب تاني.');
+      setLoading('loginBtn', false);
+      return;
+    }
+
+    /* تسجيل الدخول ناجح */
+    const sessionData = {
+      name: userData.name,
+      email: email,
+      favorites: userData.favorites || [],
+      nameLastChanged: userData.nameLastChanged || null
+    };
+    localStorage.setItem(USER_AUTH_KEY, JSON.stringify(sessionData));
+    showToast('تم تسجيل الدخول بنجاح ✓');
+    setTimeout(goToStore, 800);
+
+  } catch (err) {
+    console.error(err);
+    showMsg('loginErr', 'حدث خطأ، تحقق من الاتصال وحاول مرة تانية.');
+    setLoading('loginBtn', false);
+  }
+}
+
+/* ============ MANUAL SIGNUP ============ */
+async function handleSignup(e) {
+  e.preventDefault();
+  hideMsg('signupErr');
+  hideMsg('signupOk');
+
+  const name  = document.getElementById('signupName').value.trim();
+  const email = document.getElementById('signupEmail').value.trim().toLowerCase();
+  const pass1 = document.getElementById('signupPassword').value;
+  const pass2 = document.getElementById('signupPassword2').value;
+
+  if (pass1 !== pass2) {
+    showMsg('signupErr', 'كلمتا المرور مش متطابقتين.');
+    return;
+  }
+  if (pass1.length < 6) {
+    showMsg('signupErr', 'كلمة المرور لازم تكون 6 أحرف على الأقل.');
+    return;
+  }
+  if (name.length < 2) {
+    showMsg('signupErr', 'الاسم لازم يكون حرفين على الأقل.');
+    return;
+  }
+
+  setLoading('signupBtn', true, 'جاري الإنشاء...');
+
+  try {
+    const key  = emailToKey(email);
+    const snap = await db.ref('users/' + key).once('value');
+
+    if (snap.exists()) {
+      showMsg('signupErr', 'البريد ده مسجل قبل كده، سجّل دخولك.');
+      setLoading('signupBtn', false);
+      return;
+    }
+
+    /* حفظ الحساب في Firebase */
+    const newUser = {
+      name: name,
+      email: email,
+      passwordHash: hashPassword(pass1),
+      favorites: [],
+      nameLastChanged: null,
+      createdAt: Date.now()
+    };
+    await db.ref('users/' + key).set(newUser);
+
+    /* تسجيل دخول تلقائي بعد الإنشاء */
+    const sessionData = {
+      name: name,
+      email: email,
+      favorites: [],
+      nameLastChanged: null
+    };
+    localStorage.setItem(USER_AUTH_KEY, JSON.stringify(sessionData));
+    showMsg('signupOk', 'تم إنشاء الحساب بنجاح! جاري الدخول للمتجر...', 'ok');
+    setTimeout(goToStore, 1200);
+
+  } catch (err) {
+    console.error(err);
+    showMsg('signupErr', 'حدث خطأ، تحقق من الاتصال وحاول مرة تانية.');
+    setLoading('signupBtn', false);
+  }
+}
+
+/* ============ GOOGLE SIGN-IN ============ */
+function handleCredentialResponse(response) {
+  try {
+    const payload = JSON.parse(atob(response.credential.split('.')[1]));
+    const email   = payload.email;
+    const name    = payload.name;
+    const key     = emailToKey(email);
+
+    /* جلب أو إنشاء بروفايل في Firebase */
+    db.ref('users/' + key).once('value').then(snap => {
+      let userData;
+      if (snap.exists()) {
+        userData = snap.val();
+      } else {
+        /* حساب جديد عبر Google */
+        userData = {
+          name: name,
+          email: email,
+          passwordHash: null,
+          favorites: [],
+          nameLastChanged: null,
+          createdAt: Date.now(),
+          provider: 'google'
+        };
+        db.ref('users/' + key).set(userData);
+      }
+
+      const sessionData = {
+        name: userData.name || name,
+        email: email,
+        favorites: userData.favorites || [],
+        nameLastChanged: userData.nameLastChanged || null
+      };
+      localStorage.setItem(USER_AUTH_KEY, JSON.stringify(sessionData));
+
+      /* لو admin يحفظ في sessionStorage كمان */
+      if (ADMIN_ALLOWED_EMAILS.includes(email)) {
+        sessionStorage.setItem('mrstore_admin_auth', '1');
+        localStorage.setItem('mrstore_admin_google_email', email);
+      }
+
+      showToast('تم تسجيل الدخول بنجاح ✓');
+      setTimeout(goToStore, 800);
+    });
+
+  } catch (err) {
+    console.error('Google Sign-In error:', err);
+    showToast('حدث خطأ في تسجيل الدخول بجوجل.');
+  }
+}
+
+/* تهيئة Google Sign-In */
+window.onGoogleLibraryLoad = function() {
+  google.accounts.id.initialize({
+    client_id: GOOGLE_CLIENT_ID,
+    callback: handleCredentialResponse,
+    auto_select: false,
+    cancel_on_tap_outside: true,
+  });
+
+  const renderBtn = (id) => {
+    const el = document.getElementById(id);
+    if (el) {
+      google.accounts.id.renderButton(el, {
+        theme: 'outline',
+        size: 'large',
+        locale: 'ar',
+        text: 'signin_with',
+        shape: 'rectangular',
+        width: 360
+      });
+    }
+  };
+
+  renderBtn('googleLoginBtn');
+  renderBtn('googleSignupBtn');
+};
+
+/* Fallback لو الـ callback ما اشتغلش */
+let _gRetry = 0;
+const _gTimer = setInterval(() => {
+  _gRetry++;
+  if (typeof google !== 'undefined' && google.accounts) {
+    clearInterval(_gTimer);
+    window.onGoogleLibraryLoad();
+  } else if (_gRetry > 50) {
+    clearInterval(_gTimer);
+    document.querySelectorAll('.google-wrap').forEach(el => {
+      el.innerHTML = '<p style="font-size:.78rem;color:var(--ink-soft);padding:6px 0;">تسجيل الدخول بجوجل غير متاح حالياً.</p>';
+    });
+  }
+}, 200);
+
+/* ============ REDIRECT IF ALREADY LOGGED IN ============ */
+(function() {
+  try {
+    const user = JSON.parse(localStorage.getItem(USER_AUTH_KEY));
+    if (user && user.name && user.email) {
+      window.location.replace('index.html');
+    }
+  } catch(e) {}
+})();
+</script>
+</body>
+</html>
