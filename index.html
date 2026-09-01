@@ -2549,6 +2549,19 @@ html { scroll-behavior: smooth; }
 </div>
 
 <script>
+/* ============ AUTH GUARD ============ */
+/* يتشغل فوراً — لو مفيش يوزر مسجل يحول لصفحة اللوجين */
+(function() {
+  try {
+    const user = JSON.parse(localStorage.getItem('mrstore_user_data'));
+    if (!user || !user.email || !user.name) {
+      window.location.replace('login.html');
+    }
+  } catch(e) {
+    window.location.replace('login.html');
+  }
+})();
+
 /* ============ CONFIG ============ */
 const STORE_WHATSAPP_NUMBER = "01027883297";
 const ADMIN_PASSWORD = "mrstore2026";
@@ -2824,14 +2837,12 @@ function handleUserLogout() {
 
   setUserData(null);
   localStorage.removeItem(ADMIN_EMAIL_KEY); sessionStorage.removeItem('mrstore_admin_auth');
-  updateAdminNavVisibility();
-  if (location.hash === '#admin') location.hash = '';
-  if(state.filter === 'favorites') applyFilter('all'); else renderProducts();
   // إعادة تهيئة Google sign-in بأمان
   if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
     google.accounts.id.disableAutoSelect();
   }
   showToast('تم تسجيل الخروج');
+  setTimeout(() => { window.location.replace('login.html'); }, 900);
 }
 
 /* ============ TOAST ENHANCED ============ */
