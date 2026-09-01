@@ -2787,7 +2787,13 @@ function startRealtimeSync() {
 
 /* ============ STATE ============ */
 const state = { cart: [], filter: "all", search: "", appliedCoupon: null, adminOrderFilter: "all", adminOrderSearch: "" };
-function money(n){ return n.toLocaleString('en-US') + ' ج.م'; }
+function money(amount) {
+    if (amount === undefined || amount === null) {
+        return "0 ج.م";
+    }
+    const validAmount = Number(amount) || 0;
+    return validAmount.toLocaleString() + ' ج.م';
+}
 
 /* ============ USER & ADMIN AUTH HELPERS ============ */
 function getUserData() { try { return JSON.parse(localStorage.getItem(USER_AUTH_KEY)); } catch(e) { return null; } }
