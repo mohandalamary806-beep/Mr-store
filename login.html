@@ -593,9 +593,21 @@ async function handleLogin(e){
       showMsg('loginErr','كلمة المرور غلط، جرّب تاني.');
       setLoading('loginBtn',false); return;
     }
+    /* جلب الاسم من userProfiles/ لو موجود عشان يكون الأحدث دايماً */
+    let finalName = userData.name;
+    let finalNameLastChanged = userData.nameLastChanged || null;
+    try {
+      const profileKey  = emailToKey(email);
+      const profileSnap = await db.ref('userProfiles/' + profileKey).once('value');
+      if (profileSnap.exists()) {
+        const profile = profileSnap.val();
+        if (profile.name)            finalName            = profile.name;
+        if (profile.nameLastChanged) finalNameLastChanged = profile.nameLastChanged;
+      }
+    } catch(e) {}
     localStorage.setItem(USER_AUTH_KEY, JSON.stringify({
-      name: userData.name, email: email,
-      favorites: userData.favorites||[], nameLastChanged: userData.nameLastChanged||null
+      name: finalName, email: email,
+      favorites: userData.favorites||[], nameLastChanged: finalNameLastChanged
     }));
     /* لو الإيميل ده admin — نفس صلاحيات Google login */
     if(ADMIN_ALLOWED_EMAILS.includes(email)){
