@@ -6,7 +6,7 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=0.8, maximum-scale=5.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
 <title>MR Store | متجرك لأحدث موضة رجالي — توصيل لكل انحاء مصر</title>
 <meta name="description" content="MR Store — تسوق أحدث صيحات الموضة الرجالي. جودة عالية، أسعار مناسبة، دفع عند الاستلام وتوصيل سريع لكل محافظات مصر.">
 <meta name="keywords" content="ملابس رجالي, موضة رجالي, تسوق اون لاين, مصر, MR Store, قمصان, جاكيت, بنطلون">
@@ -272,6 +272,29 @@ h1,h2,h3,h4{font-weight:inherit;}
 .menu-toggle{display:none;}
 /* زرار الطلبات — مخفي على الديسكتوب ظاهر على الموبايل */
 .orders-mobile-btn { display:none; }
+
+/* ===== ORDERS BADGE (نوتش الطلبات الجديدة) ===== */
+.orders-badge{
+  position:absolute;top:-1px;left:-1px;
+  background:var(--stamp);color:#fff;
+  font-family:var(--ff-mono);font-weight:700;font-size:.55rem;
+  min-width:16px;height:16px;border-radius:50%;
+  display:none;align-items:center;justify-content:center;
+  border:2px solid var(--canvas);
+  padding:0 2px;
+  animation:badgePop .3s cubic-bezier(.34,1.56,.64,1);
+}
+.orders-badge.show{ display:flex; }
+@keyframes badgePop{0%{transform:scale(0)}100%{transform:scale(1)}}
+/* على الـ nav link */
+.orders-nav-wrap{ position:relative; display:inline-flex; align-items:center; gap:6px; }
+.orders-nav-badge{
+  background:var(--stamp);color:#fff;
+  font-family:var(--ff-mono);font-size:.6rem;font-weight:700;
+  padding:1px 5px;border-radius:999px;
+  display:none;
+}
+.orders-nav-badge.show{ display:inline-flex; }
 @media (max-width:900px){
   .main-nav{display:none;}
   .menu-toggle{display:flex;}
@@ -1801,7 +1824,7 @@ html { scroll-behavior: smooth; }
       <a href="#top">الرئيسية</a>
       <a href="#products">المنتجات</a>
       <a href="#footer">تواصل معنا</a>
-      <a href="#" onclick="openMyOrdersModal(); return false;">الطلبات</a>
+      <span class="orders-nav-wrap"><a href="#" onclick="openMyOrdersModal(); return false;">الطلبات</a><span class="orders-nav-badge" id="ordersNavBadge"></span></span>
       <a href="#admin" class="admin-nav-link" id="adminNavLink">لوحة التحكم</a>
     </nav>
     <div class="header-actions">
@@ -1823,6 +1846,7 @@ html { scroll-behavior: smooth; }
       <!-- زرار الطلبات — يظهر على الموبايل بس -->
       <button class="icon-btn orders-mobile-btn" aria-label="طلباتي" onclick="openMyOrdersModal()" id="ordersToggle">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg>
+        <span class="orders-badge" id="ordersBadge"></span>
       </button>
       <button class="icon-btn" id="darkModeToggle" aria-label="تبديل الوضع الليلي" onclick="toggleDarkMode()" title="وضع ليلي / نهاري">
         <svg id="darkIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
@@ -2790,6 +2814,8 @@ function startRealtimeSync() {
     if (isAdminAuthed()) { renderAdminOrders(); updateAdminStats(); }
     /* تحديث modal الطلبات لو مفتوح */
     if (typeof window._renderMyOrders === 'function') window._renderMyOrders();
+    /* تحديث الـ badge */
+    updateOrdersBadge();
   });
 
   attachListener('flashSale', 'mrstore_flash_sale', data => {
@@ -2906,7 +2932,40 @@ function showToast(msg, type = 'default') {
   _toastTimer = setTimeout(() => toast.classList.remove('show'), 3200);
 }
 
-/* ============ ORDERS MANAGEMENT (Cross-Device) ============ */
+/* ============ ORDERS BADGE ============ */
+function updateOrdersBadge() {
+  const user = getUserData();
+  if (!user || !user.email) {
+    _setOrdersBadge(0);
+    return;
+  }
+  /* طلبات اليوزر الحالي اللي حالتها pending أو in_transit */
+  const myActive = ORDERS.filter(o =>
+    o.customerAuthId === user.email &&
+    (o.status === 'pending' || o.status === 'in_transit')
+  ).length;
+  _setOrdersBadge(myActive);
+}
+
+function _setOrdersBadge(count) {
+  /* زرار الموبايل */
+  const mob = document.getElementById('ordersBadge');
+  if (mob) {
+    mob.textContent = count > 9 ? '9+' : (count || '');
+    mob.classList.toggle('show', count > 0);
+  }
+  /* nav الديسكتوب */
+  const nav = document.getElementById('ordersNavBadge');
+  if (nav) {
+    nav.textContent = count > 9 ? '9+' : (count || '');
+    nav.classList.toggle('show', count > 0);
+  }
+}
+
+/* نستدعيها لما اليوزر يسجل دخول أو يعمل طلب */
+function _refreshOrdersBadgeAfterLogin() {
+  setTimeout(updateOrdersBadge, 800);
+}
 let ORDERS = [];
 const ORDERS_STORAGE_KEY = 'mrstore_orders_data';
 
@@ -3923,6 +3982,9 @@ checkoutForm.addEventListener('submit', async e=>{
   // إطلاق كونفيتي 🎉
   launchConfetti();
 
+  // تحديث badge الطلبات
+  setTimeout(updateOrdersBadge, 1000);
+
   // إفراغ سلة التسوق
   state.cart = [];
   state.appliedCoupon = null;
@@ -4721,6 +4783,7 @@ async function handleCredentialResponse(response) {
         showToast('تم تسجيل الدخول بنجاح ✓');
         renderProducts();
         attachUserProfileListener();
+        updateOrdersBadge();
         if (isFirstLogin) {
           setTimeout(() => openEditUsernameModal(true), 400);
         }
@@ -5000,6 +5063,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   /* 7. تشغيل الـ Realtime Listeners — بيحدّث كل حاجة أوتوماتيك */
   startRealtimeSync();
   renderRecentlyViewed();
+  updateOrdersBadge();
 
   /* 8. تهيئة Google Sign-In — بنفصلها عن DOMContentLoaded عشان async */
   initGoogleSignIn();
