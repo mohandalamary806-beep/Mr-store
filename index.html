@@ -1609,6 +1609,70 @@ body { animation: pageFadeIn .4s ease both; }
 
 
 
+/* ============ SETTINGS MODAL ============ */
+.settings-section { margin-bottom:4px; }
+.settings-label {
+  font-family:var(--ff-mono); font-size:.65rem; font-weight:700;
+  letter-spacing:.1em; text-transform:uppercase;
+  color:var(--ink-soft); margin-bottom:10px;
+}
+.settings-divider { height:1px; background:var(--line); margin:18px 0; }
+
+/* بطاقة اليوزر */
+.settings-user-card {
+  display:flex; align-items:center; gap:14px;
+  background:var(--canvas-deep); border-radius:var(--radius-m);
+  padding:14px 16px;
+}
+[data-theme="dark"] .settings-user-card { background:var(--canvas); }
+.settings-avatar {
+  width:46px; height:46px; border-radius:50%;
+  background:var(--denim); color:#ECE5D3;
+  font-family:var(--ff-mono); font-weight:700; font-size:1.2rem;
+  display:flex; align-items:center; justify-content:center;
+  flex-shrink:0;
+}
+[data-theme="dark"] .settings-avatar { color:#0D0F14; }
+.settings-user-info { min-width:0; }
+.settings-user-name { font-weight:700; font-size:.95rem; color:var(--ink); margin-bottom:3px; }
+.settings-user-email { font-size:.75rem; color:var(--ink-soft); font-family:var(--ff-mono); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+/* صف الاسم */
+.settings-row {
+  display:flex; align-items:center; justify-content:space-between;
+  background:var(--canvas-deep); border-radius:var(--radius-s);
+  padding:12px 14px;
+}
+[data-theme="dark"] .settings-row { background:var(--canvas); }
+.settings-row span { font-weight:700; font-size:.9rem; }
+.settings-action-btn {
+  font-family:var(--ff-mono); font-size:.72rem; font-weight:700;
+  color:var(--denim); background:none; border:none; cursor:pointer;
+  padding:4px 8px; border-radius:var(--radius-s);
+  transition:background .2s;
+}
+.settings-action-btn:hover { background:var(--canvas); }
+[data-theme="dark"] .settings-action-btn { color:#D4A843; }
+[data-theme="dark"] .settings-action-btn:hover { background:var(--canvas-deep); }
+.settings-name-note {
+  font-size:.78rem; color:var(--ink-soft);
+  margin-top:8px; line-height:1.5;
+}
+
+/* زرار الخروج */
+.settings-logout-btn {
+  width:100%; padding:13px 16px;
+  border-radius:var(--radius-s);
+  border:2px solid var(--stamp);
+  color:var(--stamp); background:none;
+  font-weight:700; font-size:.9rem;
+  display:flex; align-items:center; justify-content:center; gap:8px;
+  cursor:pointer;
+  transition:background .2s, color .2s;
+}
+.settings-logout-btn:hover { background:var(--stamp); color:#fff; }
+.settings-logout-btn svg { width:17px; height:17px; flex-shrink:0; }
+
 /* ============ WA FLOAT TOOLTIP ============ */
 .wa-float{position:fixed;}
 .wa-tooltip{
@@ -1845,8 +1909,9 @@ html { scroll-behavior: smooth; }
       </div>
       <div class="user-profile-wrap" id="userProfileWrap" style="display:none;">
         <span id="userNameDisplay"></span>
-        <button onclick="openEditUsernameModal(false)" style="background:none;border:none;cursor:pointer;font-size:.85rem;padding:2px 4px;color:var(--brass);" title="تعديل الاسم" aria-label="تعديل الاسم">✏️</button>
-        <button class="btn btn-outline btn-sm" onclick="handleUserLogout()">خروج</button>
+        <button class="icon-btn" onclick="openSettingsModal()" aria-label="الإعدادات" title="الإعدادات">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
       </div>
 
       <button class="icon-btn" id="searchToggle" aria-label="بحث" onclick="document.getElementById('searchInput').focus();document.getElementById('products').scrollIntoView({behavior:'smooth'});">
@@ -2455,6 +2520,64 @@ html { scroll-behavior: smooth; }
   <div class="modal-body" style="text-align:center; padding: 32px 20px;">
     <p style="margin-bottom: 22px; color: var(--ink-soft); font-size: 0.95rem;">سجّل دخولك بضغطة واحدة باستخدام حساب جوجل لتجربة تسوق أفضل وحفظ منتجاتك المفضلة والمشاركة في التقييمات.</p>
     <div class="google-signin-wrap" id="userGoogleSignInBtn" style="display:flex; justify-content:center;"></div>
+  </div>
+</div>
+
+<!-- ============ SETTINGS MODAL (الإعدادات) ============ -->
+<div class="overlay" id="settingsOverlay" onclick="closeSettingsModal()"></div>
+<div class="modal" id="settingsModal">
+  <div class="modal-head">
+    <h3>الإعدادات</h3>
+    <button class="icon-btn" onclick="closeSettingsModal()" aria-label="إغلاق">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>
+    </button>
+  </div>
+  <div class="modal-body">
+
+    <!-- معلومات الحساب -->
+    <div class="settings-section">
+      <div class="settings-label">الحساب</div>
+      <div class="settings-user-card">
+        <div class="settings-avatar" id="settingsAvatar">م</div>
+        <div class="settings-user-info">
+          <div class="settings-user-name" id="settingsUserName">—</div>
+          <div class="settings-user-email" id="settingsUserEmail">—</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-divider"></div>
+
+    <!-- تغيير الاسم -->
+    <div class="settings-section">
+      <div class="settings-label">الاسم الظاهر</div>
+      <div class="settings-row" id="settingsNameRow">
+        <span id="settingsCurrentName">—</span>
+        <button class="settings-action-btn" id="settingsChangeNameBtn" onclick="openSettingsNameEdit()">تغيير</button>
+      </div>
+      <!-- فورم تغيير الاسم (مخفي بالبداية) -->
+      <div id="settingsNameForm" style="display:none; margin-top:12px;">
+        <div class="field" style="margin-bottom:10px;">
+          <input type="text" id="settingsNameInput" placeholder="أدخل الاسم الجديد..." maxlength="30">
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-primary btn-sm" onclick="saveSettingsName()" id="settingsSaveNameBtn">حفظ</button>
+          <button class="btn btn-outline btn-sm" onclick="closeSettingsNameEdit()">إلغاء</button>
+        </div>
+        <div class="settings-name-note" id="settingsNameNote"></div>
+      </div>
+    </div>
+
+    <div class="settings-divider"></div>
+
+    <!-- تسجيل الخروج -->
+    <div class="settings-section">
+      <button class="settings-logout-btn" onclick="settingsLogout()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        تسجيل الخروج
+      </button>
+    </div>
+
   </div>
 </div>
 
@@ -3093,6 +3216,121 @@ async function openMyOrdersModal() {
 function closeMyOrdersModal() {
   document.getElementById('myOrdersModal').classList.remove('open');
   document.getElementById('myOrdersOverlay').classList.remove('open');
+}
+
+/* ============ SETTINGS MODAL ============ */
+function openSettingsModal() {
+  const user = getUserData();
+  if (!user) return;
+
+  /* تعبئة بيانات اليوزر */
+  const name  = user.name  || '—';
+  const email = user.email || '—';
+  const initial = name.charAt(0).toUpperCase();
+
+  document.getElementById('settingsAvatar').textContent    = initial;
+  document.getElementById('settingsUserName').textContent  = name;
+  document.getElementById('settingsUserEmail').textContent = email;
+  document.getElementById('settingsCurrentName').textContent = name;
+
+  /* تحقق من إمكانية تغيير الاسم */
+  const canChange = canChangeName(user);
+  const changeBtn = document.getElementById('settingsChangeNameBtn');
+  if (changeBtn) {
+    if (canChange) {
+      changeBtn.disabled = false;
+      changeBtn.textContent = 'تغيير';
+      changeBtn.style.opacity = '1';
+    } else {
+      const days = daysUntilNextChange(user);
+      changeBtn.disabled = true;
+      changeBtn.textContent = `بعد ${days} يوم`;
+      changeBtn.style.opacity = '.5';
+    }
+  }
+
+  /* إخفاء فورم الاسم */
+  closeSettingsNameEdit();
+
+  document.getElementById('settingsModal').classList.add('open');
+  document.getElementById('settingsOverlay').classList.add('open');
+}
+
+function closeSettingsModal() {
+  document.getElementById('settingsModal').classList.remove('open');
+  document.getElementById('settingsOverlay').classList.remove('open');
+}
+
+function openSettingsNameEdit() {
+  const user = getUserData();
+  if (!user || !canChangeName(user)) return;
+  const inp = document.getElementById('settingsNameInput');
+  inp.value = user.name || '';
+  document.getElementById('settingsNameForm').style.display = 'block';
+  document.getElementById('settingsChangeNameBtn').style.display = 'none';
+  document.getElementById('settingsNameNote').textContent = '';
+  inp.focus();
+}
+
+function closeSettingsNameEdit() {
+  document.getElementById('settingsNameForm').style.display = 'none';
+  const changeBtn = document.getElementById('settingsChangeNameBtn');
+  if (changeBtn) changeBtn.style.display = '';
+}
+
+async function saveSettingsName() {
+  const user = getUserData();
+  if (!user) return;
+
+  const newName = document.getElementById('settingsNameInput').value.trim();
+  if (!newName || newName.length < 2) {
+    document.getElementById('settingsNameNote').textContent = 'الاسم لازم يكون حرفين على الأقل.';
+    return;
+  }
+  if (!canChangeName(user)) {
+    document.getElementById('settingsNameNote').textContent = `مش قادر تغير اسمك دلوقتي.`;
+    return;
+  }
+
+  const saveBtn = document.getElementById('settingsSaveNameBtn');
+  saveBtn.disabled = true;
+  saveBtn.textContent = 'جاري الحفظ...';
+
+  const normalizedNew = newName.toLowerCase();
+  const normalizedOld = (user.name || '').toLowerCase();
+
+  const takenNames = await loadTakenNames();
+  if (normalizedNew !== normalizedOld && takenNames[normalizedNew] && takenNames[normalizedNew] !== user.email) {
+    document.getElementById('settingsNameNote').textContent = 'الاسم ده محجوز، جرّب اسم تاني.';
+    saveBtn.disabled = false;
+    saveBtn.textContent = 'حفظ';
+    return;
+  }
+
+  /* تحرير القديم وحجز الجديد */
+  if (normalizedOld && takenNames[normalizedOld] === user.email) delete takenNames[normalizedOld];
+  takenNames[normalizedNew] = user.email;
+  await saveTakenNames(takenNames);
+
+  const nameLastChanged = new Date().toISOString();
+  await saveUserProfile(user.email, { name: newName, nameLastChanged });
+  setUserData({ ...user, name: newName, nameLastChanged });
+
+  /* تحديث الـ UI */
+  document.getElementById('settingsCurrentName').textContent = newName;
+  document.getElementById('settingsUserName').textContent    = newName;
+  document.getElementById('settingsAvatar').textContent      = newName.charAt(0).toUpperCase();
+  closeSettingsNameEdit();
+  showToast('تم تغيير الاسم بنجاح ✓');
+  renderProducts();
+
+  saveBtn.disabled = false;
+  saveBtn.textContent = 'حفظ';
+}
+
+function settingsLogout() {
+  closeSettingsModal();
+  handleUserLogout();
 }
 
 // 5. إلغاء الطلب من طرف العميل (pending فقط)
