@@ -3382,12 +3382,12 @@ function productCardHTML(p){
     adminControlsHTML = `
     <div style="margin-top:12px; padding-top:10px; border-top:1px dashed var(--line); display:flex; gap:6px; flex-wrap:wrap;" onclick="event.stopPropagation()">
       <button class="btn btn-sm" onclick="openEditProductModal(${p.id})" style="font-size:0.75rem; border:1px solid var(--denim); padding:6px; flex:1;">تعديل ✏️</button>
-      <button class="btn btn-sm ${isActive ? 'btn-outline' : 'btn-primary'}" data-action="toggle-active" data-id="${p.id}" style="font-size:0.75rem; flex:1; padding:6px;">
+      <button class="btn btn-sm ${isActive ? 'btn-outline' : 'btn-primary'}" onclick="event.stopPropagation(); toggleProductActive(${p.id})" style="font-size:0.75rem; flex:1; padding:6px;">
         ${isActive ? 'توقيف ⏸️' : 'تفعيل ▶️'}
       </button>
       <button class="btn btn-sm" onclick="moveProductUp(${p.id})" style="font-size:0.75rem; border:1px solid var(--ink); padding:6px;">⬆️</button>
       <button class="btn btn-sm" onclick="moveProductDown(${p.id})" style="font-size:0.75rem; border:1px solid var(--ink); padding:6px;">⬇️</button>
-      <button class="btn btn-sm" data-action="delete-prod" data-id="${p.id}" style="font-size:0.75rem; color:var(--stamp); border:1px solid var(--stamp); padding:6px; width:100%;">حذف 🗑️</button>
+      <button class="btn btn-sm" onclick="event.stopPropagation(); deleteProduct(${p.id})" style="font-size:0.75rem; color:var(--stamp); border:1px solid var(--stamp); padding:6px; width:100%;">حذف 🗑️</button>
     </div>`;
   }
 
