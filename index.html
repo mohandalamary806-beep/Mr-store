@@ -250,7 +250,7 @@ h1,h2,h3,h4{font-weight:inherit;}
 /* ============ HEADER ============ */
 .site-header{position:sticky;top:0;z-index:60;background:var(--canvas);border-bottom:2px dashed var(--line);}
 .header-inner{display:flex;align-items:center;justify-content:space-between;height:78px;gap:16px;}
-.logo{display:flex;align-items:center;gap:10px;font-family:var(--ff-mono);font-weight:700;font-size:1.2rem;letter-spacing:.05em;}
+.logo{display:flex;align-items:center;gap:10px;font-family:var(--ff-mono);font-weight:700;font-size:1.2rem;letter-spacing:.05em;flex-shrink:0;}
 .logo svg{width:26px;height:26px;color:var(--denim);flex-shrink:0;}
 .main-nav{display:flex;gap:30px;}
 .main-nav a{font-size:.95rem;font-weight:500;color:var(--ink-soft);transition:color .2s;padding:6px 0;}
@@ -276,6 +276,12 @@ h1,h2,h3,h4{font-weight:inherit;}
 }
 @media (max-width:600px){
   .user-auth-wrap .btn-sm{padding:6px 10px;font-size:.75rem;}
+  /* ضمان ظهور كل عناصر الهيدر على الموبايل */
+  .header-actions{display:flex !important;align-items:center;gap:3px;flex-shrink:0;}
+  #cartToggle{display:flex !important;}
+  #menuOpenBtn{display:flex !important;}
+  #darkModeToggle{display:flex !important;}
+  #searchToggle{display:none;}
 }
 
 /* Mobile menu overlay */
@@ -3370,7 +3376,7 @@ function productCardHTML(p){
 
   let buyBtnHTML = '';
   if (isActive && stockQty > 0) {
-    buyBtnHTML = `<button class="btn-add" data-action="add" data-id="${p.id}" onclick="event.stopPropagation()">أضف للعربة</button>`;
+    buyBtnHTML = `<button class="btn-add" onclick="event.stopPropagation(); addToCart(${p.id}, this)">أضف للعربة</button>`;
   } else if (!isActive) {
     buyBtnHTML = `<div class="out-of-stock-badge">المنتج غير متاح حالياً ⏸️</div>`;
   } else {
@@ -3406,7 +3412,7 @@ function productCardHTML(p){
         <h3 class="product-name">${p.name}</h3>
         <div class="product-price-row">
           <div class="price-wrap"><span class="product-price">${money(p.price)}</span>${oldPrice}</div>
-          <button class="${heartClass}" data-action="like" data-id="${p.id}" aria-label="أضف للمفضلة" onclick="event.stopPropagation()">
+          <button class="${heartClass}" onclick="event.stopPropagation(); handleLikeAction(${p.id})" aria-label="أضف للمفضلة" data-action="like" data-id="${p.id}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
             <span>${likeCount}</span>
           </button>
