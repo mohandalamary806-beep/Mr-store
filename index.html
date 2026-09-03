@@ -4329,7 +4329,6 @@ function openProductDetail(productId) {
     { label:'الخامة', val:p.material },
     { label:'بلد المنشأ', val:p.origin },
     { label:'تعليمات العناية', val:p.care },
-    { label:'الكود', val:`#${String(productId).slice(-6)}` },
   ].filter(d => d.val);
   detailsGrid.innerHTML = details.map(d => `
     <div class="pd-detail-item">
