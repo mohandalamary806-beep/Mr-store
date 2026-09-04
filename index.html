@@ -1684,48 +1684,6 @@ body { animation: pageFadeIn .4s ease both; }
 }
 .sr-delete-btn:hover { opacity:1; }
 
-/* أزرار المستخدم (تعديل / حذف) */
-.sr-user-actions {
-  display:flex; gap:6px; margin-top:10px;
-}
-.sr-edit-btn, .sr-user-del-btn {
-  font-size:.72rem; font-weight:700; font-family:var(--ff-mono);
-  padding:4px 10px; border-radius:var(--radius-s);
-  cursor:pointer; transition:background .2s, color .2s;
-  border:1.5px solid var(--line); background:none; color:var(--ink-soft);
-}
-.sr-edit-btn:hover { border-color:var(--denim); color:var(--denim); }
-.sr-user-del-btn:hover { border-color:var(--stamp); color:var(--stamp); }
-[data-theme="dark"] .sr-edit-btn:hover  { border-color:#D4A843; color:#D4A843; }
-[data-theme="dark"] .sr-user-del-btn:hover { border-color:#E05C4A; color:#E05C4A; }
-
-/* فورم التعديل inline */
-.sr-edit-form {
-  margin-top:10px; display:none;
-}
-.sr-edit-form.open { display:block; }
-.sr-edit-picker {
-  display:flex; gap:4px; margin-bottom:8px; cursor:pointer;
-}
-.sr-edit-picker .sr-pick-star {
-  font-size:1.6rem; color:var(--line);
-  transition:color .15s, transform .15s cubic-bezier(.34,1.56,.64,1);
-  cursor:pointer; user-select:none;
-}
-.sr-edit-picker .sr-pick-star.active,
-.sr-edit-picker .sr-pick-star.hover { color:#F5A623; transform:scale(1.2); }
-.sr-edit-textarea {
-  width:100%; border:2px solid var(--line);
-  border-radius:var(--radius-s); padding:10px 12px;
-  font-size:.88rem; background:var(--canvas);
-  color:var(--ink); resize:vertical; min-height:70px;
-  font-family:var(--ff-body);
-  transition:border-color .2s;
-}
-.sr-edit-textarea:focus { border-color:var(--denim); outline:none; }
-[data-theme="dark"] .sr-edit-textarea { background:var(--canvas-deep); }
-.sr-edit-actions { display:flex; gap:8px; margin-top:8px; }
-
 /* empty state */
 .sr-empty {
   text-align:center; padding:48px 20px;
@@ -2880,8 +2838,8 @@ html { scroll-behavior: smooth; }
 
     <div class="settings-divider"></div>
 
-    <!-- اختيار الإطار — يظهر فقط لصاحب الموقع -->
-    <div class="settings-section" id="settingsFrameSection" style="display:none;">
+    <!-- اختيار الإطار -->
+    <div class="settings-section" id="settingsFrameSection">
       <div class="settings-label">إطار الصورة</div>
       <div class="frame-picker" id="framePicker"></div>
     </div>
@@ -3177,6 +3135,14 @@ function saveDataStore(path, storageKey, data) {
   /* نرجع resolved promise عشان أي await قديم يشتغل بدون مشاكل */
   return Promise.resolve();
 }
+
+/* ============ REALTIME LISTENERS ============ */
+/*
+  بدل ما نـ fetch في كل مرة، بنستخدم .on('value') —
+  Firebase بيبعت أي تغيير تلقائي والصفحة بتتحدث فوراً.
+  كل listener بنحفظه عشان نقدر نوقفه لو محتاجين.
+*/
+const _listeners = {};
 
 function attachListener(path, storageKey, onUpdate) {
   if (!useFirebase) return;
@@ -3676,12 +3642,11 @@ function _renderFramePicker(user) {
   const section = document.getElementById('settingsFrameSection');
   if (!picker) return;
 
-  /* غير صاحب الموقع — إخفاء القسم كامل */
-  if (!OWNER_EMAILS.includes((user.email||'').toLowerCase())) {
+  /* صاحب الموقع — مفيش اختيار، إطاره ثابت */
+  if (OWNER_EMAILS.includes((user.email||'').toLowerCase())) {
     if (section) section.style.display = 'none';
     return;
   }
-  /* صاحب الموقع — إظهار القسم */
   if (section) section.style.display = '';
 
   const currentFrame = user.frame || 'none';
@@ -5508,9 +5473,6 @@ async function handleCredentialResponse(response) {
     const savedNameLastChanged = (savedProfile && savedProfile.nameLastChanged) || (localData && localData.nameLastChanged) || null;
     // المفضلة: Firebase أولاً ثم localStorage
     const savedFavorites = (savedProfile && savedProfile.favorites) || (localData && localData.favorites) || [];
-    // الإطار والصورة من Firebase
-    const savedFrame   = (savedProfile && savedProfile.frame)   || (localData && localData.frame)   || getFrameType(email);
-    const savedPicture = (savedProfile && savedProfile.picture) || (localData && localData.picture) || '';
     const isFirstLogin = !savedNameLastChanged;
 
     // جلب الكارت المحفوظ من Firebase
@@ -5522,9 +5484,7 @@ async function handleCredentialResponse(response) {
         name: savedName,
         email: email,
         favorites: savedFavorites,
-        nameLastChanged: savedNameLastChanged,
-        frame: savedFrame,
-        picture: savedPicture
+        nameLastChanged: savedNameLastChanged
       });
       // استعادة الكارت
       if (savedCart && savedCart.length > 0) {
@@ -5554,9 +5514,7 @@ async function handleCredentialResponse(response) {
           name: savedName,
           email: email,
           favorites: savedFavorites,
-          nameLastChanged: savedNameLastChanged,
-          frame: savedFrame,
-          picture: savedPicture
+          nameLastChanged: savedNameLastChanged
         });
         // استعادة الكارت
         if (savedCart && savedCart.length > 0) {
@@ -5955,15 +5913,8 @@ function _srCardHTML(r) {
   const user      = { name: r.userName, picture: r.userPic||'', frame: r.userFrame||getFrameType(r.userEmail||''), email: r.userEmail||'' };
   const isOwner   = OWNER_EMAILS.includes((r.userEmail||'').toLowerCase());
   const ownerTag  = isOwner ? `<span class="sr-owner-tag">صاحب الموقع</span>` : '';
-  const currentUser = getUserData();
-  const isMyReview  = currentUser && currentUser.email && r.userEmail === currentUser.email;
-  const adminDel    = isAdminAuthed() && !isMyReview
+  const adminDel  = isAdminAuthed()
     ? `<button class="sr-delete-btn" onclick="deleteSiteReview('${r.id}')">حذف</button>` : '';
-  const userActions = isMyReview ? `
-    <div class="sr-user-actions">
-      <button class="sr-edit-btn"     onclick="openSrEdit('${r.id}')">تعديل ✏️</button>
-      <button class="sr-user-del-btn" onclick="deleteMySiteReview('${r.id}')">حذف 🗑️</button>
-    </div>` : '';
   const date      = r.date ? new Date(r.date).toLocaleDateString('ar-EG', { year:'numeric', month:'long', day:'numeric' }) : '';
   const stars     = '★'.repeat(r.rating) + '☆'.repeat(5 - r.rating);
 
@@ -5976,24 +5927,8 @@ function _srCardHTML(r) {
         <div class="sr-card-date">${date}</div>
       </div>
     </div>
-    <div class="sr-card-stars" id="srStars-${r.id}">${stars}</div>
-    <div class="sr-card-text"  id="srText-${r.id}">${r.text}</div>
-    ${userActions}
-    <!-- فورم التعديل inline -->
-    <div class="sr-edit-form" id="srEditForm-${r.id}">
-      <div class="sr-edit-picker" id="srEditPicker-${r.id}">
-        <span class="sr-pick-star" data-val="1">★</span>
-        <span class="sr-pick-star" data-val="2">★</span>
-        <span class="sr-pick-star" data-val="3">★</span>
-        <span class="sr-pick-star" data-val="4">★</span>
-        <span class="sr-pick-star" data-val="5">★</span>
-      </div>
-      <textarea class="sr-edit-textarea" id="srEditText-${r.id}" maxlength="400">${r.text}</textarea>
-      <div class="sr-edit-actions">
-        <button class="btn btn-primary btn-sm" onclick="saveSrEdit('${r.id}', ${r.rating})">حفظ</button>
-        <button class="btn btn-outline btn-sm" onclick="closeSrEdit('${r.id}')">إلغاء</button>
-      </div>
-    </div>
+    <div class="sr-card-stars">${stars}</div>
+    <div class="sr-card-text">${r.text}</div>
   </div>`;
 }
 
@@ -6085,89 +6020,6 @@ async function deleteSiteReview(id) {
   _renderSrSummary(_siteReviews);
   _renderSrList();
   showToast('تم حذف التعليق ✓');
-}
-
-/* حذف تعليق اليوزر نفسه */
-async function deleteMySiteReview(id) {
-  if (!confirm('هل تريد حذف تعليقك نهائياً؟')) return;
-  if (useFirebase) {
-    await firebase.database().ref(SITE_REVIEWS_KEY + '/' + id).remove()
-      .catch(e => console.warn('delete my review failed:', e));
-  }
-  showToast('تم حذف تعليقك ✓');
-  /* الـ listener هيحدّث القائمة تلقائياً */
-}
-
-/* فتح فورم التعديل */
-let _srEditRating = {};
-function openSrEdit(id) {
-  const rev = _siteReviews.find(r => r.id === id);
-  if (!rev) return;
-  const form = document.getElementById('srEditForm-' + id);
-  if (!form) return;
-
-  /* إغلاق أي فورم تعديل مفتوح تاني */
-  document.querySelectorAll('.sr-edit-form.open').forEach(f => {
-    if (f.id !== 'srEditForm-' + id) f.classList.remove('open');
-  });
-
-  _srEditRating[id] = rev.rating;
-  form.classList.add('open');
-
-  /* تهيئة الـ star picker للتعديل */
-  const picker = document.querySelectorAll('#srEditPicker-' + id + ' .sr-pick-star');
-  picker.forEach(s => {
-    s.classList.toggle('active', Number(s.dataset.val) <= rev.rating);
-    s.addEventListener('mouseenter', () => {
-      const v = Number(s.dataset.val);
-      picker.forEach(x => x.classList.toggle('hover', Number(x.dataset.val) <= v));
-    });
-    s.addEventListener('mouseleave', () => {
-      picker.forEach(x => x.classList.remove('hover'));
-      picker.forEach(x => x.classList.toggle('active', Number(x.dataset.val) <= _srEditRating[id]));
-    });
-    s.addEventListener('click', () => {
-      _srEditRating[id] = Number(s.dataset.val);
-      picker.forEach(x => x.classList.toggle('active', Number(x.dataset.val) <= _srEditRating[id]));
-    });
-  });
-
-  /* scroll للكارت */
-  const card = document.getElementById('srCard-' + id);
-  if (card) card.scrollIntoView({ behavior:'smooth', block:'nearest' });
-}
-
-function closeSrEdit(id) {
-  const form = document.getElementById('srEditForm-' + id);
-  if (form) form.classList.remove('open');
-}
-
-async function saveSrEdit(id, oldRating) {
-  const user = getUserData();
-  if (!user) return;
-
-  const newText   = (document.getElementById('srEditText-' + id).value || '').trim();
-  const newRating = _srEditRating[id] || oldRating;
-
-  if (newText.length < 3) { showToast('اكتب تعليقاً مختصراً على الأقل ✕'); return; }
-
-  const updates = {
-    text:      newText,
-    rating:    newRating,
-    editedAt:  new Date().toISOString(),
-    /* تحديث الإطار والصورة بالأحدث */
-    userPic:   user.picture || '',
-    userFrame: user.frame   || getFrameType(user.email || '')
-  };
-
-  if (useFirebase) {
-    await firebase.database().ref(SITE_REVIEWS_KEY + '/' + id).update(updates)
-      .catch(e => console.warn('edit review failed:', e));
-  }
-
-  closeSrEdit(id);
-  showToast('تم تعديل تعليقك ✓');
-  /* الـ listener هيحدّث الـ UI تلقائياً */
 }
 
 /* تحميل من Firebase */
