@@ -5855,7 +5855,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   /* تهيئة قسم تعليقات الموقع */
   _initSrPicker();
   _attachSiteReviewsListener();
-  loadSiteReviews();
 
   /* 8. تهيئة Google Sign-In — بنفصلها عن DOMContentLoaded عشان async */
   initGoogleSignIn();
@@ -5990,15 +5989,18 @@ async function submitSiteReview() {
       await firebase.database().ref(SITE_REVIEWS_KEY + '/' + rev.id).set(rev);
     } catch(e) {
       console.warn('siteReview save failed:', e);
+      showToast('حدث خطأ أثناء الحفظ ✕');
+      btn.disabled = false; btn.textContent = 'إرسال التقييم';
+      return;
     }
+  } else {
+    /* بدون Firebase — أضف يدوياً */
+    _siteReviews.unshift(rev);
+    _renderSrSummary(_siteReviews);
+    _renderSrList();
   }
 
-  /* تحديث الـ UI */
-  _siteReviews.unshift(rev);
-  _renderSrSummary(_siteReviews);
-  _renderSrList();
-
-  /* reset */
+  /* reset — الـ listener هيحدّث الـ UI تلقائياً */
   document.getElementById('srTextarea').value = '';
   _srSelected = 0;
   document.querySelectorAll('.sr-pick-star').forEach(s => s.classList.remove('active','hover'));
@@ -6035,13 +6037,26 @@ async function loadSiteReviews() {
   _renderSrList();
 }
 
-/* listener realtime */
+/* listener realtime — المصدر الوحيد للبيانات */
 function _attachSiteReviewsListener() {
-  if (!useFirebase) return;
+  if (!useFirebase) {
+    _renderSrSummary([]);
+    _renderSrList();
+    return;
+  }
   firebase.database().ref(SITE_REVIEWS_KEY).on('value', snap => {
-    if (!snap.exists()) { _siteReviews = []; }
-    else _siteReviews = Object.values(snap.val()).sort((a,b) => (b.date||0) > (a.date||0) ? 1 : -1);
+    if (!snap.exists()) {
+      _siteReviews = [];
+    } else {
+      _siteReviews = Object.values(snap.val())
+        .filter(r => r && r.id && r.userName)
+        .sort((a, b) => (b.date || 0) > (a.date || 0) ? 1 : -1);
+    }
     _renderSrSummary(_siteReviews);
+    _renderSrList();
+  }, err => {
+    console.warn('siteReviews listener error:', err);
+    _renderSrSummary([]);
     _renderSrList();
   });
 }
