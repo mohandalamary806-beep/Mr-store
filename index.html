@@ -475,13 +475,32 @@ h1,h2,h3,h4{font-weight:inherit;}
 .product-price{font-weight:800;font-size:1.15rem;}
 .product-old{font-size:.82rem;color:var(--ink-soft);text-decoration:line-through;}
 .btn-add{
-  width:100%;padding:11px;border-radius:var(--radius-s);border:2px solid var(--ink);
-  font-weight:700;font-size:.85rem;transition:background .2s,color .2s;
+  width:100%;padding:12px;border-radius:var(--radius-m);
+  border:2px solid var(--ink);
+  font-weight:700;font-size:.85rem;letter-spacing:.02em;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  position:relative;overflow:hidden;
+  transition:background .22s ease,color .22s ease,transform .2s cubic-bezier(.34,1.56,.64,1),box-shadow .2s ease,border-color .2s ease;
 }
-.btn-add:hover{background:var(--ink);color:var(--paper);}
+.btn-add::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(255,255,255,.12) 0%,transparent 55%);
+  opacity:0;transition:opacity .2s ease;pointer-events:none;
+}
+.btn-add:hover{
+  background:var(--ink);color:var(--paper);
+  transform:translateY(-2px);
+  box-shadow:0 6px 18px rgba(34,31,26,.18);
+}
+.btn-add:hover::before{opacity:1;}
+.btn-add:active{transform:scale(.97) translateY(0);box-shadow:none;}
+[data-theme="dark"] .btn-add{border-color:#D4A843;color:#D4A843;}
+[data-theme="dark"] .btn-add:hover{background:#D4A843;color:#0D0F14;border-color:#D4A843;}
 .out-of-stock-badge{
-  width:100%;padding:11px;border-radius:var(--radius-s);background:var(--canvas-deep);
-  color:var(--stamp);font-weight:700;font-size:.85rem;text-align:center;border:1px dashed var(--stamp);
+  width:100%;padding:11px;border-radius:var(--radius-m);background:var(--canvas-deep);
+  color:var(--stamp);font-weight:700;font-size:.85rem;text-align:center;
+  border:1.5px dashed var(--stamp);letter-spacing:.02em;
+  opacity:.8;
 }
 /* ============ SHARE BUTTON ============ */
 .share-wrap { position:relative; margin-top:8px; }
@@ -894,37 +913,180 @@ h1,h2,h3,h4{font-weight:inherit;}
 .order-items div{display:flex;justify-content:space-between;font-size:.86rem;padding:4px 0;color:var(--ink-soft);}
 .order-total-row{display:flex;justify-content:space-between;align-items:baseline;font-weight:700;padding-top:12px;border-top:2px dashed var(--line);margin-bottom:18px;}
 .order-total-row span:last-child{font-family:var(--ff-mono);color:var(--brass);font-size:1.1rem;}
-.order-actions{display:flex;gap:10px;flex-wrap:wrap;}
-.order-actions button{padding:9px 18px;border-radius:var(--radius-s);font-size:.82rem;font-weight:700;transition:background .2s,color .2s;}
-.btn-mark{background:var(--denim);color:var(--paper);}
-.btn-mark:hover{background:var(--denim-deep);}
-.btn-undo{border:2px solid var(--ink);}
-.btn-undo:hover{background:var(--ink);color:var(--paper);}
-.btn-delete{color:var(--stamp);margin-inline-start:auto;}
-.btn-delete:hover{text-decoration:underline;}
-.btn-wa{
-  background:#25D366;color:#fff;
-  display:inline-flex;align-items:center;gap:6px;
-  padding:9px 14px;border-radius:var(--radius-s);
-  font-size:.82rem;font-weight:700;
-  transition:background .2s, transform .18s cubic-bezier(.34,1.56,.64,1);
+.order-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+.order-actions button{
+  padding:9px 16px;border-radius:var(--radius-m);font-size:.82rem;font-weight:700;
+  transition:transform .2s cubic-bezier(.34,1.56,.64,1),box-shadow .2s ease,background .2s ease,color .2s ease;
+  display:inline-flex;align-items:center;gap:5px;
+  position:relative;overflow:hidden;
 }
-.btn-wa:hover{background:#1DA851;transform:scale(1.04);}
+.order-actions button::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(255,255,255,.13) 0%,transparent 55%);
+  opacity:0;transition:opacity .18s ease;pointer-events:none;
+}
+.order-actions button:hover::before{opacity:1;}
+.order-actions button:active{transform:scale(.96)!important;box-shadow:none!important;}
+.btn-mark{
+  background:linear-gradient(150deg,var(--denim) 0%,var(--denim-deep) 100%);
+  color:var(--paper);
+  box-shadow:0 3px 10px rgba(43,59,104,.28);
+}
+.btn-mark:hover{
+  transform:translateY(-2px);
+  box-shadow:0 6px 18px rgba(43,59,104,.38);
+}
+[data-theme="dark"] .btn-mark{
+  background:linear-gradient(150deg,#D4A843 0%,#B8902E 100%);
+  color:#0D0F14;box-shadow:0 3px 10px rgba(212,168,67,.28);
+}
+.btn-undo{
+  border:2px solid var(--line);color:var(--ink-soft);background:var(--canvas-deep);
+  box-shadow:0 1px 4px rgba(34,31,26,.08);
+}
+.btn-undo:hover{
+  border-color:var(--ink);background:var(--ink);color:var(--paper);
+  transform:translateY(-2px);box-shadow:0 4px 12px rgba(34,31,26,.18);
+}
+[data-theme="dark"] .btn-undo{border-color:#1E2130;color:#9A9BAA;background:#0D0F14;}
+[data-theme="dark"] .btn-undo:hover{border-color:#D4A843;background:#D4A843;color:#0D0F14;}
+.btn-delete{
+  color:var(--stamp);margin-inline-start:auto;
+  border:1.5px solid transparent;border-radius:var(--radius-m);
+  padding:8px 14px;font-size:.78rem;font-weight:700;
+  background:rgba(166,59,42,.07);
+  transition:background .2s ease,color .2s ease,border-color .2s ease,transform .18s cubic-bezier(.34,1.56,.64,1);
+}
+.btn-delete:hover{
+  background:rgba(166,59,42,.14);border-color:var(--stamp);
+  transform:translateY(-1px);
+}
+.btn-delete:active{transform:scale(.95);}
+[data-theme="dark"] .btn-delete{background:rgba(224,92,74,.1);color:#E05C4A;}
+[data-theme="dark"] .btn-delete:hover{background:rgba(224,92,74,.2);border-color:#E05C4A;}
+.btn-wa{
+  background:linear-gradient(150deg,#25D366 0%,#1DA851 100%);
+  color:#fff;
+  display:inline-flex;align-items:center;gap:6px;
+  padding:9px 14px;border-radius:var(--radius-m);
+  font-size:.82rem;font-weight:700;
+  box-shadow:0 3px 10px rgba(29,168,81,.3);
+  transition:transform .2s cubic-bezier(.34,1.56,.64,1),box-shadow .2s ease;
+  position:relative;overflow:hidden;
+}
+.btn-wa::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(255,255,255,.15) 0%,transparent 55%);
+  opacity:0;transition:opacity .2s ease;pointer-events:none;
+}
+.btn-wa:hover{
+  transform:translateY(-2px) scale(1.03);
+  box-shadow:0 6px 20px rgba(29,168,81,.42);
+}
+.btn-wa:hover::before{opacity:1;}
 .btn-wa svg{width:15px;height:15px;flex-shrink:0;}
 .admin-empty{text-align:center;padding:90px 20px;color:var(--ink-soft);}
 .admin-empty strong{display:block;font-family:var(--ff-display);font-size:2.2rem;color:var(--ink);margin-bottom:10px;font-weight:400;}
 @media (max-width:640px){.order-cust{grid-template-columns:1fr;}}
 
 /* Admin Tabs Styling */
-.admin-main-tabs { display:flex; gap:10px; flex-wrap:wrap; margin-bottom: 24px; }
-.admin-main-tabs button { padding: 10px 20px; font-weight:700; border-radius: var(--radius-s); background: var(--canvas-deep); transition: .2s; }
-.admin-main-tabs button.active { background: var(--denim); color: var(--paper); }
+.admin-main-tabs { display:flex; gap:8px; flex-wrap:wrap; margin-bottom: 24px; }
+.admin-main-tabs button {
+  padding: 10px 22px; font-weight:700; border-radius: var(--radius-m);
+  background: var(--canvas-deep); color:var(--ink-soft);
+  border:1.5px solid var(--line);
+  transition: background .2s ease, color .2s ease, border-color .2s ease, transform .18s cubic-bezier(.34,1.56,.64,1), box-shadow .2s ease;
+  font-size:.85rem; letter-spacing:.02em;
+}
+.admin-main-tabs button:hover:not(.active){
+  background:var(--canvas);color:var(--ink);
+  border-color:var(--denim);
+  transform:translateY(-1px);
+  box-shadow:0 3px 10px rgba(43,59,104,.12);
+}
+.admin-main-tabs button.active {
+  background:linear-gradient(150deg,var(--denim) 0%,var(--denim-deep) 100%);
+  color: var(--paper);border-color:transparent;
+  box-shadow:0 4px 14px rgba(43,59,104,.28);
+  transform:translateY(-1px);
+}
+[data-theme="dark"] .admin-main-tabs button{background:#0D0F14;border-color:#1E2130;color:#9A9BAA;}
+[data-theme="dark"] .admin-main-tabs button:hover:not(.active){border-color:#D4A843;color:#F5F5F0;}
+[data-theme="dark"] .admin-main-tabs button.active{background:linear-gradient(150deg,#D4A843 0%,#B8902E 100%);color:#0D0F14;box-shadow:0 4px 14px rgba(212,168,67,.28);}
 
 /* Table styling for Coupons & Reviews */
 .admin-table-wrapper { background: var(--paper); border-radius: var(--radius-m); padding: 20px; box-shadow: var(--shadow-s); overflow-x: auto; }
 .admin-table { width: 100%; border-collapse: collapse; font-size: .85rem; text-align: right; }
 .admin-table th, .admin-table td { padding: 12px; border-bottom: 1px dashed var(--line); }
 .admin-table th { color: var(--ink-soft); font-family: var(--ff-mono); text-transform: uppercase; letter-spacing: .05em; font-weight: 700; }
+
+/* ============ ADMIN CARD CONTROLS ============ */
+.admin-card-controls{
+  margin-top:12px;padding-top:10px;
+  border-top:1.5px dashed var(--line);
+  display:flex;gap:5px;flex-wrap:wrap;
+}
+.acb{
+  display:inline-flex;align-items:center;justify-content:center;gap:5px;
+  padding:7px 11px;border-radius:var(--radius-s);
+  font-size:.72rem;font-weight:700;letter-spacing:.02em;
+  cursor:pointer;border:1.5px solid transparent;
+  transition:transform .18s cubic-bezier(.34,1.56,.64,1),box-shadow .18s ease,background .18s ease,color .18s ease,border-color .18s ease;
+  position:relative;overflow:hidden;
+  font-family:var(--ff-body);
+}
+.acb::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(255,255,255,.14) 0%,transparent 55%);
+  opacity:0;transition:opacity .18s;pointer-events:none;
+}
+.acb:hover::before{opacity:1;}
+.acb:active{transform:scale(.94)!important;box-shadow:none!important;}
+
+/* تعديل */
+.acb-edit{
+  background:rgba(43,59,104,.1);color:var(--denim);border-color:rgba(43,59,104,.2);
+  flex:1;
+}
+.acb-edit:hover{background:var(--denim);color:var(--paper);border-color:var(--denim);transform:translateY(-2px);box-shadow:0 4px 12px rgba(43,59,104,.28);}
+[data-theme="dark"] .acb-edit{background:rgba(212,168,67,.1);color:#D4A843;border-color:rgba(212,168,67,.2);}
+[data-theme="dark"] .acb-edit:hover{background:#D4A843;color:#0D0F14;border-color:#D4A843;box-shadow:0 4px 12px rgba(212,168,67,.28);}
+
+/* توقيف */
+.acb-pause{
+  background:rgba(169,118,46,.1);color:var(--brass);border-color:rgba(169,118,46,.2);
+  flex:1;
+}
+.acb-pause:hover{background:var(--brass);color:var(--paper);border-color:var(--brass);transform:translateY(-2px);box-shadow:0 4px 12px rgba(169,118,46,.28);}
+[data-theme="dark"] .acb-pause{background:rgba(169,118,46,.12);color:var(--brass);}
+[data-theme="dark"] .acb-pause:hover{background:var(--brass);color:#0D0F14;}
+
+/* تفعيل */
+.acb-play{
+  background:rgba(63,125,92,.1);color:var(--ok);border-color:rgba(63,125,92,.2);
+  flex:1;
+}
+.acb-play:hover{background:var(--ok);color:#fff;border-color:var(--ok);transform:translateY(-2px);box-shadow:0 4px 12px rgba(63,125,92,.28);}
+[data-theme="dark"] .acb-play{background:rgba(78,201,138,.1);color:#4EC98A;border-color:rgba(78,201,138,.2);}
+[data-theme="dark"] .acb-play:hover{background:#4EC98A;color:#0D0F14;}
+
+/* أسهم الترتيب */
+.acb-up,.acb-down{
+  background:rgba(34,31,26,.06);color:var(--ink-soft);border-color:var(--line);
+  width:34px;padding:7px;flex-shrink:0;
+}
+.acb-up:hover,.acb-down:hover{background:var(--ink);color:var(--paper);border-color:var(--ink);transform:translateY(-2px);box-shadow:0 3px 8px rgba(34,31,26,.18);}
+[data-theme="dark"] .acb-up,[data-theme="dark"] .acb-down{background:#0D0F14;border-color:#1E2130;color:#9A9BAA;}
+[data-theme="dark"] .acb-up:hover,[data-theme="dark"] .acb-down:hover{background:#D4A843;color:#0D0F14;border-color:#D4A843;}
+
+/* حذف */
+.acb-delete{
+  background:rgba(166,59,42,.08);color:var(--stamp);border-color:rgba(166,59,42,.18);
+  width:100%;margin-top:2px;
+}
+.acb-delete:hover{background:linear-gradient(150deg,var(--stamp) 0%,#8B2A1C 100%);color:#fff;border-color:transparent;transform:translateY(-2px);box-shadow:0 4px 14px rgba(166,59,42,.32);}
+[data-theme="dark"] .acb-delete{background:rgba(224,92,74,.1);color:#E05C4A;border-color:rgba(224,92,74,.18);}
+[data-theme="dark"] .acb-delete:hover{background:linear-gradient(150deg,#E05C4A 0%,#B03020 100%);box-shadow:0 4px 14px rgba(224,92,74,.32);}
 
 /* ============ LOADING SCREEN ============ */
 #loadingScreen{
@@ -1719,6 +1881,97 @@ body { animation: pageFadeIn .4s ease both; }
   opacity:.7; transition:opacity .2s;
 }
 .sr-delete-btn:hover { opacity:1; }
+
+/* أزرار المستخدم (تعديل / حذف تعليقه) */
+.sr-user-actions {
+  display:flex; gap:7px; margin-top:12px; flex-wrap:wrap;
+}
+.sr-action-btn {
+  display:inline-flex; align-items:center; gap:5px;
+  font-size:.75rem; font-weight:700; font-family:var(--ff-mono);
+  padding:6px 12px; border-radius:var(--radius-s);
+  cursor:pointer; background:none; color:var(--ink-soft);
+  border:1.5px solid var(--line);
+  transition:background .18s ease, color .18s ease, border-color .18s ease, transform .18s cubic-bezier(.34,1.56,.64,1), box-shadow .18s ease;
+  letter-spacing:.02em;
+}
+.sr-action-btn svg { width:13px; height:13px; flex-shrink:0; }
+.sr-action-btn:active { transform:scale(.95); }
+.sr-action-edit:hover {
+  background:rgba(43,59,104,.1); color:var(--denim); border-color:var(--denim);
+  transform:translateY(-1px); box-shadow:0 3px 8px rgba(43,59,104,.15);
+}
+[data-theme="dark"] .sr-action-edit:hover { background:rgba(212,168,67,.12); color:#D4A843; border-color:#D4A843; }
+.sr-action-del:hover {
+  background:rgba(166,59,42,.1); color:var(--stamp); border-color:var(--stamp);
+  transform:translateY(-1px); box-shadow:0 3px 8px rgba(166,59,42,.15);
+}
+[data-theme="dark"] .sr-action-del:hover { background:rgba(224,92,74,.12); color:#E05C4A; border-color:#E05C4A; }
+
+/* فورم التعديل inline */
+.sr-edit-form {
+  margin-top:12px; display:none;
+  background:var(--canvas-deep); border-radius:var(--radius-m);
+  padding:14px 16px; border:1.5px solid var(--line);
+}
+[data-theme="dark"] .sr-edit-form { background:#0D0F14; border-color:#1E2130; }
+.sr-edit-form.open { display:block; }
+.sr-edit-label {
+  font-family:var(--ff-mono); font-size:.65rem; font-weight:700;
+  letter-spacing:.08em; color:var(--ink-soft); text-transform:uppercase;
+  margin-bottom:10px; display:block;
+}
+.sr-edit-picker {
+  display:flex; gap:6px; margin-bottom:12px; cursor:pointer;
+}
+.sr-edit-picker .sr-pick-star {
+  font-size:1.7rem; color:var(--line);
+  transition:color .15s, transform .2s cubic-bezier(.34,1.56,.64,1);
+  cursor:pointer; user-select:none; line-height:1;
+}
+.sr-edit-picker .sr-pick-star.active,
+.sr-edit-picker .sr-pick-star.hover { color:#F5A623; transform:scale(1.2); }
+.sr-edit-textarea {
+  width:100%; border:1.5px solid var(--line);
+  border-radius:var(--radius-s); padding:10px 12px;
+  font-size:.88rem; background:var(--canvas);
+  color:var(--ink); resize:vertical; min-height:72px;
+  font-family:var(--ff-body);
+  transition:border-color .2s;
+}
+.sr-edit-textarea:focus { border-color:var(--denim); outline:none; }
+[data-theme="dark"] .sr-edit-textarea { background:var(--canvas-deep); border-color:#1E2130; }
+[data-theme="dark"] .sr-edit-textarea:focus { border-color:#D4A843; }
+.sr-edit-actions { display:flex; gap:8px; margin-top:10px; }
+
+/* CSS for product review user actions */
+.rev-user-actions {
+  display:flex; gap:7px; margin-top:10px; flex-wrap:wrap;
+}
+.rev-edit-form {
+  margin-top:10px; display:none;
+  background:var(--canvas-deep); border-radius:var(--radius-s);
+  padding:12px 14px; border:1.5px dashed var(--line);
+}
+.rev-edit-form.open { display:block; }
+.rev-edit-picker { display:flex; gap:4px; margin-bottom:8px; cursor:pointer; }
+.rev-edit-picker .sr-pick-star {
+  font-size:1.4rem; color:var(--line);
+  transition:color .15s, transform .18s cubic-bezier(.34,1.56,.64,1);
+  cursor:pointer; user-select:none;
+}
+.rev-edit-picker .sr-pick-star.active,
+.rev-edit-picker .sr-pick-star.hover { color:#F5A623; transform:scale(1.2); }
+.rev-edit-textarea {
+  width:100%; border:1.5px solid var(--line);
+  border-radius:var(--radius-s); padding:8px 10px;
+  font-size:.85rem; background:var(--canvas); color:var(--ink);
+  resize:vertical; min-height:60px; font-family:var(--ff-body);
+  transition:border-color .2s;
+}
+.rev-edit-textarea:focus { border-color:var(--denim); outline:none; }
+[data-theme="dark"] .rev-edit-textarea { background:var(--canvas-deep); }
+.rev-edit-actions { display:flex; gap:7px; margin-top:8px; }
 
 /* empty state */
 .sr-empty {
@@ -3553,7 +3806,7 @@ function avatarHTML(user, size = 40) {
   const inner = pic
     ? `<img src="${pic}" alt="${name}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`
     : `<span class="av-initial">${initial}</span>`;
-  const badge = isOwner ? `<span class="av-owner-badge" title="صاحب الموقع">★</span>` : '';
+  const badge = isOwner ? `<span class="av-owner-badge" title="Owner">★</span>` : '';
 
   return `<span class="av-wrap ${frameClass}" style="width:${size}px;height:${size}px;" title="${name}">${inner}${badge}</span>`;
 }
@@ -4207,26 +4460,71 @@ async function deleteProduct(id) {
 }
 
 /* ============ REVIEWS SYSTEM ============ */
+let _revEditRating = {};
+
 function viewProductReviews(prodId) {
-  const list = document.getElementById('productReviewsList');
+  const list      = document.getElementById('productReviewsList');
   document.getElementById('revProdId').value = prodId;
-  const isAdmin = isAdminAuthed();
-  const prodRevs = REVIEWS.filter(r => r.prodId === prodId);
+  const isAdmin   = isAdminAuthed();
+  const currentUser = getUserData();
+  const prodRevs  = REVIEWS.filter(r => r.prodId === prodId);
+
   if (prodRevs.length === 0) {
     list.innerHTML = `<div style="text-align:center; color:var(--ink-soft); padding:20px;">لا توجد تقييمات لهذا المنتج بعد.</div>`;
   } else {
-    list.innerHTML = prodRevs.map(r => `
-      <div style="border-bottom:1px dashed var(--line); padding:10px 0;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-          <div style="display:flex; align-items:center; gap:8px;">
-            <strong>${r.userName}</strong>
-            ${isAdmin ? `<button onclick="deleteReviewFromModal(${r.id}, ${prodId})" style="color:var(--stamp); font-size:.75rem; font-weight:700; border:1px solid var(--stamp); border-radius:3px; padding:2px 6px; background:transparent; cursor:pointer;">حذف</button>` : ''}
-          </div>
-          <span style="color:var(--brass);">${'⭐'.repeat(r.rating)}</span>
+    list.innerHTML = prodRevs.map(r => {
+      const isMyRev  = currentUser && currentUser.email && r.userEmail === currentUser.email;
+      const adminBtn = isAdmin && !isMyRev
+        ? `<button class="sr-action-btn sr-action-del" style="font-size:.7rem;padding:3px 8px;" onclick="deleteReviewFromModal(${r.id}, ${prodId})">
+             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px;"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+             حذف</button>` : '';
+      const editedNote = r.editedAt ? `<span style="font-size:.62rem;color:var(--ink-soft);font-family:var(--ff-mono);opacity:.7;">• تم التعديل</span>` : '';
+      const userActions = isMyRev ? `
+        <div class="rev-user-actions">
+          <button class="sr-action-btn sr-action-edit" onclick="openRevEdit(${r.id}, ${prodId})">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            تعديل
+          </button>
+          <button class="sr-action-btn sr-action-del" onclick="deleteMyReview(${r.id}, ${prodId})">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px;"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+            حذف تقييمي
+          </button>
         </div>
-        <p style="color:var(--ink-soft);">${r.text}</p>
-      </div>
-    `).join('');
+        <div class="rev-edit-form" id="revEditForm-${r.id}">
+          <div class="rev-edit-picker" id="revEditPicker-${r.id}">
+            <span class="sr-pick-star" data-val="1">★</span>
+            <span class="sr-pick-star" data-val="2">★</span>
+            <span class="sr-pick-star" data-val="3">★</span>
+            <span class="sr-pick-star" data-val="4">★</span>
+            <span class="sr-pick-star" data-val="5">★</span>
+          </div>
+          <textarea class="rev-edit-textarea" id="revEditText-${r.id}" maxlength="300" placeholder="عدّل تقييمك...">${r.text}</textarea>
+          <div class="rev-edit-actions">
+            <button class="btn btn-primary btn-sm" onclick="saveRevEdit(${r.id}, ${prodId})">حفظ</button>
+            <button class="btn btn-outline btn-sm" onclick="closeRevEdit(${r.id})">إلغاء</button>
+          </div>
+        </div>` : '';
+
+      return `
+      <div style="border-bottom:1px dashed var(--line); padding:12px 0;" id="revCard-${r.id}">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:5px; gap:8px;">
+          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+            <strong style="font-size:.9rem;">${r.userName}</strong>
+            ${editedNote}
+            ${adminBtn}
+          </div>
+          <span style="color:#F5A623; white-space:nowrap;">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</span>
+        </div>
+        <p style="color:var(--ink-soft); font-size:.87rem; line-height:1.6;" id="revText-${r.id}">${r.text}</p>
+        ${userActions}
+      </div>`;
+    }).join('');
+
+    /* تهيئة نجوم التعديل بعد render */
+    prodRevs.forEach(r => {
+      if (!(currentUser && currentUser.email && r.userEmail === currentUser.email)) return;
+      _revEditRating[r.id] = r.rating;
+    });
   }
   document.getElementById('reviewsModal').classList.add('open');
   document.getElementById('reviewsOverlay').classList.add('open');
@@ -4234,6 +4532,66 @@ function viewProductReviews(prodId) {
 function closeReviewsModal() {
   document.getElementById('reviewsModal').classList.remove('open');
   document.getElementById('reviewsOverlay').classList.remove('open');
+}
+
+function openRevEdit(reviewId, prodId) {
+  const rev = REVIEWS.find(r => r.id === reviewId);
+  if (!rev) return;
+  /* إغلاق أي فورم مفتوح تاني */
+  document.querySelectorAll('.rev-edit-form.open').forEach(f => {
+    if (f.id !== 'revEditForm-' + reviewId) f.classList.remove('open');
+  });
+  const form = document.getElementById('revEditForm-' + reviewId);
+  if (!form) return;
+  if (form.classList.contains('open')) { form.classList.remove('open'); return; }
+  _revEditRating[reviewId] = rev.rating;
+  form.classList.add('open');
+  /* تهيئة النجوم */
+  const picker = form.querySelectorAll('.sr-pick-star');
+  picker.forEach(s => {
+    s.className = 'sr-pick-star' + (Number(s.dataset.val) <= rev.rating ? ' active' : '');
+    s.onmouseenter = () => picker.forEach(x => x.classList.toggle('hover', Number(x.dataset.val) <= Number(s.dataset.val)));
+    s.onmouseleave = () => { picker.forEach(x => x.classList.remove('hover')); picker.forEach(x => { x.className = 'sr-pick-star' + (Number(x.dataset.val) <= _revEditRating[reviewId] ? ' active' : ''); }); };
+    s.onclick = () => { _revEditRating[reviewId] = Number(s.dataset.val); picker.forEach(x => { x.className = 'sr-pick-star' + (Number(x.dataset.val) <= _revEditRating[reviewId] ? ' active' : ''); }); };
+  });
+  form.querySelector('.rev-edit-textarea').focus();
+}
+
+function closeRevEdit(reviewId) {
+  const form = document.getElementById('revEditForm-' + reviewId);
+  if (form) form.classList.remove('open');
+}
+
+async function saveRevEdit(reviewId, prodId) {
+  const user = getUserData();
+  if (!user) return;
+  const form = document.getElementById('revEditForm-' + reviewId);
+  if (!form) return;
+  const newText   = (form.querySelector('.rev-edit-textarea').value || '').trim();
+  const newRating = _revEditRating[reviewId];
+  if (!newText || newText.length < 2) { showToast('اكتب رأيك أولاً ✕'); return; }
+  if (!newRating) { showToast('اختر تقييماً ✕'); return; }
+  const saveBtn = form.querySelector('.btn-primary');
+  if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'جاري الحفظ...'; }
+  REVIEWS = REVIEWS.map(r => r.id === reviewId
+    ? { ...r, text: newText, rating: newRating, editedAt: new Date().toISOString(),
+        userPic: user.picture || '', userFrame: user.frame || getFrameType(user.email || '') }
+    : r
+  );
+  await saveDataStore('reviews', REVIEWS_STORAGE_KEY, REVIEWS);
+  if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'حفظ'; }
+  showToast('تم تعديل تقييمك ✓');
+  viewProductReviews(prodId);
+  if (isAdminAuthed()) renderAdminReviews();
+}
+
+async function deleteMyReview(reviewId, prodId) {
+  if (!await showConfirm('حذف تقييمك', 'هل تريد حذف تقييمك نهائياً؟')) return;
+  REVIEWS = REVIEWS.filter(r => r.id !== reviewId);
+  await saveDataStore('reviews', REVIEWS_STORAGE_KEY, REVIEWS);
+  showToast('تم حذف تقييمك ✓');
+  viewProductReviews(prodId);
+  if (isAdminAuthed()) renderAdminReviews();
 }
 
 async function deleteReviewFromModal(reviewId, prodId) {
@@ -4310,14 +4668,27 @@ function productCardHTML(p){
   let adminControlsHTML = '';
   if (isAdmin) {
     adminControlsHTML = `
-    <div style="margin-top:12px; padding-top:10px; border-top:1px dashed var(--line); display:flex; gap:6px; flex-wrap:wrap;" onclick="event.stopPropagation()">
-      <button class="btn btn-sm" onclick="openEditProductModal(${p.id})" style="font-size:0.75rem; border:1px solid var(--denim); padding:6px; flex:1;">تعديل ✏️</button>
-      <button class="btn btn-sm ${isActive ? 'btn-outline' : 'btn-primary'}" onclick="event.stopPropagation(); toggleProductActive(${p.id})" style="font-size:0.75rem; flex:1; padding:6px;">
-        ${isActive ? 'توقيف ⏸️' : 'تفعيل ▶️'}
+    <div class="admin-card-controls" onclick="event.stopPropagation()">
+      <button class="acb acb-edit" onclick="openEditProductModal(${p.id})">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;flex-shrink:0;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        تعديل
       </button>
-      <button class="btn btn-sm" onclick="moveProductUp(${p.id})" style="font-size:0.75rem; border:1px solid var(--ink); padding:6px;">⬆️</button>
-      <button class="btn btn-sm" onclick="moveProductDown(${p.id})" style="font-size:0.75rem; border:1px solid var(--ink); padding:6px;">⬇️</button>
-      <button class="btn btn-sm" onclick="event.stopPropagation(); deleteProduct(${p.id})" style="font-size:0.75rem; color:var(--stamp); border:1px solid var(--stamp); padding:6px; width:100%;">حذف 🗑️</button>
+      <button class="acb ${isActive ? 'acb-pause' : 'acb-play'}" onclick="event.stopPropagation(); toggleProductActive(${p.id})">
+        ${isActive
+          ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:13px;height:13px;flex-shrink:0;"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>توقيف`
+          : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:13px;height:13px;flex-shrink:0;"><polygon points="5 3 19 12 5 21 5 3"/></svg>تفعيل`
+        }
+      </button>
+      <button class="acb acb-up" onclick="moveProductUp(${p.id})" title="تحريك لأعلى">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:13px;height:13px;"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+      </button>
+      <button class="acb acb-down" onclick="moveProductDown(${p.id})" title="تحريك لأسفل">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" style="width:13px;height:13px;"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+      </button>
+      <button class="acb acb-delete" onclick="event.stopPropagation(); deleteProduct(${p.id})">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;flex-shrink:0;"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+        حذف
+      </button>
     </div>`;
   }
 
@@ -5295,7 +5666,7 @@ function openProductDetail(productId) {
     revList.innerHTML = prodRevs.map(r => {
       const revUser = { name: r.userName, picture: r.userPic || '', frame: r.userFrame || getFrameType(r.userEmail || ''), email: r.userEmail || '' };
       const isOwner = OWNER_EMAILS.includes((r.userEmail||'').toLowerCase());
-      const ownerTag = isOwner ? `<span style="font-size:.62rem;background:var(--denim);color:#ECE5D3;padding:2px 7px;border-radius:999px;font-family:var(--ff-mono);font-weight:700;margin-right:6px;">صاحب الموقع</span>` : '';
+      const ownerTag = isOwner ? `<span style="font-size:.62rem;background:var(--denim);color:#ECE5D3;padding:2px 7px;border-radius:999px;font-family:var(--ff-mono);font-weight:700;margin-right:6px;">Owner</span>` : '';
       return `
       <div class="pd-review-card">
         <div class="pd-review-header" style="align-items:flex-start;gap:10px;">
@@ -6038,13 +6409,43 @@ function _renderSrSummary(reviews) {
 
 /* رسم كارت تعليق */
 function _srCardHTML(r) {
-  const user      = { name: r.userName, picture: r.userPic||'', frame: r.userFrame||getFrameType(r.userEmail||''), email: r.userEmail||'' };
-  const isOwner   = OWNER_EMAILS.includes((r.userEmail||'').toLowerCase());
-  const ownerTag  = isOwner ? `<span class="sr-owner-tag">صاحب الموقع</span>` : '';
-  const adminDel  = isAdminAuthed()
-    ? `<button class="sr-delete-btn" onclick="deleteSiteReview('${r.id}')">حذف</button>` : '';
-  const date      = r.date ? new Date(r.date).toLocaleDateString('ar-EG', { year:'numeric', month:'long', day:'numeric' }) : '';
-  const stars     = '★'.repeat(r.rating) + '☆'.repeat(5 - r.rating);
+  const currentUser = getUserData();
+  const user        = { name: r.userName, picture: r.userPic||'', frame: r.userFrame||getFrameType(r.userEmail||''), email: r.userEmail||'' };
+  const isOwner     = OWNER_EMAILS.includes((r.userEmail||'').toLowerCase());
+  const isMyReview  = currentUser && currentUser.email && r.userEmail === currentUser.email;
+  const ownerTag    = isOwner ? `<span class="sr-owner-tag">Owner</span>` : '';
+  const adminDel    = isAdminAuthed() && !isMyReview
+    ? `<button class="sr-delete-btn" onclick="deleteSiteReview('${r.id}')" title="حذف (أدمن)">✕</button>` : '';
+  const date        = r.date ? new Date(r.date).toLocaleDateString('ar-EG', { year:'numeric', month:'long', day:'numeric' }) : '';
+  const stars       = '★'.repeat(r.rating) + '☆'.repeat(5 - r.rating);
+  const editedNote  = r.editedAt ? `<span style="font-size:.65rem;color:var(--ink-soft);font-family:var(--ff-mono);margin-right:6px;opacity:.7;">• تم التعديل</span>` : '';
+
+  const userActions = isMyReview ? `
+    <div class="sr-user-actions">
+      <button class="sr-action-btn sr-action-edit" onclick="openSrEdit('${r.id}')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        تعديل
+      </button>
+      <button class="sr-action-btn sr-action-del" onclick="deleteMySiteReview('${r.id}')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+        حذف تعليقي
+      </button>
+    </div>
+    <div class="sr-edit-form" id="srEditForm-${r.id}">
+      <span class="sr-edit-label">تعديل تقييمك</span>
+      <div class="sr-edit-picker" id="srEditPicker-${r.id}">
+        <span class="sr-pick-star" data-val="1">★</span>
+        <span class="sr-pick-star" data-val="2">★</span>
+        <span class="sr-pick-star" data-val="3">★</span>
+        <span class="sr-pick-star" data-val="4">★</span>
+        <span class="sr-pick-star" data-val="5">★</span>
+      </div>
+      <textarea class="sr-edit-textarea" id="srEditText-${r.id}" maxlength="400" placeholder="عدّل تعليقك...">${r.text}</textarea>
+      <div class="sr-edit-actions">
+        <button class="btn btn-primary btn-sm" onclick="saveSrEdit('${r.id}', ${r.rating})">حفظ التعديل</button>
+        <button class="btn btn-outline btn-sm" onclick="closeSrEdit('${r.id}')">إلغاء</button>
+      </div>
+    </div>` : '';
 
   return `
   <div class="sr-card" id="srCard-${r.id}">
@@ -6052,11 +6453,12 @@ function _srCardHTML(r) {
       ${avatarHTML(user, 42)}
       <div class="sr-card-meta">
         <div class="sr-card-name">${r.userName} ${ownerTag} ${adminDel}</div>
-        <div class="sr-card-date">${date}</div>
+        <div class="sr-card-date">${date}${editedNote}</div>
       </div>
     </div>
-    <div class="sr-card-stars">${stars}</div>
-    <div class="sr-card-text">${r.text}</div>
+    <div class="sr-card-stars" id="srStars-${r.id}">${stars}</div>
+    <div class="sr-card-text" id="srText-${r.id}">${r.text}</div>
+    ${userActions}
   </div>`;
 }
 
@@ -6140,14 +6542,75 @@ async function submitSiteReview() {
 /* حذف (أدمن فقط) */
 async function deleteSiteReview(id) {
   if (!await showConfirm('حذف التعليق', 'هل تريد حذف هذا التعليق نهائياً؟')) return;
-  _siteReviews = _siteReviews.filter(r => r.id !== id);
   if (useFirebase) {
     firebase.database().ref(SITE_REVIEWS_KEY + '/' + id).remove()
       .catch(e => console.warn('delete review failed:', e));
   }
-  _renderSrSummary(_siteReviews);
-  _renderSrList();
   showToast('تم حذف التعليق ✓');
+}
+
+async function deleteMySiteReview(id) {
+  if (!await showConfirm('حذف تعليقك', 'هل تريد حذف تعليقك نهائياً؟ مش هتقدر ترجعه.')) return;
+  if (useFirebase) {
+    await firebase.database().ref(SITE_REVIEWS_KEY + '/' + id).remove()
+      .catch(e => console.warn('delete my review failed:', e));
+  }
+  showToast('تم حذف تعليقك ✓');
+}
+
+let _srEditRating = {};
+
+function openSrEdit(id) {
+  const rev = _siteReviews.find(r => r.id === id);
+  if (!rev) return;
+  /* إغلاق أي فورم تعديل مفتوح تاني */
+  document.querySelectorAll('.sr-edit-form.open').forEach(f => {
+    if (f.id !== 'srEditForm-' + id) f.classList.remove('open');
+  });
+  const form = document.getElementById('srEditForm-' + id);
+  if (!form) return;
+  const isOpen = form.classList.contains('open');
+  if (isOpen) { form.classList.remove('open'); return; }
+  _srEditRating[id] = rev.rating;
+  form.classList.add('open');
+  /* تهيئة النجوم */
+  const picker = form.querySelectorAll('.sr-pick-star');
+  picker.forEach(s => {
+    s.className = 'sr-pick-star' + (Number(s.dataset.val) <= rev.rating ? ' active' : '');
+    s.onmouseenter = () => picker.forEach(x => x.classList.toggle('hover', Number(x.dataset.val) <= Number(s.dataset.val)));
+    s.onmouseleave = () => { picker.forEach(x => x.classList.remove('hover')); picker.forEach(x => { x.className = 'sr-pick-star' + (Number(x.dataset.val) <= _srEditRating[id] ? ' active' : ''); }); };
+    s.onclick = () => { _srEditRating[id] = Number(s.dataset.val); picker.forEach(x => { x.className = 'sr-pick-star' + (Number(x.dataset.val) <= _srEditRating[id] ? ' active' : ''); }); };
+  });
+  form.querySelector('.sr-edit-textarea').focus();
+  form.scrollIntoView({ behavior:'smooth', block:'nearest' });
+}
+
+function closeSrEdit(id) {
+  const form = document.getElementById('srEditForm-' + id);
+  if (form) form.classList.remove('open');
+}
+
+async function saveSrEdit(id, oldRating) {
+  const user = getUserData();
+  if (!user) return;
+  const form = document.getElementById('srEditForm-' + id);
+  if (!form) return;
+  const newText   = (form.querySelector('.sr-edit-textarea').value || '').trim();
+  const newRating = _srEditRating[id] || oldRating;
+  if (newText.length < 3) { showToast('اكتب تعليقاً مختصراً على الأقل ✕'); return; }
+  const saveBtn = form.querySelector('.btn-primary');
+  if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'جاري الحفظ...'; }
+  const updates = {
+    text: newText, rating: newRating, editedAt: new Date().toISOString(),
+    userPic: user.picture || '', userFrame: user.frame || getFrameType(user.email || '')
+  };
+  if (useFirebase) {
+    await firebase.database().ref(SITE_REVIEWS_KEY + '/' + id).update(updates)
+      .catch(e => console.warn('edit review failed:', e));
+  }
+  if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'حفظ التعديل'; }
+  closeSrEdit(id);
+  showToast('تم تعديل تعليقك ✓');
 }
 
 /* تحميل من Firebase */
