@@ -3812,17 +3812,29 @@ async function saveSettingsName() {
   const takenNames = await loadTakenNames();
   if (normalizedNew !== normalizedOld && takenNames[normalizedNew] && takenNames[normalizedNew] !== user.email) {
     document.getElementById('settingsNameNote').textContent = 'الاسم ده محجوز، جرّب اسم تاني.';
-    saveBtn.disabled = false;
-    saveBtn.textContent = 'حفظ';
-    return;
-  }
-
-  /* تحرير القديم وحجز الجديد */
-  if (normalizedOld && takenNames[normalizedOld] === user.email) delete takenNames[normalizedOld];
-  takenNames[normalizedNew] = user.email;
-  await saveTakenNames(takenNames);
-
-  const nameLastChanged = new Date().toISOString();
+  if (!useFirebase || !email) return;
+  const key = emailToKey(email);
+  try {
+    const snap = await firebase.database().ref('userProfiles/' + key).once('value');
+    if (snap.exists()) {
+      const profile = snap.val();
+      const user = getUserData();
+      if (user && user.email === email) {
+        const updates = {};
+        if (profile.picture) {
+          localStorage.setItem('mrstore_pic_' + key, profile.picture);
+          updates.picture = profile.picture;
+        }
+        if (profile.frame) {
+          updates.frame = profile.frame;
+        }
+        if (Object.keys(updates).length > 0) {
+          setUserData({ ...user, ...updates });
+        }
+      }
+    }
+  } catch(e) {}
+} const nameLastChanged = new Date().toISOString();
   await saveUserProfile(user.email, { name: newName, nameLastChanged });
   setUserData({ ...user, name: newName, nameLastChanged });
 
