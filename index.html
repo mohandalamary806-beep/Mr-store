@@ -259,7 +259,9 @@ h1,h2,h3,h4{font-weight:inherit;}
 .admin-nav-link.is-visible{display:inline;}
 .header-actions{display:flex;align-items:center;gap:10px;}
 .user-auth-wrap,.user-profile-wrap{display:flex;align-items:center;gap:8px;}
-.user-profile-wrap{font-family:var(--ff-mono);font-size:.82rem;font-weight:700;color:var(--denim);}
+.user-profile-wrap{font-family:var(--ff-mono);font-size:.82rem;font-weight:700;color:var(--denim);cursor:pointer;}
+.user-profile-wrap:hover #userNameDisplay{color:var(--denim-deep);}
+[data-theme="dark"] .user-profile-wrap{color:#D4A843;}
 .icon-btn{position:relative;width:42px;height:42px;display:flex;align-items:center;justify-content:center;border-radius:50%;transition:background .2s;}
 .icon-btn svg{width:21px;height:21px;}
 .icon-btn:hover{background:var(--canvas-deep);}
@@ -1615,8 +1617,73 @@ body { animation: pageFadeIn .4s ease both; }
 
 
 
+/* ============ AVATAR & FRAMES ============ */
+.av-wrap {
+  position:relative;
+  display:inline-flex; align-items:center; justify-content:center;
+  border-radius:50%; flex-shrink:0;
+  background:var(--denim); overflow:visible;
+}
+.av-initial {
+  color:#ECE5D3; font-family:var(--ff-mono); font-weight:700;
+  font-size:calc(var(--av-size, 40px) * .38);
+  line-height:1; user-select:none;
+}
+[data-theme="dark"] .av-initial { color:#0D0F14; }
+
+/* إطار عادي */
+.av-frame-default {
+  box-shadow: 0 0 0 2px var(--line);
+}
+/* إطار ذهبي */
+.av-frame-gold {
+  box-shadow: 0 0 0 3px #D4A843, 0 0 10px rgba(212,168,67,.4);
+}
+/* إطار صاحب الموقع — متحرك */
+.av-frame-owner {
+  box-shadow: 0 0 0 3px var(--denim);
+  animation: ownerGlow 2.4s ease-in-out infinite;
+}
+@keyframes ownerGlow {
+  0%,100% { box-shadow:0 0 0 3px #2B3B68, 0 0 10px rgba(43,59,104,.5); }
+  50%      { box-shadow:0 0 0 3px #A9762E, 0 0 16px rgba(169,118,46,.6); }
+}
+[data-theme="dark"] .av-frame-owner {
+  animation: ownerGlowDark 2.4s ease-in-out infinite;
+}
+@keyframes ownerGlowDark {
+  0%,100% { box-shadow:0 0 0 3px #D4A843, 0 0 12px rgba(212,168,67,.5); }
+  50%      { box-shadow:0 0 0 3px #E05C4A, 0 0 18px rgba(224,92,74,.5); }
+}
+
+/* شارة صاحب الموقع */
+.av-owner-badge {
+  position:absolute; bottom:-3px; left:-3px;
+  background:var(--denim); color:#ECE5D3;
+  font-size:.52rem; font-weight:900;
+  width:14px; height:14px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  border:2px solid var(--canvas);
+  line-height:1;
+}
+[data-theme="dark"] .av-owner-badge { background:#D4A843; color:#0D0F14; border-color:var(--canvas); }
+
+/* اختيار الأطارات في الإعدادات */
+.frame-picker { display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; }
+.frame-option {
+  display:flex; flex-direction:column; align-items:center; gap:6px;
+  cursor:pointer; padding:8px; border-radius:var(--radius-m);
+  border:2px solid transparent; transition:border-color .2s, background .2s;
+}
+.frame-option:hover { background:var(--canvas-deep); }
+.frame-option.selected { border-color:var(--denim); background:var(--canvas-deep); }
+[data-theme="dark"] .frame-option.selected { border-color:#D4A843; }
+.frame-option-label {
+  font-size:.68rem; font-family:var(--ff-mono); font-weight:700;
+  color:var(--ink-soft); text-align:center;
+}
+
 /* ============ SETTINGS MODAL ============ */
-.settings-section { margin-bottom:4px; }
 .settings-label {
   font-family:var(--ff-mono); font-size:.65rem; font-weight:700;
   letter-spacing:.1em; text-transform:uppercase;
@@ -1914,10 +1981,8 @@ html { scroll-behavior: smooth; }
         <button class="btn btn-primary btn-sm" id="userSignupBtn" onclick="openUserAuthModal()">إنشاء حساب</button>
       </div>
       <div class="user-profile-wrap" id="userProfileWrap" style="display:none;">
-        <span id="userNameDisplay"></span>
-        <button class="icon-btn" onclick="openSettingsModal()" aria-label="الإعدادات" title="الإعدادات">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-        </button>
+        <span id="userHeaderAvatar" style="cursor:pointer;" onclick="openSettingsModal()" title="الإعدادات"></span>
+        <span id="userNameDisplay" style="cursor:pointer;" onclick="openSettingsModal()"></span>
       </div>
 
       <button class="icon-btn" id="searchToggle" aria-label="بحث" onclick="document.getElementById('searchInput').focus();document.getElementById('products').scrollIntoView({behavior:'smooth'});">
@@ -2544,12 +2609,27 @@ html { scroll-behavior: smooth; }
     <div class="settings-section">
       <div class="settings-label">الحساب</div>
       <div class="settings-user-card">
-        <div class="settings-avatar" id="settingsAvatar">م</div>
+        <!-- avatar قابل للنقر لتغيير الصورة -->
+        <div style="position:relative;flex-shrink:0;cursor:pointer;" onclick="document.getElementById('picFileInput').click()" title="اضغط لتغيير الصورة">
+          <div id="settingsAvatarWrap"></div>
+          <span style="position:absolute;bottom:-2px;right:-2px;width:18px;height:18px;background:var(--denim);border-radius:50%;border:2px solid var(--paper);display:flex;align-items:center;justify-content:center;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#ECE5D3" stroke-width="2.5" stroke-linecap="round" style="width:10px;height:10px;"><path d="M12 5v14M5 12h14"/></svg>
+          </span>
+        </div>
+        <input type="file" id="picFileInput" accept="image/*" style="display:none;" onchange="handlePicUpload(this)">
         <div class="settings-user-info">
           <div class="settings-user-name" id="settingsUserName">—</div>
           <div class="settings-user-email" id="settingsUserEmail">—</div>
         </div>
       </div>
+    </div>
+
+    <div class="settings-divider"></div>
+
+    <!-- اختيار الإطار -->
+    <div class="settings-section" id="settingsFrameSection">
+      <div class="settings-label">إطار الصورة</div>
+      <div class="frame-picker" id="framePicker"></div>
     </div>
 
     <div class="settings-divider"></div>
@@ -2561,7 +2641,6 @@ html { scroll-behavior: smooth; }
         <span id="settingsCurrentName">—</span>
         <button class="settings-action-btn" id="settingsChangeNameBtn" onclick="openSettingsNameEdit()">تغيير</button>
       </div>
-      <!-- فورم تغيير الاسم (مخفي بالبداية) -->
       <div id="settingsNameForm" style="display:none; margin-top:12px;">
         <div class="field" style="margin-bottom:10px;">
           <input type="text" id="settingsNameInput" placeholder="أدخل الاسم الجديد..." maxlength="30">
@@ -3015,15 +3094,27 @@ function getUserData() { try { return JSON.parse(localStorage.getItem(USER_AUTH_
 function setUserData(data) { if (data) localStorage.setItem(USER_AUTH_KEY, JSON.stringify(data)); else localStorage.removeItem(USER_AUTH_KEY); updateUserUI(); }
 function updateUserUI() {
   const user = getUserData();
-  const authWrap = document.getElementById('userAuthWrap');
+  const authWrap   = document.getElementById('userAuthWrap');
   const profileWrap = document.getElementById('userProfileWrap');
   if (user && user.name) {
-    authWrap.style.display = 'none'; profileWrap.style.display = 'flex';
+    authWrap.style.display = 'none';
+    profileWrap.style.display = 'flex';
     document.getElementById('userNameDisplay').textContent = user.name.split(' ')[0];
+    _renderHeaderAvatar(user);
   } else {
-    authWrap.style.display = 'flex'; profileWrap.style.display = 'none';
+    authWrap.style.display = 'flex';
+    profileWrap.style.display = 'none';
     document.getElementById('userNameDisplay').textContent = '';
+    const av = document.getElementById('userHeaderAvatar');
+    if (av) av.innerHTML = '';
   }
+}
+
+/* رسم الـ avatar في الهيدر */
+function _renderHeaderAvatar(user) {
+  const el = document.getElementById('userHeaderAvatar');
+  if (!el || !user) return;
+  el.innerHTML = avatarHTML(user, 30);
 }
 function isAdminAuthed(){ return sessionStorage.getItem('mrstore_admin_auth') === '1' || !!getAdminGoogleEmail(); }
 function openUserAuthModal() {
@@ -3068,6 +3159,102 @@ function showToast(msg, type = 'default') {
   toast.className = 'toast ' + (typeMap[type] || '');
   toast.classList.add('show');
   _toastTimer = setTimeout(() => toast.classList.remove('show'), 3200);
+}
+
+/* ============ PROFILE PICTURE ============ */
+
+/* الإيميلات أصحاب الموقع — هيحصلوا على إطار خاص */
+const OWNER_EMAILS = ['mohandalamary806@gmail.com', 'mrstore010011@gmail.com'];
+
+/* ضغط الصورة لـ base64 صغير (max 120x120 / جودة 65%) */
+function compressImageToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const MAX = 120;
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let w = img.width, h = img.height;
+        if (w > h) { if (w > MAX) { h = h * MAX / w; w = MAX; } }
+        else        { if (h > MAX) { w = w * MAX / h; h = MAX; } }
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', 0.65));
+      };
+      img.onerror = reject;
+      img.src = e.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+/* نوع الإطار بناءً على الإيميل */
+function getFrameType(email) {
+  if (!email) return 'none';
+  if (OWNER_EMAILS.includes(email.toLowerCase())) return 'owner';
+  return 'none';
+}
+
+/* رسم الـ avatar HTML */
+function avatarHTML(user, size = 40) {
+  if (!user) return '';
+  const name     = user.name  || '?';
+  const email    = user.email || '';
+  const pic      = user.picture || '';
+  const frame    = user.frame || getFrameType(email);
+  const initial  = name.charAt(0).toUpperCase();
+  const isOwner  = frame === 'owner';
+  const isGold   = frame === 'gold';
+
+  const frameClass = isOwner ? 'av-frame-owner' : isGold ? 'av-frame-gold' : 'av-frame-default';
+  const inner = pic
+    ? `<img src="${pic}" alt="${name}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`
+    : `<span class="av-initial">${initial}</span>`;
+  const badge = isOwner ? `<span class="av-owner-badge" title="صاحب الموقع">★</span>` : '';
+
+  return `<span class="av-wrap ${frameClass}" style="width:${size}px;height:${size}px;" title="${name}">${inner}${badge}</span>`;
+}
+
+/* حفظ الصورة في Firebase + localStorage */
+async function saveProfilePicture(base64) {
+  const user = getUserData();
+  if (!user || !user.email) return;
+  const key = emailToKey(user.email);
+  /* حفظ في localStorage */
+  localStorage.setItem('mrstore_pic_' + key, base64);
+  /* حفظ في Firebase */
+  if (useFirebase) {
+    firebase.database().ref('userProfiles/' + key).update({ picture: base64 })
+      .catch(e => console.warn('picture save failed:', e));
+    firebase.database().ref('users/' + key).update({ picture: base64 })
+      .catch(e => console.warn('users picture save failed:', e));
+  }
+  /* تحديث localStorage للـ user session */
+  setUserData({ ...user, picture: base64 });
+}
+
+/* جلب الصورة المحفوظة */
+function getUserPicture(email) {
+  if (!email) return '';
+  const key = emailToKey(email);
+  return localStorage.getItem('mrstore_pic_' + key) || '';
+}
+
+/* تحميل الصورة عند login من Firebase */
+async function loadUserPictureFromFirebase(email) {
+  if (!useFirebase || !email) return;
+  const key = emailToKey(email);
+  try {
+    const snap = await firebase.database().ref('userProfiles/' + key + '/picture').once('value');
+    if (snap.exists() && snap.val()) {
+      localStorage.setItem('mrstore_pic_' + key, snap.val());
+      const user = getUserData();
+      if (user && user.email === email) setUserData({ ...user, picture: snap.val() });
+    }
+  } catch(e) {}
 }
 
 /* ============ ORDERS BADGE ============ */
@@ -3225,39 +3412,102 @@ function closeMyOrdersModal() {
 }
 
 /* ============ SETTINGS MODAL ============ */
+
+/* الأطارات المتاحة */
+const AVAILABLE_FRAMES = [
+  { id:'none',    label:'بدون',  css:'av-frame-default' },
+  { id:'gold',    label:'ذهبي',  css:'av-frame-gold'    },
+];
+
+function _renderSettingsAvatar(user) {
+  const wrap = document.getElementById('settingsAvatarWrap');
+  if (!wrap) return;
+  wrap.innerHTML = avatarHTML(user, 56);
+}
+
+function _renderFramePicker(user) {
+  const picker  = document.getElementById('framePicker');
+  const section = document.getElementById('settingsFrameSection');
+  if (!picker) return;
+
+  /* صاحب الموقع — مفيش اختيار، إطاره ثابت */
+  if (OWNER_EMAILS.includes((user.email||'').toLowerCase())) {
+    if (section) section.style.display = 'none';
+    return;
+  }
+  if (section) section.style.display = '';
+
+  const currentFrame = user.frame || 'none';
+  picker.innerHTML = AVAILABLE_FRAMES.map(f => `
+    <div class="frame-option ${f.id === currentFrame ? 'selected' : ''}"
+         onclick="selectFrame('${f.id}')">
+      ${avatarHTML({...user, frame: f.id}, 44)}
+      <span class="frame-option-label">${f.label}</span>
+    </div>`).join('');
+}
+
+async function selectFrame(frameId) {
+  const user = getUserData();
+  if (!user) return;
+  const updated = { ...user, frame: frameId };
+  setUserData(updated);
+  /* حفظ في Firebase */
+  if (useFirebase) {
+    firebase.database().ref('userProfiles/' + emailToKey(user.email)).update({ frame: frameId })
+      .catch(e => console.warn('frame save failed:', e));
+    firebase.database().ref('users/' + emailToKey(user.email)).update({ frame: frameId })
+      .catch(e => {});
+  }
+  _renderSettingsAvatar(updated);
+  _renderFramePicker(updated);
+  _renderHeaderAvatar(updated);
+  showToast('تم تغيير الإطار ✓');
+}
+
+async function handlePicUpload(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (file.size > 5 * 1024 * 1024) { showToast('الصورة كبيرة جداً — اختار صورة أقل من 5MB'); return; }
+
+  showToast('جاري رفع الصورة...');
+  try {
+    const base64 = await compressImageToBase64(file);
+    await saveProfilePicture(base64);
+    const user = getUserData();
+    _renderSettingsAvatar(user);
+    _renderHeaderAvatar(user);
+    showToast('تم تغيير الصورة بنجاح ✓');
+  } catch(e) {
+    console.error(e);
+    showToast('حدث خطأ أثناء رفع الصورة ✕');
+  }
+  input.value = '';
+}
+
 function openSettingsModal() {
   const user = getUserData();
   if (!user) return;
 
-  /* تعبئة بيانات اليوزر */
   const name  = user.name  || '—';
   const email = user.email || '—';
-  const initial = name.charAt(0).toUpperCase();
 
-  document.getElementById('settingsAvatar').textContent    = initial;
-  document.getElementById('settingsUserName').textContent  = name;
-  document.getElementById('settingsUserEmail').textContent = email;
+  document.getElementById('settingsUserName').textContent    = name;
+  document.getElementById('settingsUserEmail').textContent   = email;
   document.getElementById('settingsCurrentName').textContent = name;
 
+  _renderSettingsAvatar(user);
+  _renderFramePicker(user);
+
   /* تحقق من إمكانية تغيير الاسم */
-  const canChange = canChangeName(user);
   const changeBtn = document.getElementById('settingsChangeNameBtn');
   if (changeBtn) {
-    if (canChange) {
-      changeBtn.disabled = false;
-      changeBtn.textContent = 'تغيير';
-      changeBtn.style.opacity = '1';
-    } else {
-      const days = daysUntilNextChange(user);
-      changeBtn.disabled = true;
-      changeBtn.textContent = `بعد ${days} يوم`;
-      changeBtn.style.opacity = '.5';
-    }
+    const canChange = canChangeName(user);
+    changeBtn.disabled    = !canChange;
+    changeBtn.textContent = canChange ? 'تغيير' : `بعد ${daysUntilNextChange(user)} يوم`;
+    changeBtn.style.opacity = canChange ? '1' : '.5';
   }
 
-  /* إخفاء فورم الاسم */
   closeSettingsNameEdit();
-
   document.getElementById('settingsModal').classList.add('open');
   document.getElementById('settingsOverlay').classList.add('open');
 }
@@ -3325,7 +3575,9 @@ async function saveSettingsName() {
   /* تحديث الـ UI */
   document.getElementById('settingsCurrentName').textContent = newName;
   document.getElementById('settingsUserName').textContent    = newName;
-  document.getElementById('settingsAvatar').textContent      = newName.charAt(0).toUpperCase();
+  const updatedUser = { ...user, name: newName, nameLastChanged };
+  _renderSettingsAvatar(updatedUser);
+  _renderHeaderAvatar(updatedUser);
   closeSettingsNameEdit();
   showToast('تم تغيير الاسم بنجاح ✓');
   renderProducts();
@@ -3661,7 +3913,16 @@ document.getElementById('addReviewForm').addEventListener('submit', async (e) =>
   const rating = Number(document.getElementById('revRating').value);
   const text = document.getElementById('revText').value.trim();
   
-  const newRev = { id: Date.now(), prodId, userName: user.name.split(' ')[0], rating, text };
+  const newRev = {
+    id: Date.now(),
+    prodId,
+    userName: user.name.split(' ')[0],
+    rating,
+    text,
+    userEmail: user.email || '',
+    userPic:   user.picture || '',
+    userFrame: user.frame || getFrameType(user.email || '')
+  };
   REVIEWS.push(newRev);
   await saveDataStore('reviews', REVIEWS_STORAGE_KEY, REVIEWS);
   showToast('تمت إضافة تقييمك ✓');
@@ -4479,10 +4740,15 @@ function renderAdminReviews() {
   if(REVIEWS.length === 0){ tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:20px;">لا توجد تقييمات</td></tr>`; return;}
   tbody.innerHTML = REVIEWS.map(r => {
     const p = findProduct(r.prodId);
+    const revUser = { name: r.userName, picture: r.userPic||'', frame: r.userFrame||getFrameType(r.userEmail||''), email: r.userEmail||'' };
+    const isOwner = OWNER_EMAILS.includes((r.userEmail||'').toLowerCase());
     return `
     <tr>
       <td>${p ? p.name : '<span style="color:var(--stamp);">منتج محذوف</span>'}</td>
-      <td>${r.userName}</td>
+      <td style="display:flex;align-items:center;gap:8px;">
+        ${avatarHTML(revUser, 28)}
+        <span>${r.userName}${isOwner ? ' ★' : ''}</span>
+      </td>
       <td>${'⭐'.repeat(r.rating)}</td>
       <td>${r.text}</td>
       <td><button style="color:var(--stamp); font-weight:bold;" onclick="deleteReview(${r.id})">حذف</button></td>
@@ -4686,14 +4952,26 @@ function openProductDetail(productId) {
   if (prodRevs.length === 0) {
     revList.innerHTML = `<div class="pd-no-reviews">لا توجد تقييمات بعد. كن أول من يقيّم!</div>`;
   } else {
-    revList.innerHTML = prodRevs.map(r => `
+    revList.innerHTML = prodRevs.map(r => {
+      const revUser = { name: r.userName, picture: r.userPic || '', frame: r.userFrame || getFrameType(r.userEmail || ''), email: r.userEmail || '' };
+      const isOwner = OWNER_EMAILS.includes((r.userEmail||'').toLowerCase());
+      const ownerTag = isOwner ? `<span style="font-size:.62rem;background:var(--denim);color:#ECE5D3;padding:2px 7px;border-radius:999px;font-family:var(--ff-mono);font-weight:700;margin-right:6px;">صاحب الموقع</span>` : '';
+      return `
       <div class="pd-review-card">
-        <div class="pd-review-header">
-          <span class="pd-review-author">${r.userName}</span>
-          <span class="pd-review-stars">${'⭐'.repeat(r.rating)}</span>
+        <div class="pd-review-header" style="align-items:flex-start;gap:10px;">
+          <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;">
+            ${avatarHTML(revUser, 34)}
+            <div>
+              <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
+                <span class="pd-review-author">${r.userName}</span>${ownerTag}
+              </div>
+              <span class="pd-review-stars" style="font-size:.78rem;">${'⭐'.repeat(r.rating)}</span>
+            </div>
+          </div>
         </div>
-        <p class="pd-review-text">${r.text}</p>
-      </div>`).join('');
+        <p class="pd-review-text" style="margin-top:8px;">${r.text}</p>
+      </div>`;
+    }).join('');
   }
 
   /* Reset tabs */
@@ -5310,6 +5588,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         sanitizeCart();
         renderCart();
       }
+    });
+    /* تحميل الصورة من Firebase وتحديث الهيدر */
+    loadUserPictureFromFirebase(currentUser.email).then(() => {
+      _renderHeaderAvatar(getUserData());
     });
   }
 
