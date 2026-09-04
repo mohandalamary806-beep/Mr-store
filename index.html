@@ -3720,9 +3720,17 @@ function showConfirm(title, msg, type = 'danger') {
     document.getElementById('confirmMsg').textContent = msg;
     const iconWrap = document.getElementById('confirmIconWrap');
     iconWrap.className = 'confirm-icon ' + type;
-    document.getElementById('confirmOkBtn').onclick = () => { closeConfirm(); resolve(true); };
+    document.getElementById('confirmOkBtn').onclick = () => {
+      _confirmResolve = null;
+      document.getElementById('confirmOverlay').classList.remove('open');
+      resolve(true);
+    };
+    document.getElementById('confirmCancelBtn').onclick = () => {
+      _confirmResolve = null;
+      document.getElementById('confirmOverlay').classList.remove('open');
+      resolve(false);
+    };
     document.getElementById('confirmOverlay').classList.add('open');
-    document.getElementById('confirmCancelBtn').onclick = () => { closeConfirm(); resolve(false); };
   });
 }
 
@@ -6542,19 +6550,25 @@ async function submitSiteReview() {
 /* حذف (أدمن فقط) */
 async function deleteSiteReview(id) {
   if (!await showConfirm('حذف التعليق', 'هل تريد حذف هذا التعليق نهائياً؟')) return;
+  _siteReviews = _siteReviews.filter(r => r.id !== id);
   if (useFirebase) {
     firebase.database().ref(SITE_REVIEWS_KEY + '/' + id).remove()
       .catch(e => console.warn('delete review failed:', e));
   }
+  _renderSrSummary(_siteReviews);
+  _renderSrList();
   showToast('تم حذف التعليق ✓');
 }
 
 async function deleteMySiteReview(id) {
   if (!await showConfirm('حذف تعليقك', 'هل تريد حذف تعليقك نهائياً؟ مش هتقدر ترجعه.')) return;
+  _siteReviews = _siteReviews.filter(r => r.id !== id);
   if (useFirebase) {
-    await firebase.database().ref(SITE_REVIEWS_KEY + '/' + id).remove()
+    firebase.database().ref(SITE_REVIEWS_KEY + '/' + id).remove()
       .catch(e => console.warn('delete my review failed:', e));
   }
+  _renderSrSummary(_siteReviews);
+  _renderSrList();
   showToast('تم حذف تعليقك ✓');
 }
 
