@@ -2880,8 +2880,8 @@ html { scroll-behavior: smooth; }
 
     <div class="settings-divider"></div>
 
-    <!-- اختيار الإطار -->
-    <div class="settings-section" id="settingsFrameSection">
+    <!-- اختيار الإطار — يظهر فقط لصاحب الموقع -->
+    <div class="settings-section" id="settingsFrameSection" style="display:none;">
       <div class="settings-label">إطار الصورة</div>
       <div class="frame-picker" id="framePicker"></div>
     </div>
@@ -3177,14 +3177,6 @@ function saveDataStore(path, storageKey, data) {
   /* نرجع resolved promise عشان أي await قديم يشتغل بدون مشاكل */
   return Promise.resolve();
 }
-
-/* ============ REALTIME LISTENERS ============ */
-/*
-  بدل ما نـ fetch في كل مرة، بنستخدم .on('value') —
-  Firebase بيبعت أي تغيير تلقائي والصفحة بتتحدث فوراً.
-  كل listener بنحفظه عشان نقدر نوقفه لو محتاجين.
-*/
-const _listeners = {};
 
 function attachListener(path, storageKey, onUpdate) {
   if (!useFirebase) return;
@@ -3684,11 +3676,12 @@ function _renderFramePicker(user) {
   const section = document.getElementById('settingsFrameSection');
   if (!picker) return;
 
-  /* صاحب الموقع — مفيش اختيار، إطاره ثابت */
-  if (OWNER_EMAILS.includes((user.email||'').toLowerCase())) {
+  /* غير صاحب الموقع — إخفاء القسم كامل */
+  if (!OWNER_EMAILS.includes((user.email||'').toLowerCase())) {
     if (section) section.style.display = 'none';
     return;
   }
+  /* صاحب الموقع — إظهار القسم */
   if (section) section.style.display = '';
 
   const currentFrame = user.frame || 'none';
@@ -3812,29 +3805,17 @@ async function saveSettingsName() {
   const takenNames = await loadTakenNames();
   if (normalizedNew !== normalizedOld && takenNames[normalizedNew] && takenNames[normalizedNew] !== user.email) {
     document.getElementById('settingsNameNote').textContent = 'الاسم ده محجوز، جرّب اسم تاني.';
-  if (!useFirebase || !email) return;
-  const key = emailToKey(email);
-  try {
-    const snap = await firebase.database().ref('userProfiles/' + key).once('value');
-    if (snap.exists()) {
-      const profile = snap.val();
-      const user = getUserData();
-      if (user && user.email === email) {
-        const updates = {};
-        if (profile.picture) {
-          localStorage.setItem('mrstore_pic_' + key, profile.picture);
-          updates.picture = profile.picture;
-        }
-        if (profile.frame) {
-          updates.frame = profile.frame;
-        }
-        if (Object.keys(updates).length > 0) {
-          setUserData({ ...user, ...updates });
-        }
-      }
-    }
-  } catch(e) {}
-} const nameLastChanged = new Date().toISOString();
+    saveBtn.disabled = false;
+    saveBtn.textContent = 'حفظ';
+    return;
+  }
+
+  /* تحرير القديم وحجز الجديد */
+  if (normalizedOld && takenNames[normalizedOld] === user.email) delete takenNames[normalizedOld];
+  takenNames[normalizedNew] = user.email;
+  await saveTakenNames(takenNames);
+
+  const nameLastChanged = new Date().toISOString();
   await saveUserProfile(user.email, { name: newName, nameLastChanged });
   setUserData({ ...user, name: newName, nameLastChanged });
 
