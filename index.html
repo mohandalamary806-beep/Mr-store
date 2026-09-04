@@ -183,7 +183,7 @@
 
 /* Smooth color transitions for dark mode */
 *, *::before, *::after {
-  transition: background-color .3s ease, color .3s ease, border-color .3s ease, box-shadow .3s ease;
+  transition: background-color .5s ease, color .4s ease, border-color .4s ease, box-shadow .4s ease;
 }
 /* Don't transition transforms/animations */
 .reveal, .product-card, .btn, .icon-btn, .fly-dot, .confetti-piece {
@@ -1976,9 +1976,35 @@ body { animation: pageFadeIn .4s ease both; }
 .reveal.is-visible { opacity:1; transform: none; }
 
 /* --- Dark mode toggle morph --- */
-#darkModeToggle { transition: transform .35s cubic-bezier(.34,1.56,.64,1), background .2s ease; }
-#darkModeToggle:hover { transform: scale(1.12) rotate(20deg); }
-#darkModeToggle svg { transition: opacity .2s ease, transform .3s ease; }
+#darkModeToggle {
+  transition: transform .4s cubic-bezier(.34,1.56,.64,1), background .3s ease;
+  overflow: hidden;
+}
+#darkModeToggle:hover { transform: scale(1.15) rotate(22deg); }
+#darkModeToggle svg {
+  transition: opacity .25s ease, transform .4s cubic-bezier(.34,1.56,.64,1);
+  position: absolute;
+}
+#darkIcon  { transform: rotate(0deg);    opacity: 1; }
+#lightIcon { transform: rotate(-90deg);  opacity: 0; display: block !important; }
+[data-theme="dark"] #darkIcon  { transform: rotate(90deg);  opacity: 0; }
+[data-theme="dark"] #lightIcon { transform: rotate(0deg);   opacity: 1; }
+
+/* Ripple overlay لتأثير الانتشار */
+#darkRipple {
+  position: fixed;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 9998;
+  transform: scale(0);
+  opacity: 1;
+  transition: none;
+}
+#darkRipple.expanding {
+  transition: transform .7s cubic-bezier(.4,0,.2,1), opacity .7s ease;
+  transform: scale(1);
+  opacity: 0;
+}
 
 /* --- Input focus lift --- */
 .field input:focus,
@@ -2092,6 +2118,9 @@ html { scroll-behavior: smooth; }
 
 <!-- ============ CONFETTI CONTAINER ============ -->
 <div class="confetti-wrap" id="confettiWrap"></div>
+
+<!-- Dark mode ripple -->
+<div id="darkRipple"></div>
 
 <!-- ============ BACK TO TOP ============ -->
 <button id="backToTop" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="الرجوع للأعلى">
@@ -5704,23 +5733,64 @@ function refreshFlashSaleAdminUI() {
 /* ============ DARK MODE ============ */
 function applyDarkMode(isDark) {
   const html = document.documentElement;
-  const darkIcon = document.getElementById('darkIcon');
-  const lightIcon = document.getElementById('lightIcon');
   if (isDark) {
     html.setAttribute('data-theme', 'dark');
-    if (darkIcon) darkIcon.style.display = 'none';
-    if (lightIcon) lightIcon.style.display = '';
   } else {
     html.removeAttribute('data-theme');
-    if (darkIcon) darkIcon.style.display = '';
-    if (lightIcon) lightIcon.style.display = 'none';
   }
 }
 
 function toggleDarkMode() {
   const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-  const next = !isDark;
-  applyDarkMode(next);
+  const next   = !isDark;
+
+  /* حساب موضع الزرار عشان الـ ripple يبدأ منه */
+  const btn  = document.getElementById('darkModeToggle');
+  const rip  = document.getElementById('darkRipple');
+
+  if (btn && rip) {
+    const rect = btn.getBoundingClientRect();
+    const cx   = rect.left + rect.width  / 2;
+    const cy   = rect.top  + rect.height / 2;
+
+    /* حجم الـ ripple يغطي الشاشة كلها */
+    const maxD = Math.hypot(
+      Math.max(cx, window.innerWidth  - cx),
+      Math.max(cy, window.innerHeight - cy)
+    ) * 2.2;
+
+    /* لون الـ ripple — عكس الثيم الجديد */
+    const color = next ? '#0D0F14' : '#ECE5D3';
+
+    rip.style.cssText = `
+      width:${maxD}px; height:${maxD}px;
+      left:${cx - maxD/2}px; top:${cy - maxD/2}px;
+      background:${color};
+      transform:scale(0); opacity:.9;
+      transition:none;
+    `;
+
+    /* trigger reflow ثم ابدأ الانيميشن */
+    rip.offsetWidth;
+    rip.style.transition = 'transform .65s cubic-bezier(.4,0,.2,1), opacity .65s ease';
+    rip.style.transform  = 'scale(1)';
+    rip.style.opacity    = '0';
+
+    /* غيّر الثيم في منتصف الانيميشن */
+    setTimeout(() => applyDarkMode(next), 120);
+
+    /* نظّف بعد الانتهاء */
+    setTimeout(() => { rip.style.cssText = ''; }, 700);
+  } else {
+    applyDarkMode(next);
+  }
+
+  /* أنيميشن الزرار */
+  if (btn) {
+    btn.style.transform = 'scale(1.3) rotate(180deg)';
+    setTimeout(() => { btn.style.transform = ''; }, 400);
+  }
+
   localStorage.setItem('mrstore_dark_mode', next ? '1' : '0');
 }
 
